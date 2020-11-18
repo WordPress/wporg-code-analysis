@@ -49,7 +49,11 @@ class PHPCS {
 	 */
 	public function __construct() {
 		$this->phpcs = dirname( __DIR__ ) . '/vendor/squizlabs/php_codesniffer/bin/phpcs';
-		$this->cache_file = get_temp_dir() . 'wporg-code-analysis/phpcs-cache';
+		if ( is_callable( 'get_temp_dir' ) ) {
+			$this->cache_file = get_temp_dir() . 'wporg-code-analysis/phpcs-cache';
+		} else {
+			$this->cache_file = '/tmp/wporg-code-analysis/phpcs-cache';			
+		}
 	}
 
 	/**
@@ -89,7 +93,7 @@ class PHPCS {
 	 * @return void
 	 */
 	public function clear_cache() {
-		wp_delete_file( $this->cache_file );
+		@unlink( $this->cache_file );
 	}
 
 	/**
