@@ -93,11 +93,11 @@ if ( empty( $opts['slug'] ) ) {
 	$slugs = [ $opts['slug'] ];
 }
 
-foreach ( $slugs as $slug ) {
+// Do we need a fresh object each time?
+$phpcs = new PHPCS();
+$phpcs->set_standard( dirname( __DIR__ ) . '/rulesets/reviewer-flags.xml' );
 
-	// Do we need a fresh object each time?
-	$phpcs = new PHPCS();
-	$phpcs->set_standard( dirname( __DIR__ ) . '/rulesets/reviewer-flags.xml' );
+foreach ( $slugs as $slug ) {
 
 	$path = export_plugin( $slug );
 	$args = array(
