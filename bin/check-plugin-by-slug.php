@@ -93,7 +93,6 @@ if ( empty( $opts['slug'] ) ) {
 	$slugs = [ $opts['slug'] ];
 }
 
-// Do we need a fresh object each time?
 $phpcs = new PHPCS();
 $phpcs->set_standard( dirname( __DIR__ ) . '/rulesets/reviewer-flags.xml' );
 
