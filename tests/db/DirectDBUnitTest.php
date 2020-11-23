@@ -1,26 +1,23 @@
 <?php
-namespace WordPressDotOrg\Code_Analysis;
-
 use PHPUnit\Framework\TestCase;
-use WordPressDotOrg\Code_Analysis\PHPCS;
+use PHP_CodeSniffer\Files\LocalFile;
+use PHP_CodeSniffer\Ruleset;
+use PHP_CodeSniffer\Config;
+ 
+class DisallowExtractSniffTest extends TestCase {
+    public function testDisallowExtractSniff() {
+        $fixtureFile = __FILE__ . '.inc';
+        $sniffFiles = [ dirname( dirname( __DIR__ ) ) . '/MinimalPluginStandard/Sniffs/DirectDBSniff.php' ];
+        $config = new Config();
+        $ruleset = new Ruleset($config);
+        $ruleset->registerSniffs($sniffFiles, [], []);
+        $ruleset->populateTokenListeners();
+        $phpcsFile = new LocalFile($fixtureFile, $ruleset, $config);
+        $phpcsFile->process();
+        $foundErrors = $phpcsFile->getErrors();
+        $lines = array_keys($foundErrors);
 
-
-class DirectDBTests extends TestCase {
-
-	public $full_report;
-
-	public function setUp() {
-		
-		$phpcs = new PHPCS();
-		$phpcs->set_standard( dirname( dirname( __DIR__ ) ). '/sniffs/DirectDBSniff.php' );
-		// phpcs --standard=PEAR --sniffs=Generic.PHP.LowerCaseConstant,PEAR.WhiteSpace.ScopeIndent /path/to/code
-
-		$this->full_report = $phpcs->run_full_report( $path );
-
-	}
-
-	public function test_full_report() {
-		var_dump( $this->full_report );
-	}
-
+        // FIXME
+        $this->assertEquals([7], $lines);
+    }
 }
