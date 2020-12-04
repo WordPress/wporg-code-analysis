@@ -386,6 +386,7 @@ class DirectDBSniff extends Sniff {
 		$methodPtr = $this->phpcsFile->findNext( array( \T_WHITESPACE ), ( $is_object_call + 1 ), null, true, null, true );
 		$method    = $this->tokens[ $methodPtr ]['content'];
 
+		// TODO: this might not be a method call, it might be a property $foo->bar
 		var_dump( "method \$wpdb->$method" );
 		#var_dump( PassedParameters::getParameters( $this->phpcsFile, $methodPtr ) );
 
