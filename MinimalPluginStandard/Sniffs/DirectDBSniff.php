@@ -221,7 +221,7 @@ class DirectDBSniff extends Sniff {
 		#var_dump( __FUNCTION__, $stackPtr, $endPtr ); #return;
 		#var_dump( array_slice( $this->tokens, $stackPtr, $endPtr - $stackPtr + 1, true ) );
 		$newPtr = $stackPtr;
-		while ( $this->phpcsFile->findNext( Tokens::$functionNameTokens + Tokens::$textStringTokens + [ \T_VARIABLE => \T_VARIABLE ], $newPtr, $endPtr, false, null, true ) ) {
+		while ( $this->phpcsFile->findNext( Tokens::$functionNameTokens + Tokens::$textStringTokens + [ \T_VARIABLE => \T_VARIABLE, \T_INT_CAST => \T_INT_CAST, \T_BOOL_CAST => \T_BOOL_CAST ], $newPtr, $endPtr, false, null, true ) ) {
 			#echo "qqq\n"; var_dump( $this->tokens[ $newPtr ] ); return;
 
 			if ( in_array( $this->tokens[ $newPtr ][ 'code' ], Tokens::$functionNameTokens ) ) {
@@ -263,6 +263,10 @@ class DirectDBSniff extends Sniff {
 					var_dump( "unsanitized var found in expression!", $this->get_complex_variable( $newPtr ) );
 					return false;
 				}
+			} elseif ( in_array( $this->tokens[ $newPtr ][ 'code' ], Tokens::$castTokens ) ) {
+				// We're safely casting to an int or bool
+				var_dump( __FUNCTION__, "cast", $this->tokens[ $newPtr ][ 'content' ] );
+				return true;
 			} else {
 				#var_dump( __FUNCTION__, "unknown token", $this->tokens[ $newPtr ] );
 			}
