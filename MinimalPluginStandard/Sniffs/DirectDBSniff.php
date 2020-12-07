@@ -87,7 +87,6 @@ class DirectDBSniff extends Sniff {
 	protected function mark_sanitized_var( $stackPtr ) {
 
 		if ( \T_VARIABLE !== $this->tokens[ $stackPtr ][ 'code' ] ) {
-			var_dump( "not a variable", $this->tokens[ $stackPtr ] );
 			return false;
 		}
 
@@ -113,7 +112,6 @@ class DirectDBSniff extends Sniff {
 	 */
 	protected function is_sanitized_var( $stackPtr ) {
 		if ( \T_VARIABLE !== $this->tokens[ $stackPtr ][ 'code' ] ) {
-			var_dump( "not a variable", $this->tokens[ $stackPtr ] );
 			return false;
 		}
 
@@ -252,7 +250,6 @@ class DirectDBSniff extends Sniff {
 				// If the expression contains an unsanitized variable and we haven't already found an escaping function,
 				// then we can fail at this point.
 				if ( '$wpdb' !== $this->tokens[ $newPtr ][ 'content' ] && !$this->is_sanitized_var( $newPtr ) ) {
-					var_dump( "unsanitized var found in expression!", $this->get_complex_variable( $newPtr ) );
 					return false;
 				}
 			} elseif ( in_array( $this->tokens[ $newPtr ][ 'code' ], Tokens::$castTokens ) ) {
@@ -359,7 +356,6 @@ class DirectDBSniff extends Sniff {
 		}
 
 		if ( $this->is_assignment( $stackPtr ) ) {
-			var_dump( "assigning to " . $this->tokens[ $stackPtr ]['content'] );
 
 			// Work out what we're assigning to the variable at $stackPtr    		
     		$nextToken = $this->phpcsFile->findNext( Tokens::$assignmentTokens, $stackPtr +1 , null, false, null, true );
