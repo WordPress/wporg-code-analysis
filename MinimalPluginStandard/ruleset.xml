@@ -1,4 +1,4 @@
 <?xml version="1.0"?>
-<ruleset name="PluginStandards">
+<ruleset name="MinimalPluginStandards">
   <description>Minimal coding standards for WordPress plugins.</description>
 </ruleset>

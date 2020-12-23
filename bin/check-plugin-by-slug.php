@@ -94,7 +94,7 @@ if ( empty( $opts['slug'] ) ) {
 }
 
 $phpcs = new PHPCS();
-$phpcs->set_standard( dirname( __DIR__ ) . '/rulesets/reviewer-flags.xml' );
+$phpcs->set_standard( dirname( __DIR__ ) . '/MinimalPluginStandard' );
 
 foreach ( $slugs as $slug ) {
 
