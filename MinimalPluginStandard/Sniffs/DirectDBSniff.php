@@ -34,6 +34,7 @@ class DirectDBSniff extends Sniff {
 		'like_escape'                => true,
 		'wp_json_encode'             => true,
 		'prepare'                    => true, // $wpdb->prepare
+		'wp_parse_id_list'           => true,
 	);
 
 	// None of these are SQL safe
@@ -64,6 +65,11 @@ class DirectDBSniff extends Sniff {
 		'get_col'     => true,
 		'get_row'     => true,
 		'get_results' => true,
+	);
+
+	protected $safe_constants = array(
+		'ARRAY_A'     => true,
+		'OBJECT'      => true,
 	);
 
 	/**
@@ -222,6 +228,9 @@ class DirectDBSniff extends Sniff {
 			if ( in_array( $this->tokens[ $newPtr ][ 'code' ], Tokens::$functionNameTokens ) ) {
 				if ( isset( $this->escapingFunctions[ $this->tokens[ $newPtr ][ 'content' ] ] ) ) {
 					// First function call was to an escaping function. We're good.
+					return true;
+				} elseif ( isset( $this->safe_constants[ $this->tokens[ $newPtr ][ 'content' ] ] ) ) {
+					// It's a constant like ARRAY_A, it's safe.
 					return true;
 				} else {
 					// First function call was something else. It should be wrapped in an escape.
