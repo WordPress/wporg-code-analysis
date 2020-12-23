@@ -89,3 +89,10 @@ function secure_wpdb_query_9( $foo ) {
 	$wpdb->query( "SELECT * FROM $wpdb->posts WHERE foo = '{$esc[1]->foo}' LIMIT 1" ); // safe
 }
 
+function secure_wpdb_query_10( $foo ) {
+
+	global $wpdb;
+
+	// 5. Safe query, prepare()
+	$wpdb->get_results( $wpdb->prepare( "SELECT * FROM $wpdb->posts WHERE foo = %s LIMIT 1", $foo ), ARRAY_A ); // safe
+}
