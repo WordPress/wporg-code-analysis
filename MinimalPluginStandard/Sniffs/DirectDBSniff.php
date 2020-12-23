@@ -174,7 +174,8 @@ class DirectDBSniff extends Sniff {
 
 		$properties = [];
 		$i = $stackPtr + 1;
-		while ( true ) {
+		$limit = 200;
+		while ( $limit > 0 ) {
 			// Find the next non-empty token
 			$nextToken = $this->phpcsFile->findNext( Tokens::$emptyTokens, $i , null, true, null, true );
 
@@ -197,6 +198,7 @@ class DirectDBSniff extends Sniff {
 			}
 
 			++ $i;
+			-- $limit;
 		}
 
 		return [ ltrim( $this->tokens[ $stackPtr ][ 'content' ], '$' ), $properties ];
