@@ -25,7 +25,6 @@ class DisallowExtractSniffTest extends TestCase {
                 38,
                 45,
                 52,
-                59
                 59,
                 66
             ], 
