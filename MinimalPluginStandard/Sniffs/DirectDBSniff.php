@@ -386,6 +386,11 @@ class DirectDBSniff extends Sniff {
     		return; // ??
 		}
 
+		// We're only interested in wpdb method calls to risky functions
+		if ( !$this->is_wpdb_method_call( $stackPtr, $this->unsafe_methods ) ) {
+			return;
+		}
+
 		$is_object_call = $this->phpcsFile->findNext( \T_OBJECT_OPERATOR, ( $stackPtr + 1 ), null, false, null, true );
 		if ( false === $is_object_call ) {
 			return; // This is not a call to the wpdb object.
