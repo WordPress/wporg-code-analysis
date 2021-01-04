@@ -58,3 +58,10 @@ function insecure_wpdb_query_7( $foo ) {
 	// 7. Unescaped query, concat unknown function
 	$wpdb->query( "SELECT * FROM $wpdb->users WHERE foo = '" . baz( $foo ) . "' LIMIT '" ); // unsafe
 }
+
+function insecure_wpdb_query_8( $foo ) {
+	global $wpdb;
+
+	// 7. Unescaped query, $this->wpdb
+	$this->wpdb->query( "SELECT * FROM $wpdb->users WHERE foo = '" . $foo . "' LIMIT '" ); // unsafe
+}
