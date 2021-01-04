@@ -65,3 +65,12 @@ function insecure_wpdb_query_8( $foo ) {
 	// 7. Unescaped query, $this->wpdb
 	$this->wpdb->query( "SELECT * FROM $wpdb->users WHERE foo = '" . $foo . "' LIMIT '" ); // unsafe
 }
+
+function insecure_wpdb_query_9( $foo ) {
+
+	global $wpdb;
+
+	// 9. Complex variable that is only partly escaped
+	$esc[1]->foo = esc_sql( $foo );
+	$wpdb->query( "SELECT * FROM $wpdb->posts WHERE foo = '{$esc[2]->foo}' LIMIT 1" ); // unsafe
+}

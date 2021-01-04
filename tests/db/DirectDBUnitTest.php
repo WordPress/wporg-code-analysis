@@ -26,7 +26,8 @@ class DisallowExtractSniffTest extends TestCase {
                 45,
                 52,
                 59,
-                66
+                66,
+                75
             ], 
             $lines);
     }

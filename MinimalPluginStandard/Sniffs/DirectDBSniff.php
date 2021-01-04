@@ -27,13 +27,13 @@ class DirectDBSniff extends Sniff {
 	 */
 	protected $escapingFunctions = array(
 		'absint'                     => true,
-		'esc_sql'                    => true,
 		'floatval'                   => true,
 		'intval'                     => true,
 		'json_encode'                => true,
 		'like_escape'                => true,
 		'wp_json_encode'             => true,
 		'prepare'                    => true, // $wpdb->prepare
+		'esc_sql'                    => true,
 		'wp_parse_id_list'           => true,
 	);
 
@@ -134,9 +134,8 @@ class DirectDBSniff extends Sniff {
 		if ( isset( $this->sanitized_variables[ $context ][ $var[0] ] ) && $var[1] === $this->sanitized_variables[ $context ][ $var[0] ] ) {
 			// Check if it's sanitized exactly, with array indexes etc
 			return true;
-		} elseif ( isset( $this->sanitized_variables[ $context ][ $var[0] ] ) && true ===  $this->sanitized_variables[ $context ][ $var[0] ] ) {
-			// TODO maybe warn on this: it was sanitized as a scalar.
-			// That might be ok if the sanitizing function was recursive.
+		} elseif ( isset( $this->sanitized_variables[ $context ][ $var[0] ] ) && true === $this->sanitized_variables[ $context ][ $var[0] ] ) {
+			// The main $var was sanitized recursively, so consider anything in it safe
 			return true;
 		}
 
@@ -173,9 +172,6 @@ class DirectDBSniff extends Sniff {
 		while ( $limit > 0 ) {
 			// Find the next non-empty token
 			$nextToken = $this->phpcsFile->findNext( Tokens::$emptyTokens, $i , null, true, null, true );
-			if ( $nextToken <= $i ) {
-				break;
-			}
 
 			// If it's :: or -> then check if the following thing is a string..
 			if ( $this->tokens[ $nextToken ][ 'code' ] === \T_OBJECT_OPERATOR
@@ -385,7 +381,7 @@ class DirectDBSniff extends Sniff {
     		} else {
     			// If the expression being assigned is safe (ie escaped) then mark the variable as sanitized.
     			if ( $this->expression_is_safe( $nextToken + 1 ) ) {
-    				$this->mark_sanitized_var( $stackPtr );
+					$this->mark_sanitized_var( $stackPtr );
     			}
     		}
 
