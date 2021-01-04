@@ -167,37 +167,43 @@ class DirectDBSniff extends Sniff {
 			return false;
 		}
 
-		// We already have a handy function for array keys
-		if ( $array_keys = $this->get_array_access_keys( $stackPtr ) ) {
-			return [ ltrim( $this->tokens[ $stackPtr ][ 'content' ], '$' ), $array_keys ];
-		}
-
 		$properties = [];
 		$i = $stackPtr + 1;
 		$limit = 200;
 		while ( $limit > 0 ) {
 			// Find the next non-empty token
 			$nextToken = $this->phpcsFile->findNext( Tokens::$emptyTokens, $i , null, true, null, true );
+			if ( $nextToken <= $i ) {
+				break;
+			}
 
 			// If it's :: or -> then check if the following thing is a string..
 			if ( $this->tokens[ $nextToken ][ 'code' ] === \T_OBJECT_OPERATOR
-				||  $this->tokens[ $nextToken ][ 'code' ] === \T_DOUBLE_COLON) {
-				$objectThing = $this->phpcsFile->findNext( Tokens::$emptyTokens, ++$i , null, true, null, true );
+				||  $this->tokens[ $nextToken ][ 'code' ] === \T_DOUBLE_COLON
+				||  $this->tokens[ $nextToken ][ 'code' ] === \T_OPEN_SQUARE_BRACKET ) {
+				$objectThing = $this->phpcsFile->findNext( Tokens::$emptyTokens, $nextToken + 1 , null, true, null, true );
 
 				// It could be a variable name or function name
 				if ( $this->tokens[ $objectThing ][ 'code' ] === \T_STRING ) {
-					$lookAhead = $this->phpcsFile->findNext( Tokens::$emptyTokens, $i + 1 , null, true, null, true );
+					$lookAhead = $this->phpcsFile->findNext( Tokens::$emptyTokens, $objectThing + 1 , null, true, null, true );
 					if ( $this->tokens[ $lookAhead ][ 'code' ] === \T_OPEN_PARENTHESIS ) {
 						// It's a function name, so ignore it
 						break;
 					}
 					$properties[] = $this->tokens[ $objectThing ][ 'content' ];
+					$i = $objectThing + 1;
+				} elseif ( $this->tokens[ $objectThing ][ 'code' ] === \T_LNUMBER ) {
+					// It's a numeric array index
+					$properties[] = $this->tokens[ $objectThing ][ 'content' ];
+					$i = $objectThing + 1;
 
+				} else {
+					++ $i;
 				}
-
+			} else {
+				++ $i;
 			}
 
-			++ $i;
 			-- $limit;
 		}
 
