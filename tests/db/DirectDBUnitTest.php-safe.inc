@@ -96,3 +96,42 @@ function secure_wpdb_query_10( $foo ) {
 	// 5. Safe query, prepare()
 	$wpdb->get_results( $wpdb->prepare( "SELECT * FROM $wpdb->posts WHERE foo = %s LIMIT 1", $foo ), ARRAY_A ); // safe
 }
+
+function secure_wpdb_query_11( $foo ) {
+
+	global $wpdb;
+
+	// 5. Safe query, $this->wpdb->prepare()
+	$this->wpdb->get_results( $this->wpdb->prepare( "SELECT * FROM $wpdb->posts WHERE foo = %s LIMIT 1", $foo ) ); // safe
+}
+
+function false_positive_1() {
+	// https://plugins.trac.wordpress.org/browser/mailoptin/trunk/vendor/pelago/emogrifier/Classes/Emogrifier.php#L368
+	// Not a wpdb->query() call at all
+
+	$nodesMatchingCssSelectors = $xPath->query($this->translateCssToXpath($cssRule['selector']));
+}
+
+function false_positive_2( $email ) {
+	// https://plugins.trac.wordpress.org/browser/gdpr-framework/trunk/src/Components/WordpressComments/WordpressComments.php#L205
+	// Also not a wpdb query (it's WP_Query!)
+
+	$query = new \WP_Comment_Query();
+
+	$comments = $query->query(
+			array(
+					'author_email'       => $email,
+					'include_unapproved' => true,
+					'status'             => 'all',
+			)
+	);
+}
+
+function false_positive_3() {
+	// https://plugins.trac.wordpress.org/browser/cherry-services-list/trunk/admin/includes/class-cherry-services-meta.php#L109
+	$post_id         = absint( $_REQUEST['post'] );
+
+	$post_meta_infos = $wpdb->get_results(
+				"SELECT meta_key, meta_value FROM $wpdb->postmeta WHERE post_id = $post_id"
+	);
+}
