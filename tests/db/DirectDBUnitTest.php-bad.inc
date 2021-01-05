@@ -96,3 +96,12 @@ function insecure_wpdb_query_12() {
 	$foo = ( isset( $_GET['foo'] ) ? absint( $_GET['foo'] ) : $_POST['foo'] );
 	$wpdb->query( "SELECT * FROM $wpdb->users WHERE foo = '" . $foo . "' LIMIT 1" ); // unsafe
 }
+
+function false_negative_1() {
+	global $wpdb;
+
+	// https://plugins.trac.wordpress.org/browser/automatic-domain-changer/trunk/auto-domain-change.php#L366
+	// This wasn't caught for some reason
+	$sql = 'UPDATE ' . $t . ' SET ' . implode( ',', $sets ) . ' WHERE `' . $id . '`=' . $row[ $id ] . ' LIMIT 1;';
+	$wpdb->get_results($sql); // unsafe
+}
