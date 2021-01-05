@@ -233,6 +233,9 @@ class DirectDBSniff extends Sniff {
 				if ( isset( $this->escapingFunctions[ $this->tokens[ $newPtr ][ 'content' ] ] ) ) {
 					// First function call was to an escaping function. We're good.
 					return true;
+				} elseif ( $this->is_wpdb_method_call( $newPtr, [ 'prepare' => true ] ) ) {
+					// It's a call to $wpdb->prepare(), safe.
+					return true;
 				} elseif ( isset( $this->safe_constants[ $this->tokens[ $newPtr ][ 'content' ] ] ) ) {
 					// It's a constant like ARRAY_A, it's safe.
 					return true;
@@ -260,6 +263,14 @@ class DirectDBSniff extends Sniff {
 				}
 
 			} elseif ( \T_VARIABLE === $this->tokens[ $newPtr ][ 'code' ] ) {
+				// Allow for things like $this->wpdb->prepare()
+				if ( '$this' === $this->tokens[ $newPtr ][ 'content' ] ) {
+					if ( 'wpdb' === $this->tokens[ $newPtr + 2 ][ 'content' ] ) {
+						// Continue the loop from the wpdb->prepare() part
+						$newPtr += 2;
+						continue;
+					}
+				}
 				// If the expression contains an unsanitized variable and we haven't already found an escaping function,
 				// then we can fail at this point.
 				if ( '$wpdb' !== $this->tokens[ $newPtr ][ 'content' ] && !$this->is_sanitized_var( $newPtr ) ) {
