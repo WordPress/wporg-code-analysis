@@ -158,3 +158,10 @@ function false_positive_6() {
 	$foo = ( isset( $_GET['foo'] ) ? absint( $_GET['foo'] ) : absint( $_POST['foo'] ) );
 	$wpdb->query( "SELECT * FROM $wpdb->users WHERE foo = '" . $foo . "' LIMIT 1" ); // safe
 }
+
+function false_positive_7() {
+	global $wpdb;
+
+	// A bug in handling $wpdb->prepare() with multiple args?
+	$wpdb->query( $wpdb->prepare("UPDATE {$wpdb->posts} SET post_content = REPLACE(post_content, %s, %s)", $from_url, $to_url) ); // safe
+}

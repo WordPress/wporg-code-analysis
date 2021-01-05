@@ -313,7 +313,7 @@ class DirectDBSniff extends Sniff {
 					// Skip over the function's parameters and continue checking the remainder of the expression.
 					$function_params = PassedParameters::getParameters( $this->phpcsFile, $newPtr );
 					if ( $param = end( $function_params ) ) {
-						$newPtr = $this->next_non_empty( $param['end'] );
+						$newPtr = $this->next_non_empty( $param['end'] + 1 ) ;
 						continue;
 					} else {
 						// Something went wrong here
