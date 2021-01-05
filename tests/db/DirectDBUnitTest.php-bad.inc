@@ -81,3 +81,10 @@ function insecure_wpdb_query_10( $foo ) {
 	// 7. Unescaped query, prefixed with a constant
 	$wpdb->query( "SELECT * FROM $wpdb->users WHERE foo = '" . SOME_CONSTANT . $foo . "' LIMIT '" ); // unsafe
 }
+
+function insecure_wpdb_query_11( $foo ) {
+	global $wpdb;
+
+	$table = $wpdb->base_prefix . $foo;
+	$wpdb->query( "SELECT * FROM $table WHERE foo=1 LIMIT 1" ); // unsafe because of $foo
+}

@@ -95,10 +95,6 @@ class DirectDBSniff extends Sniff {
 	}
 
 	/**
-	 * Get the name of the variable at $stackPtr.
-
-
-	/**
 	 * Mark the variable at $stackPtr as being safely sanitized for use in a SQL context.
 	 * $stackPtr must point to a T_VARIABLE. Handles arrays and (maybe) object properties.
 	 */
@@ -191,6 +187,41 @@ class DirectDBSniff extends Sniff {
 	}
 
 	/**
+	 * Is the \T_VARIABLE at $stackPtr a property of wpdb like $wpdb->tablename?
+	 */
+	protected function is_wpdb_property( $stackPtr ) {
+		// It must be a variable
+		if ( \T_VARIABLE !== $this->tokens[ $stackPtr ][ 'code' ] ) {
+			return false;
+		}
+
+		// $wpdb
+		if ( '$wpdb' !== $this->tokens[ $stackPtr ][ 'content' ] ) {
+			return false;
+		}
+
+		// ->
+		$nextToken = $this->next_non_empty( $stackPtr + 1 );
+		if ( \T_OBJECT_OPERATOR !== $this->tokens[ $nextToken ][ 'code' ] ) {
+			return false;
+		}
+
+		// tablename
+		$nextToken = $this->next_non_empty( $nextToken + 1 );
+		if ( \T_STRING !== $this->tokens[ $nextToken ][ 'code' ] ) {
+			return false;
+		}
+
+		// not followed by (
+		$nextToken = $this->next_non_empty( $nextToken + 1 );
+		if ( \T_OPEN_PARENTHESIS === $this->tokens[ $nextToken ][ 'code' ] ) {
+			return false;
+		}
+
+		return $nextToken;
+	}
+
+	/**
 	 * Returns an array representing a variable that may be non-scalar.
 	 *
 	 * The first element of the return value is the variable name.
@@ -235,8 +266,12 @@ class DirectDBSniff extends Sniff {
 				} else {
 					++ $i;
 				}
-			} else {
+			} elseif ( \T_CLOSE_SQUARE_BRACKET === $this->tokens[ $nextToken ][ 'code' ] ) {
+				// It's a ] so see what's next
 				++ $i;
+			} else {
+				// Anything else is not part of a variable so stop here
+				break;
 			}
 
 			-- $limit;
@@ -314,6 +349,13 @@ class DirectDBSniff extends Sniff {
 						continue;
 					}
 				}
+
+				// Also $wpdb->tablename
+				if ( $lookahead = $this->is_wpdb_property( $newPtr ) ) {
+					$newPtr = $lookahead;
+					continue;
+				}
+
 				// If the expression contains an unsanitized variable and we haven't already found an escaping function,
 				// then we can fail at this point.
 				if ( '$wpdb' !== $this->tokens[ $newPtr ][ 'content' ] && !$this->is_sanitized_var( $newPtr ) ) {
@@ -322,6 +364,8 @@ class DirectDBSniff extends Sniff {
 			} elseif ( in_array( $this->tokens[ $newPtr ][ 'code' ], Tokens::$castTokens ) ) {
 				// We're safely casting to an int or bool
 				return true;
+			} elseif ( \T_CONSTANT_ENCAPSED_STRING === $this->tokens[ $newPtr ][ 'code' ] ) {
+				// A constant string is ok, but we want to check what's after it
 			}
 
 			if ( !is_null( $endPtr ) && $newPtr > $endPtr ) {

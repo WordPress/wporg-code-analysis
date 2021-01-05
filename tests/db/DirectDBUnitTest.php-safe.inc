@@ -143,3 +143,10 @@ function false_positive_4() {
 	$wpdb->query( "SELECT * FROM $wpdb->posts WHERE foo = '" . MPS_A_CONSTANT . "' LIMIT 1" ); // safe-ish, if we assume constants are always literal constants and never derived
 
 }
+
+function false_positive_5() {
+	global $wpdb;
+
+	$table = $wpdb->base_prefix . 'foobar';
+	$wpdb->query( "SELECT * FROM $table WHERE foo=1 LIMIT 1" ); // safe if we're aware $wpdb->base_prefix is pre-sanitized
+}
