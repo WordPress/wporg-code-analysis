@@ -88,3 +88,11 @@ function insecure_wpdb_query_11( $foo ) {
 	$table = $wpdb->base_prefix . $foo;
 	$wpdb->query( "SELECT * FROM $table WHERE foo=1 LIMIT 1" ); // unsafe because of $foo
 }
+
+function insecure_wpdb_query_12() {
+	global $wpdb;
+
+	// This looks safe at first glance
+	$foo = ( isset( $_GET['foo'] ) ? absint( $_GET['foo'] ) : $_POST['foo'] );
+	$wpdb->query( "SELECT * FROM $wpdb->users WHERE foo = '" . $foo . "' LIMIT 1" ); // unsafe
+}

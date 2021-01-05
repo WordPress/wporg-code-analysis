@@ -150,3 +150,11 @@ function false_positive_5() {
 	$table = $wpdb->base_prefix . 'foobar';
 	$wpdb->query( "SELECT * FROM $table WHERE foo=1 LIMIT 1" ); // safe if we're aware $wpdb->base_prefix is pre-sanitized
 }
+
+function false_positive_6() {
+	global $wpdb;
+
+	// This is safe but tricky to parse!
+	$foo = ( isset( $_GET['foo'] ) ? absint( $_GET['foo'] ) : absint( $_POST['foo'] ) );
+	$wpdb->query( "SELECT * FROM $wpdb->users WHERE foo = '" . $foo . "' LIMIT 1" ); // safe
+}
