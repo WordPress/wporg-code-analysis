@@ -32,7 +32,7 @@ if ( intval( $opts['number'] ) <= 1 ) {
 function get_top_slugs( $plugins_to_retrieve, $starting_page = 1 ) {
 	$payload = array(
 		'action' => 'query_plugins',
-		'request' => serialize( (object) array( 'browse' => 'popular', 'per_page' => $plugins_to_retrieve, 'page' => $starting_page ) ) );
+		'request' => serialize( (object) array( 'browse' => 'popular', 'per_page' => $plugins_to_retrieve, 'page' => $starting_page, 'fields' => [ 'active_installs' => true ] ) ) );
 
 	$ch = curl_init();
 	curl_setopt($ch, CURLOPT_URL,"https://api.wordpress.org/plugins/info/1.0/");
@@ -49,7 +49,11 @@ function get_top_slugs( $plugins_to_retrieve, $starting_page = 1 ) {
 	$out = [];
 
 	foreach ( $data->plugins as $plugin ) {
-		$out[] = $plugin->slug;
+		$out[ $plugin->slug ] = [ 
+			'slug' => $plugin->slug,
+			'installs' => $plugin->active_installs,
+			'updated' => $plugin->last_updated,
+		];
 	}
 
 	return $out;
@@ -94,7 +98,8 @@ define( 'WPINC', 'yeahnah' );
 require dirname( __DIR__ ) . '/includes/class-phpcs.php';
 
 if ( empty( $opts['slug'] ) ) {
-	$slugs = get_top_slugs( intval( $opts['number'] ), intval( $opts['page'] ) );
+	$plugins = get_top_slugs( intval( $opts['number'] ), intval( $opts['page'] ) );
+	$slugs = array_map( 'reset', $plugins ); // ugh
 } else {
 	$slugs = [ $opts['slug'] ];
 }
@@ -112,6 +117,11 @@ foreach ( $slugs as $slug ) {
 
 	echo str_repeat( '=', 80 ) . "\n";
 	echo "Checking $slug in $path...\n";
+	if ( isset( $plugins[$slug] ) ) {
+		echo number_format( $plugins[$slug]['installs'] ) . " active installs\n";
+		echo "last updated " . $plugins[$slug]['updated'] . "\n";
+		echo 'https://plugins.trac.wordpress.org/browser/' . $slug . "/trunk/\n";
+	}
 	echo str_repeat( '=', 80 ) . "\n";
 
 	switch ( $opts['report'] ) {
