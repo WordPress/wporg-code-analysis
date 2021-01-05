@@ -105,3 +105,18 @@ function false_negative_1() {
 	$sql = 'UPDATE ' . $t . ' SET ' . implode( ',', $sets ) . ' WHERE `' . $id . '`=' . $row[ $id ] . ' LIMIT 1;';
 	$wpdb->get_results($sql); // unsafe
 }
+
+function false_negative_2() {
+	// https://plugins.trac.wordpress.org/browser/woo-wallet/trunk/includes/admin/class-woo-wallet-transaction-details.php#L100
+	// This was caught in earlier revs but recently regressed
+	$user_id = filter_input(INPUT_GET, 'user_id' );
+	$this->total_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->base_prefix}woo_wallet_transactions WHERE user_id={$user_id}" );
+}
+
+function insecure_wpdb_query_13( $foo ) {
+	global $wpdb;
+
+	$foo = not_an_escaping_function( $foo );
+	$bar = $wpdb->query( "SELECT * FROM $wpdb->users WHERE foo = '" . $foo . "' LIMIT 1" ); // unsafe
+}
+

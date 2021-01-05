@@ -179,7 +179,7 @@ class DirectDBSniff extends Sniff {
 		// It could be a function call or similar. That depends on what comes after it.
 
 		$nextToken = $this->next_non_empty( $stackPtr + 1 );
-		if ( in_array( $this->tokens[ $nextToken ], $this->function_tokens ) ) {
+		if ( in_array( $this->tokens[ $nextToken ][ 'code' ], $this->function_tokens ) ) {
 			// It's followed by a paren or similar, so it's not a constant
 			return false;
 		}
