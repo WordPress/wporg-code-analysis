@@ -32,6 +32,7 @@ class DirectDBSniff extends Sniff {
 		'json_encode'                => true,
 		'like_escape'                => true,
 		'wp_json_encode'             => true,
+		'isset'                      => true,
 		'prepare'                    => true, // $wpdb->prepare
 		'esc_sql'                    => true,
 		'wp_parse_id_list'           => true,
@@ -300,13 +301,24 @@ class DirectDBSniff extends Sniff {
 	 */
 	public function expression_is_safe( $stackPtr, $endPtr = null ) {
 		// TODO: could produce warnings or give more context
+
+		$this->unsafe_expression = null;
+
 		$newPtr = $stackPtr;
 		while ( $this->phpcsFile->findNext( Tokens::$functionNameTokens + Tokens::$textStringTokens + [ \T_VARIABLE => \T_VARIABLE, \T_INT_CAST => \T_INT_CAST, \T_BOOL_CAST => \T_BOOL_CAST ], $newPtr, $endPtr, false, null, true ) ) {
 
 			if ( in_array( $this->tokens[ $newPtr ][ 'code' ], Tokens::$functionNameTokens ) ) {
 				if ( isset( $this->escapingFunctions[ $this->tokens[ $newPtr ][ 'content' ] ] ) ) {
-					// First function call was to an escaping function. We're good.
-					return true;
+					// Function call to an escaping function.
+					// Skip over the function's parameters and continue checking the remainder of the expression.
+					$function_params = PassedParameters::getParameters( $this->phpcsFile, $newPtr );
+					if ( $param = end( $function_params ) ) {
+						$newPtr = $this->next_non_empty( $param['end'] );
+						continue;
+					} else {
+						// Something went wrong here
+						return false;
+					}
 				} elseif ( $this->is_wpdb_method_call( $newPtr, [ 'prepare' => true ] ) ) {
 					// It's a call to $wpdb->prepare(), safe.
 					return true;
@@ -334,6 +346,7 @@ class DirectDBSniff extends Sniff {
 
 							// If we've found an unsanitized var then fail early
 							if ( ! $this->_is_sanitized_var( $complex_var, $context ) ) {
+								$this->unsafe_expression = $var;
 								return false;
 							}
 						}
@@ -359,6 +372,7 @@ class DirectDBSniff extends Sniff {
 				// If the expression contains an unsanitized variable and we haven't already found an escaping function,
 				// then we can fail at this point.
 				if ( '$wpdb' !== $this->tokens[ $newPtr ][ 'content' ] && !$this->is_sanitized_var( $newPtr ) ) {
+					$this->unsafe_expression = $this->tokens[ $newPtr ][ 'content' ];
 					return false;
 				}
 			} elseif ( in_array( $this->tokens[ $newPtr ][ 'code' ], Tokens::$castTokens ) ) {
@@ -506,13 +520,23 @@ class DirectDBSniff extends Sniff {
 			foreach ( PassedParameters::getParameters( $this->phpcsFile, $methodPtr ) as $methodParam ) {
 				// If the expression wasn't escaped safely, then alert.
 				if ( !$this->expression_is_safe( $methodParam[ 'start' ], $methodParam[ 'end' ] ) ) {
-					$this->phpcsFile->addError( 'Unescaped parameter %s used in $wpdb->%s',
-						$methodPtr,
-						'UnescapedDBParameter',
-						[ $methodParam[ 'clean' ], $method ],
-						0,
-						false
-					);
+					if ( $this->unsafe_expression ) {
+						$this->phpcsFile->addError( 'Unescaped parameter %s used in $wpdb->%s(%s)',
+							$methodPtr,
+							'UnescapedDBParameter',
+							[ $this->unsafe_expression, $method, $methodParam[ 'clean' ] ],
+							0,
+							false
+						);
+					} else {
+						$this->phpcsFile->addError( 'Unescaped parameter %s used in $wpdb->%s',
+							$methodPtr,
+							'UnescapedDBParameter',
+							[ $methodParam[ 'clean' ], $method ],
+							0,
+							false
+						);
+					}
 					return; // Only need to error on the first occurrence
 				}
 
