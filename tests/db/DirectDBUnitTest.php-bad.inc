@@ -74,3 +74,10 @@ function insecure_wpdb_query_9( $foo ) {
 	$esc[1]->foo = esc_sql( $foo );
 	$wpdb->query( "SELECT * FROM $wpdb->posts WHERE foo = '{$esc[2]->foo}' LIMIT 1" ); // unsafe
 }
+
+function insecure_wpdb_query_10( $foo ) {
+	global $wpdb;
+
+	// 7. Unescaped query, prefixed with a constant
+	$wpdb->query( "SELECT * FROM $wpdb->users WHERE foo = '" . SOME_CONSTANT . $foo . "' LIMIT '" ); // unsafe
+}

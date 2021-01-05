@@ -135,3 +135,11 @@ function false_positive_3() {
 				"SELECT meta_key, meta_value FROM $wpdb->postmeta WHERE post_id = $post_id"
 	);
 }
+
+function false_positive_4() {
+	define( 'MPS_A_CONSTANT', 'foo' );
+	global $wpdb;
+
+	$wpdb->query( "SELECT * FROM $wpdb->posts WHERE foo = '" . MPS_A_CONSTANT . "' LIMIT 1" ); // safe-ish, if we assume constants are always literal constants and never derived
+
+}

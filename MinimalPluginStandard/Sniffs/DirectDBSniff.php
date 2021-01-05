@@ -73,6 +73,18 @@ class DirectDBSniff extends Sniff {
 	);
 
 	/**
+	 * Tokens that indicate the start of a function call or other non-constant string
+	 */
+	protected $function_tokens = array(
+		\T_OBJECT_OPERATOR     => \T_OBJECT_OPERATOR,
+		\T_DOUBLE_COLON        => \T_DOUBLE_COLON,
+		\T_OPEN_CURLY_BRACKET  => \T_OPEN_CURLY_BRACKET,
+        \T_OPEN_SQUARE_BRACKET => \T_OPEN_SQUARE_BRACKET,
+        \T_OPEN_PARENTHESIS    => \T_OPEN_PARENTHESIS,
+        \T_OBJECT              => \T_OBJECT,
+	);
+
+	/**
 	 * Get the name of the function containing the code at a given point.
 	 */
 	public function get_function_name( $stackPtr ) {
@@ -149,6 +161,33 @@ class DirectDBSniff extends Sniff {
 			|| $this->phpcsFile->getCondition( $stackPtr, \T_FUNCTION )
 			|| 'global';
 
+	}
+
+	/**
+	 * Helper function to return the next non-empty token starting at $stackPtr inclusive.
+	 */
+	protected function next_non_empty( $stackPtr, $local_only = true ) {
+		return $this->phpcsFile->findNext( Tokens::$emptyTokens, $stackPtr , null, true, null, $local_only );
+	}
+
+	/**
+	 * Is the T_STRING at $stackPtr a constant as set by define()?
+	 */
+	protected function is_defined_constant( $stackPtr ) {
+		// It must be a string
+		if ( \T_STRING !== $this->tokens[ $stackPtr ][ 'code' ] ) {
+			return false;
+		}
+
+		// It could be a function call or similar. That depends on what comes after it.
+
+		$nextToken = $this->next_non_empty( $stackPtr + 1 );
+		if ( in_array( $this->tokens[ $nextToken ], $this->function_tokens ) ) {
+			// It's followed by a paren or similar, so it's not a constant
+			return false;
+		}
+
+		return true;
 	}
 
 	/**
@@ -239,6 +278,10 @@ class DirectDBSniff extends Sniff {
 				} elseif ( isset( $this->safe_constants[ $this->tokens[ $newPtr ][ 'content' ] ] ) ) {
 					// It's a constant like ARRAY_A, it's safe.
 					return true;
+				} elseif ( $this->is_defined_constant( $newPtr ) ) {
+					// It looks like some other constant, assume it's safe and skip over it
+					++ $newPtr;
+					continue;
 				} else {
 					// First function call was something else. It should be wrapped in an escape.
 					return false;
