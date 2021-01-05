@@ -494,7 +494,7 @@ class DirectDBSniff extends Sniff {
     			// If the expression being assigned is safe (ie escaped) then mark the variable as sanitized.
     			if ( $this->expression_is_safe( $nextToken + 1 ) ) {
 					$this->mark_sanitized_var( $stackPtr );
-    			}
+				}
     		}
 
     		return; // ??
@@ -519,7 +519,7 @@ class DirectDBSniff extends Sniff {
 		if ( isset( $this->unsafe_methods[ $method ] ) ) {
 			foreach ( PassedParameters::getParameters( $this->phpcsFile, $methodPtr ) as $methodParam ) {
 				// If the expression wasn't escaped safely, then alert.
-				if ( !$this->expression_is_safe( $methodParam[ 'start' ], $methodParam[ 'end' ] ) ) {
+				if ( !$this->expression_is_safe( $methodParam[ 'start' ], $methodParam[ 'end' ] + 1 ) ) {
 					if ( $this->unsafe_expression ) {
 						$this->phpcsFile->addError( 'Unescaped parameter %s used in $wpdb->%s(%s)',
 							$methodPtr,
