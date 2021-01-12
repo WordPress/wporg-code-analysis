@@ -118,14 +118,14 @@ class PHPCS {
 	 */
 	public function run( $path, array $args = array() ) {
 		if ( ! is_executable( $this->phpcs ) ) {
-			return new WP_Error(
+			return new \WP_Error(
 				'missing_dependency',
 				'PHP Code Sniffer is not available. Try running <code>composer install</code> first.'
 			);
 		}
 
 		if ( ! is_readable( $path ) ) {
-			return new WP_Error(
+			return new \WP_Error(
 				'invalid_path',
 				'The given path is not readable.'
 			);

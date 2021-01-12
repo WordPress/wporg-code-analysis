@@ -14,5 +14,14 @@
 		"wp-coding-standards/wpcs": "^2",
 		"phpcompatibility/phpcompatibility-wp": "^2",
 		"sirbrillig/phpcs-variable-analysis": "^2"
+	},
+	"require-dev": {
+		"phpunit/phpunit": "^7",
+		"phpcsstandards/phpcsutils": "^1.x-dev"
+	},
+	"scripts": {
+		"test": [
+			"phpunit tests"
+		]
 	}
 }

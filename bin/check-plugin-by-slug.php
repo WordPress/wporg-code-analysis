@@ -17,16 +17,22 @@ if ( 'cli' != php_sapi_name() ) {
 	die();
 }
 
-$opts = getopt( '', array( 'slug:', 'report:' ) );
+$opts = getopt( '', array( 'slug:', 'report:', 'page:', 'number:' ) );
 if ( empty( $opts['report'] ) ) {
 	$opts['report'] = 'summary';
 }
+if ( intval( $opts['page'] ) <= 1 ) {
+	$opts['page'] = 1;
+}
+if ( intval( $opts['number'] ) <= 1 ) {
+	$opts['number'] = 25;
+}
 
 // Fetch the slugs of the top plugins in the directory
-function get_top_slugs( $plugins_to_retrieve ) {
+function get_top_slugs( $plugins_to_retrieve, $starting_page = 1 ) {
 	$payload = array(
 		'action' => 'query_plugins',
-		'request' => serialize( (object) array( 'browse' => 'popular', 'per_page' => $plugins_to_retrieve ) ) );
+		'request' => serialize( (object) array( 'browse' => 'popular', 'per_page' => $plugins_to_retrieve, 'page' => $starting_page, 'fields' => [ 'active_installs' => true ] ) ) );
 
 	$ch = curl_init();
 	curl_setopt($ch, CURLOPT_URL,"https://api.wordpress.org/plugins/info/1.0/");
@@ -43,7 +49,11 @@ function get_top_slugs( $plugins_to_retrieve ) {
 	$out = [];
 
 	foreach ( $data->plugins as $plugin ) {
-		$out[] = $plugin->slug;
+		$out[ $plugin->slug ] = [ 
+			'slug' => $plugin->slug,
+			'installs' => $plugin->active_installs,
+			'updated' => $plugin->last_updated,
+		];
 	}
 
 	return $out;
@@ -88,13 +98,14 @@ define( 'WPINC', 'yeahnah' );
 require dirname( __DIR__ ) . '/includes/class-phpcs.php';
 
 if ( empty( $opts['slug'] ) ) {
-	$slugs = get_top_slugs( 25 );
+	$plugins = get_top_slugs( intval( $opts['number'] ), intval( $opts['page'] ) );
+	$slugs = array_map( 'reset', $plugins ); // ugh
 } else {
 	$slugs = [ $opts['slug'] ];
 }
 
 $phpcs = new PHPCS();
-$phpcs->set_standard( dirname( __DIR__ ) . '/rulesets/reviewer-flags.xml' );
+$phpcs->set_standard( dirname( __DIR__ ) . '/MinimalPluginStandard' );
 
 foreach ( $slugs as $slug ) {
 
@@ -104,7 +115,14 @@ foreach ( $slugs as $slug ) {
 		's' => true, // Show the name of the sniff triggering a violation.
 	);
 
+	echo str_repeat( '=', 80 ) . "\n";
 	echo "Checking $slug in $path...\n";
+	if ( isset( $plugins[$slug] ) ) {
+		echo number_format( $plugins[$slug]['installs'] ) . " active installs\n";
+		echo "last updated " . $plugins[$slug]['updated'] . "\n";
+		echo 'https://plugins.trac.wordpress.org/browser/' . $slug . "/trunk/\n";
+	}
+	echo str_repeat( '=', 80 ) . "\n";
 
 	switch ( $opts['report'] ) {
 		case 'full':
