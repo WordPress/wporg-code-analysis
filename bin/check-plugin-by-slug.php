@@ -17,7 +17,7 @@ if ( 'cli' != php_sapi_name() ) {
 	die();
 }
 
-$opts = getopt( '', array( 'slug:', 'report:', 'page:', 'number:' ) );
+$opts = getopt( '', array( 'slug:', 'report:', 'page:', 'number:', 'errors' ) );
 if ( empty( $opts['report'] ) ) {
 	$opts['report'] = 'summary';
 }
@@ -114,6 +114,10 @@ foreach ( $slugs as $slug ) {
 		'extensions' => 'php', // Only check php files.
 		's' => true, // Show the name of the sniff triggering a violation.
 	);
+
+	if ( isset( $opts['errors'] ) ) {
+		$args[ 'n' ] = true;
+	}
 
 	echo str_repeat( '=', 80 ) . "\n";
 	echo "Checking $slug in $path...\n";
