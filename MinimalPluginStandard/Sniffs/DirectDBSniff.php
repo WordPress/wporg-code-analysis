@@ -74,6 +74,26 @@ class DirectDBSniff extends Sniff {
 	);
 
 	/**
+	 * A list of variable names that, if used unescaped in a SQL query, will only produce a warning rather than an error.
+	 * For example, 'SELECT * FROM {$table}' is commonly used and typically a red herring.
+	 */
+	protected $warn_only_parameters = array(
+		'table',
+		#'this', // typically something like $this->tablename
+	);
+
+	/**
+	 * A list of SQL query prefixes that with only produce a warning instead of an error if they contain unsafe paramaters.
+	 * For example, 'CREATE TABLE $tablename' is often used because there are no clear ways to escape a table name.
+	 */
+	protected $warn_only_queries = array(
+		'CREATE TABLE',
+		'SHOW TABLE',
+		'DROP TABLE',
+		'TRUNCATE TABLE',
+	);
+
+	/**
 	 * Tokens that indicate the start of a function call or other non-constant string
 	 */
 	protected $function_tokens = array(
@@ -454,6 +474,20 @@ class DirectDBSniff extends Sniff {
 		return false;
 	}
 
+	public function is_warning_parameter( $parameter_name ) {
+		return in_array( ltrim( $parameter_name, '$' ), $this->warn_only_parameters );
+	}
+
+	public function is_warning_sql( $sql ) {
+		foreach ( $this->warn_only_queries as $warn_query ) {
+			if ( 0 === strpos( ltrim( $sql, '\'"' ), $warn_query ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	/**
 	 * Returns an array of tokens this test wants to listen for.
 	 *
@@ -521,21 +555,42 @@ class DirectDBSniff extends Sniff {
 				// If the expression wasn't escaped safely, then alert.
 				if ( !$this->expression_is_safe( $methodParam[ 'start' ], $methodParam[ 'end' ] + 1 ) ) {
 					if ( $this->unsafe_expression ) {
-						$this->phpcsFile->addError( 'Unescaped parameter %s used in $wpdb->%s(%s)',
+						if ( $this->is_warning_parameter( $this->unsafe_expression ) || $this->is_warning_sql( $methodParam[ 'clean' ] ) ) {
+							$this->phpcsFile->addWarning( 'Unescaped parameter %s used in $wpdb->%s(%s)',
+								$methodPtr,
+								'UnescapedDBParameter',
+								[ $this->unsafe_expression, $method, $methodParam[ 'clean' ] ],
+								0,
+								false
+							);
+						} else {
+							$this->phpcsFile->addError( 'Unescaped parameter %s used in $wpdb->%s(%s)',
 							$methodPtr,
 							'UnescapedDBParameter',
 							[ $this->unsafe_expression, $method, $methodParam[ 'clean' ] ],
 							0,
 							false
 						);
+
+						}
 					} else {
-						$this->phpcsFile->addError( 'Unescaped parameter %s used in $wpdb->%s',
-							$methodPtr,
-							'UnescapedDBParameter',
-							[ $methodParam[ 'clean' ], $method ],
-							0,
-							false
-						);
+						if ( $this->is_warning_parameter( $methodParam[ 'clean' ] ) || $this->is_warning_sql( $methodParam[ 'clean' ] ) ) {
+							$this->phpcsFile->addWarning( 'Unescaped parameter %s used in $wpdb->%s',
+								$methodPtr,
+								'UnescapedDBParameter',
+								[ $methodParam[ 'clean' ], $method ],
+								0,
+								false
+							);
+						} else {
+							$this->phpcsFile->addError( 'Unescaped parameter %s used in $wpdb->%s',
+								$methodPtr,
+								'UnescapedDBParameter',
+								[ $methodParam[ 'clean' ], $method ],
+								0,
+								false
+							);
+						}
 					}
 					return; // Only need to error on the first occurrence
 				}
