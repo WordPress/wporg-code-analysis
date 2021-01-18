@@ -120,3 +120,25 @@ function insecure_wpdb_query_13( $foo ) {
 	$bar = $wpdb->query( "SELECT * FROM $wpdb->users WHERE foo = '" . $foo . "' LIMIT 1" ); // unsafe
 }
 
+function insecure_wpdb_query_14() {
+	// Cribbed from some real code
+	global $wpdb;
+
+	parse_str( $_REQUEST['order'], $data );
+
+	if ( is_array( $data ) ) {
+			$id_arr = array( );
+			foreach ( $data as $key => $values ) {
+					foreach ( $values as $position => $id ) {
+							$id_arr[] = $id;
+					}
+			}
+
+
+			$menu_order_arr = array( );
+			foreach ( $id_arr as $key => $id ) {
+					$results = $wpdb->get_results( "SELECT menu_order FROM $wpdb->posts WHERE ID = " . $id ); // unsafe
+			}
+
+	}
+}
