@@ -34,8 +34,8 @@ class Scan_Metabox {
         foreach ( $results[ 'files' ] as $filename => $file ) {
             list( $slug, $filename ) = explode( '/', $filename, 2 );
             foreach ( $file[ 'messages' ] as $message ) {
-                printf( "%s %s in <a href='https://plugins.trac.wordpress.org/browser/%s/trunk/%s#L%d'>%s line %d</a>\n", $message[ 'type' ], $message[ 'source' ], $slug, $filename, $message[ 'line' ], $filename, $message[ 'line' ] );
-                echo $message[ 'message' ] . "\n\n";
+                printf( "%s %s in <a href='https://plugins.trac.wordpress.org/browser/%s/trunk/%s#L%d'>%s line %d</a>\n", esc_html( $message[ 'type' ] ), esc_html( $message[ 'source' ] ), esc_attr( $slug ), esc_attr( $filename ), $message[ 'line' ], esc_html( $filename ), $message[ 'line' ] );
+                echo esc_html( $message[ 'message' ] ) . "\n\n";
             }
         }
         echo '</pre>';
