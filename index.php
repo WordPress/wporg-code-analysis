@@ -44,9 +44,12 @@ function register_admin_metabox( $post_type, $post ) {
     add_meta_box(
         'code-scanner',
         __( 'Code Scanner', 'wporg-plugins' ),
-        array( __NAMESPACE__ . '\Admin\Scan_Metabox', 'display' ),
+        array( __NAMESPACE__ . '\Admin\Scan_Metabox', 'display_ajax' ),
         'plugin', 'normal', 'high'
     );
+
+    wp_enqueue_script( 'code-scan-metabox-js', plugins_url( 'admin/metabox.js', __FILE__ ), array( 'wp-util' ), 1 );
 }
 
 add_action( 'add_meta_boxes', __NAMESPACE__ . '\register_admin_metabox', 10, 2 );
+add_filter( 'wp_ajax_scan-plugin', array( __NAMESPACE__ . '\Admin\Scan_Metabox', 'get_ajax_response' ) );
