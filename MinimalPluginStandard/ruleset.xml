@@ -1,4 +1,173 @@
 <?xml version="1.0"?>
 <ruleset name="MinimalPluginStandards">
   <description>Minimal coding standards for WordPress plugins.</description>
+
+    <exclude-pattern>/**/test/*</exclude-pattern>
+    <exclude-pattern>/**/tests/*</exclude-pattern>
+    <exclude-pattern>/**/vendor/*</exclude-pattern>
+
+    <!-- Rule: The goto statement must never be used. -->
+    <rule ref="Generic.PHP.DiscourageGoto">
+        <type>error</type>
+        <message>The "goto" language construct should not be used.</message>
+    </rule>
+
+    <!-- Rule: The eval() construct is very dangerous, and is impossible to secure. ... these must not be used. -->
+    <rule ref="Squiz.PHP.Eval.Discouraged">
+        <type>error</type>
+        <message>eval() is a security risk so not allowed.</message>
+    </rule>
+
+    <!-- Rule: create_function() function, which internally performs an eval(),
+         is deprecated in PHP 7.2. ... these must not be used. -->
+    <rule ref="WordPress.PHP.RestrictedPHPFunctions"/>
+
+    <!-- Rules from WordPress-Extra -->
+
+    <!-- alex: needs refining to reduce false positives
+      <rule ref="WordPress.Security.EscapeOutput"/>
+      -->
+
+    <!-- Encourage use of wp_safe_redirect() to avoid open redirect vulnerabilities.
+         https://github.com/WordPress/WordPress-Coding-Standards/pull/1264 -->
+    <rule ref="WordPress.Security.SafeRedirect"/>
+    <rule ref="WordPress.Security.SafeRedirect.wp_redirect_wp_redirect">
+      <type>warning</type>
+      <message>wp_redirect() found.</message>
+    </rule>
+    
+
+    <!-- Verify that a nonce check is done before using values in superglobals.
+         https://github.com/WordPress/WordPress-Coding-Standards/issues/73 -->
+    <!-- alex: way too many FPs
+    <rule ref="WordPress.Security.NonceVerification">
+          <exclude name="WordPress.Security.NonceVerification.Recommended"/>
+    </rule>
+    -->
+
+
+    <!-- Other rules -->
+
+    <rule ref="WordPress.DB.PreparedSQLPlaceholders">
+        <exclude name="WordPress.DB.PreparedSQLPlaceholders.LikeWithoutWildcards"/>
+        <exclude name="WordPress.DB.PreparedSQLPlaceholders.UnnecessaryPrepare"/>
+        <exclude name="WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare"/>
+        <exclude name="WordPress.DB.PreparedSQLPlaceholders.MissingReplacements"/>
+    </rule>
+
+    <!-- alex: needs refining eg on nonce checks
+    <rule ref="WordPress.Security.ValidatedSanitizedInput">
+        <exclude name="WordPress.Security.ValidatedSanitizedInput.InputNotValidated"/>
+        <exclude name="WordPress.Security.ValidatedSanitizedInput.MissingUnslash"/>
+    </rule>
+    -->
+
+
+	<!-- Themes should be compatible with PHP 5.2 and higher. -->
+	<config name="testVersion" value="5.2-"/>
+
+	<exclude-pattern>*/tgm-plugin-activation/*</exclude-pattern>
+	<exclude-pattern>*/freemius/*</exclude-pattern>
+	<exclude-pattern>*/dompdf/*</exclude-pattern>
+	<exclude-pattern>*/cmb2/*</exclude-pattern>
+	<exclude-pattern>*/redux-framework/*</exclude-pattern>
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+	<exclude-pattern>*/guzzlehttp/*</exclude-pattern>
+	<exclude-pattern>*/vendors/*</exclude-pattern>
+	<exclude-pattern>*/plugin-update-checker/*</exclude-pattern>
+	<exclude-pattern>*/composer_directory/*</exclude-pattern>
+	<exclude-pattern>*/node_modules/*</exclude-pattern>
+
+
+	<!-- No PHP short open tags allowed. -->
+	<!-- Covers: https://github.com/Otto42/theme-check/blob/master/checks/phpshort.php -->
+  
+	<rule ref="Generic.PHP.DisallowShortOpenTag"/>
+ 
+
+	<!-- Alternative PHP open tags not allowed. -->
+	<rule ref="Generic.PHP.DisallowAlternativePHPTags"/>
+
+	<!-- No minification of scripts or files unless you provide original files. -->
+	<!-- Covers: https://make.wordpress.org/themes/handbook/review/required/#stylesheets-and-scripts -->
+	<rule ref="Internal.Tokenizer.Exception">
+		<message>File appears to be minified and cannot be processed. The non-minified file must be included too.</message>
+	</rule>
+
+
+	<!-- No hard coding of scripts and styles. Everything should be enqueued. -->
+	<!-- <rule ref="WordPress.WP.EnqueuedResources"/> -->
+
+	<!-- Prevent path disclosure when using add_theme_page(). -->
+	<!-- <rule ref="WordPress.Security.PluginMenuSlug"/> -->
+
+	<!-- While most themes shouldn't query the database directly, if they do, it should be done correctly. -->
+	<!-- Don't use the PHP database functions and classes, use the WP abstraction layer instead. -->
+	<!-- <rule ref="WordPress.DB.RestrictedClasses"/>
+	<rule ref="WordPress.DB.RestrictedFunctions"/> -->
+
+	<!-- All SQL queries should be prepared as close to the time of querying the database as possible. -->
+	<!-- <rule ref="WordPress.DB.PreparedSQL"/> -->
+
+	<!-- Verify that placeholders in prepared queries are used correctly. -->
+	<!-- <rule ref="WordPress.DB.PreparedSQLPlaceholders"/> -->
+
+	<!-- Validate and/or sanitize untrusted data before entering into the database. -->
+	<!-- <rule ref="WordPress.Security.ValidatedSanitizedInput">
+		<exclude name="WordPress.Security.ValidatedSanitizedInput.InputNotValidated"/>
+		<exclude name="WordPress.Security.ValidatedSanitizedInput.MissingUnslash"/>
+		<type>warning</type>
+	</rule> -->
+
+	<!-- Nonces -->
+	<!-- <rule ref="WordPress.Security.NonceVerification"/> -->
+
+	<!-- All untrusted data should be escaped before output. -->
+	<!-- <rule ref="WordPress.Security.EscapeOutput">
+		<type>warning</type>
+	</rule> -->
+
+	<!-- Prohibit the use of the backtick operator. -->
+	<rule ref="Generic.PHP.BacktickOperator"/>
+
+	<!-- Prohibit overwriting of WordPress global variables. DISABLED FOR NOW. -->
+	<!-- <rule ref="WordPress.WP.GlobalVariablesOverride"/> -->
+
+	<!-- Prohibit the use of the eval() PHP language construct. -->
+	<!-- <rule ref="Squiz.PHP.Eval.Discouraged">
+		<type>error</type>
+		<message>eval() is a security risk so not allowed.</message>
+	</rule> -->
+
+	<!-- Prohibit the use of the `goto` PHP language construct. -->
+	<!-- <rule ref="Generic.PHP.DiscourageGoto.Found">
+		<type>error</type>
+		<message>The "goto" language construct should not be used.</message>
+	</rule> -->
+
+	<!-- Verify that everything in the global namespace is prefixed. -->
+	<rule ref="WordPress.NamingConventions.PrefixAllGlobals"/>
+
+	<!-- Check for code WP does better -->
+	<!-- <rule ref="WordPress.WP.AlternativeFunctions">
+		<exclude name="WordPress.WP.AlternativeFunctions.json_encode_json_encode"/>
+	</rule> -->
+
+	<!-- Check for use of deprecated WordPress classes, functions and function parameters. -->
+	<rule ref="WordPress.WP.DeprecatedClasses"/>
+	<rule ref="WordPress.WP.DeprecatedFunctions"/>
+	<rule ref="WordPress.WP.DeprecatedParameters"/>
+
+	<!-- Check for deprecated WordPress constants. -->
+	<rule ref="WordPress.WP.DiscouragedConstants">
+		<type>error</type>
+	</rule>
+
+	<!-- Check for usage of deprecated parameter values in WP functions and provide alternative based on the parameter passed. -->
+	<rule ref="WordPress.WP.DeprecatedParameterValues"/>
+
+	<!-- Stop messing without timezone. -->
+	<!-- <rule ref="WordPress.DateTime.RestrictedFunctions"/> -->
+
+
 </ruleset>
