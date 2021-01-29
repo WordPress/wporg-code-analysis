@@ -12,8 +12,6 @@
             wp.ajax.post( 'scan-plugin', data ).always( function( response ) {
                 response = wpAjax.parseAjaxResponse( response );
 
-                console.log( 'ajax response', response.responses[0].data );
-
                 $( '#scan_plugin_output' ).html( response.responses[0].data );
 
             } );
