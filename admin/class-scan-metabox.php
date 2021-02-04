@@ -162,6 +162,11 @@ class Scan_Metabox {
             return end( $zip_files )[0];
         }
 
+        // Approved plugins have no ZIPs yet, and exist in the limbo between ZIP attachment and downloadable ZIPs
+        if ( 'approved' === $post->post_status ) {
+            return false;
+        }
+
         // Need to fetch the zip remotely
         $zip_url = Template::download_link( $post );
 
