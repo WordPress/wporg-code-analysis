@@ -79,7 +79,7 @@ class DirectDBSniff extends Sniff {
 	 */
 	protected $warn_only_parameters = array(
 		'table',
-		#'this', // typically something like $this->tablename
+		'this', // typically something like $this->tablename
 	);
 
 	/**
@@ -475,7 +475,7 @@ class DirectDBSniff extends Sniff {
 	}
 
 	public function is_warning_parameter( $parameter_name ) {
-		return in_array( ltrim( $parameter_name, '$' ), $this->warn_only_parameters );
+		return in_array( ltrim( $parameter_name, '{$' ), $this->warn_only_parameters );
 	}
 
 	public function is_warning_sql( $sql ) {
