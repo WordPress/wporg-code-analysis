@@ -161,7 +161,9 @@
 	<rule ref="WordPress.WP.DeprecatedFunctions">
 		<type>warning</type>
 	</rule>
-	<rule ref="WordPress.WP.DeprecatedParameters"/>
+	<rule ref="WordPress.WP.DeprecatedParameters">
+		<type>warning</type>
+	</rule>
 
 	<!-- Check for deprecated WordPress constants. -->
 	<rule ref="WordPress.WP.DiscouragedConstants">
