@@ -53,6 +53,7 @@
         <exclude name="WordPress.DB.PreparedSQLPlaceholders.UnnecessaryPrepare"/>
         <exclude name="WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare"/>
         <exclude name="WordPress.DB.PreparedSQLPlaceholders.MissingReplacements"/>
+		<type>warning</type>
     </rule>
 
     <!-- alex: needs refining eg on nonce checks
