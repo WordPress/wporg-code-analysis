@@ -82,7 +82,9 @@
 	<!-- No PHP short open tags allowed. -->
 	<!-- Covers: https://github.com/Otto42/theme-check/blob/master/checks/phpshort.php -->
   
-	<rule ref="Generic.PHP.DisallowShortOpenTag"/>
+	<rule ref="Generic.PHP.DisallowShortOpenTag">
+		<type>warning</type>
+	</rule>
  
 
 	<!-- Alternative PHP open tags not allowed. -->
@@ -155,7 +157,9 @@
 
 	<!-- Check for use of deprecated WordPress classes, functions and function parameters. -->
 	<rule ref="WordPress.WP.DeprecatedClasses"/>
-	<rule ref="WordPress.WP.DeprecatedFunctions"/>
+	<rule ref="WordPress.WP.DeprecatedFunctions">
+		<type>warning</type>
+	</rule>
 	<rule ref="WordPress.WP.DeprecatedParameters"/>
 
 	<!-- Check for deprecated WordPress constants. -->
