@@ -42,6 +42,7 @@ class DisallowExtractSniffTest extends TestCase {
         $this->assertEquals(
             [
                 89,
+                149,
             ],
             $warning_lines );
 

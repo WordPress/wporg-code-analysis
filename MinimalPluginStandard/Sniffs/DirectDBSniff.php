@@ -475,7 +475,12 @@ class DirectDBSniff extends Sniff {
 	}
 
 	public function is_warning_parameter( $parameter_name ) {
-		return in_array( ltrim( $parameter_name, '{$' ), $this->warn_only_parameters );
+		foreach ( $this->warn_only_parameters as $warn_param ) {
+			if ( preg_match( '/^[${]*' . preg_quote( $warn_param ) . '(?:\b|$)/', $parameter_name ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public function is_warning_sql( $sql ) {

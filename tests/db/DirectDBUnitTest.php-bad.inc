@@ -142,3 +142,9 @@ function insecure_wpdb_query_14() {
 
 	}
 }
+
+function insecure_wpdb_query_14() {
+	global $wpdb;
+
+	$wpdb->get_results( "SELECT * FROM {$this->getPrefix()}_table WHERE 1=1 LIMIT 1" ); // unsafe but a warning rather than an error
+}
