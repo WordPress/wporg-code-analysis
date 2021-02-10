@@ -33,7 +33,6 @@ class DirectDBSniff extends Sniff {
 		'like_escape'                => true,
 		'wp_json_encode'             => true,
 		'isset'                      => true,
-		'prepare'                    => true, // $wpdb->prepare
 		'esc_sql'                    => true,
 		'wp_parse_id_list'           => true,
 	);
@@ -370,6 +369,18 @@ class DirectDBSniff extends Sniff {
 						$newPtr = $this->next_non_empty( $param['end'] + 1 ) ;
 						continue;
 					}
+				} elseif ( 'prepare' === $this->tokens[ $newPtr ][ 'content' ] ) {
+					// It's wpdb->prepare(). The first parameter needs to be checked, the remainder are escaped.
+					$function_params = PassedParameters::getParameters( $this->phpcsFile, $newPtr );
+					$first_param = reset( $function_params );
+					if ( $this->expression_is_safe( $first_param[ 'start' ], $first_param[ 'end' ] + 1 ) ) {
+						// It's safe, so skip past the prepare().
+						$param = end( $function_params );
+						$newPtr = $this->next_non_empty( $param['end'] + 1 ) ;
+						continue;
+					}
+					// It wasn't safe!
+					return false;
 				} elseif ( $this->is_wpdb_method_call( $newPtr, [ 'prepare' => true ] ) ) {
 					// It's a call to $wpdb->prepare(), safe.
 					return true;
