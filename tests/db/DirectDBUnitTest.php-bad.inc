@@ -158,3 +158,12 @@ function insecure_wpdb_query_15( $foo ) {
 
 	$wpdb->get_results( "SELECT * FROM $wpdb->posts WHERE ID IN ('" . implode( "', '", $bar ) . "') LIMIT 1" ); // unsafe
 }
+
+function insecure_wpdb_query_16( $foo ) {
+	global $wpdb;
+
+	$bar = $_POST['bad'];
+
+	// $foo is correctly escaped here, but variables in the left hand side of a prepare() are unsafe!
+	$wpdb->query( $wpdb->prepare( "SELECT * FROM $wpdb->users WHERE bar='$bar' AND foo=%s", $foo  ) ); // unsafe
+}
