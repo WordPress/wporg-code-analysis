@@ -43,6 +43,16 @@ class DirectDBSniff extends Sniff {
 	protected $unslashingFunctions = array();
 
 	/**
+	 * Functions that are neither safe nor unsafe. Their output is as safe as the data passed as parameters.
+	 */
+	protected $neutralFunctions = array(
+		'implode'      => true,
+		'join'         => true,
+		'array_keys'   => true,
+		'array_values' => true,
+	);
+
+	/**
 	 * $wpdb methods with escaping built-in
 	 *
 	 * @var array[]
@@ -79,7 +89,7 @@ class DirectDBSniff extends Sniff {
 	 */
 	protected $warn_only_parameters = array(
 		'table',
-		#'this', // typically something like $this->tablename
+		'this', // typically something like $this->tablename
 	);
 
 	/**
@@ -339,6 +349,27 @@ class DirectDBSniff extends Sniff {
 						// Something went wrong here
 						return false;
 					}
+				} elseif ( isset( $this->neutralFunctions[ $this->tokens[ $newPtr ][ 'content' ] ] ) ) {
+					// It's a function like implode(), which is safe if all of the parameters are also safe.
+					$function_params = PassedParameters::getParameters( $this->phpcsFile, $newPtr );
+					foreach ( $function_params as $param ) {
+						if ( !$this->expression_is_safe( $param[ 'start' ], $param[ 'end' ] + 1 ) ) {
+							return false;
+						}
+					};
+					// If we got this far, everything in the call is safe, so skip to the next statement.
+					$newPtr = $this->next_non_empty( $param['end'] + 1 );
+					continue;
+				} elseif ( 'array_map' === $this->tokens[ $newPtr ][ 'content' ] ) {
+					// Special handling for array_map() calls that map an escaping function
+					$function_params = PassedParameters::getParameters( $this->phpcsFile, $newPtr );
+					$mapped_function = trim( $function_params[1][ 'clean' ], '"\'' );
+					// If this is array_map( 'esc_sql', ... ) or similar, then we can move on to the next statement.
+					if ( isset( $this->escapingFunctions[ $mapped_function ] ) ) {
+						$param = end( $function_params );
+						$newPtr = $this->next_non_empty( $param['end'] + 1 ) ;
+						continue;
+					}
 				} elseif ( $this->is_wpdb_method_call( $newPtr, [ 'prepare' => true ] ) ) {
 					// It's a call to $wpdb->prepare(), safe.
 					return true;
@@ -393,6 +424,13 @@ class DirectDBSniff extends Sniff {
 				// then we can fail at this point.
 				if ( '$wpdb' !== $this->tokens[ $newPtr ][ 'content' ] && !$this->is_sanitized_var( $newPtr ) ) {
 					$this->unsafe_expression = $this->tokens[ $newPtr ][ 'content' ];
+					$var = $this->get_complex_variable( $newPtr );
+					if ( $var ) {
+						$this->unsafe_expression = '$' . $var[0];
+						if ( !empty( $var[1] ) ) {
+							$this->unsafe_expression .= '[' . implode( '][', $var[1] ) . ']';
+						}
+					}
 					return false;
 				}
 			} elseif ( in_array( $this->tokens[ $newPtr ][ 'code' ], Tokens::$castTokens ) ) {
@@ -475,7 +513,12 @@ class DirectDBSniff extends Sniff {
 	}
 
 	public function is_warning_parameter( $parameter_name ) {
-		return in_array( ltrim( $parameter_name, '$' ), $this->warn_only_parameters );
+		foreach ( $this->warn_only_parameters as $warn_param ) {
+			if ( preg_match( '/^[${]*' . preg_quote( $warn_param ) . '(?:\b|$)/', $parameter_name ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public function is_warning_sql( $sql ) {
