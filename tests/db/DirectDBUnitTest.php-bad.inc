@@ -148,3 +148,13 @@ function insecure_wpdb_query_14() {
 
 	$wpdb->get_results( "SELECT * FROM {$this->getPrefix()}_table WHERE 1=1 LIMIT 1" ); // unsafe but a warning rather than an error
 }
+
+function insecure_wpdb_query_15( $foo ) {
+	global $wpdb;
+
+	$bar = array(
+		$foo
+	);
+
+	$wpdb->get_results( "SELECT * FROM $wpdb->posts WHERE ID IN ('" . implode( "', '", $bar ) . "') LIMIT 1" ); // unsafe
+}

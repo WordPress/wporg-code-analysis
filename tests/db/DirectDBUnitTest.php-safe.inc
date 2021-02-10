@@ -165,3 +165,31 @@ function false_positive_7() {
 	// A bug in handling $wpdb->prepare() with multiple args?
 	$wpdb->query( $wpdb->prepare("UPDATE {$wpdb->posts} SET post_content = REPLACE(post_content, %s, %s)", $from_url, $to_url) ); // safe
 }
+
+function false_positive_8() {
+	global $wpdb;
+	$mysql_vars = array(
+			'key_buffer_size'    => true,   // Key cache size limit.
+			'max_allowed_packet' => false,  // Individual query size limit.
+			'max_connections'    => false,  // Max number of client connections.
+			'query_cache_limit'  => true,   // Individual query cache size limit.
+			'query_cache_size'   => true,   // Total cache size limit.
+			'query_cache_type'   => 'ON',   // Query cache on or off.
+	);
+	$extra_info = array();
+	$variables  = $wpdb->get_results( "SHOW VARIABLES WHERE Variable_name IN ( '" . implode( "', '", array_keys( $mysql_vars ) ) . "' )" ); // db call ok; no-cache ok.
+
+}
+
+function secure_wpdb_query_12( $foo ) {
+	global $wpdb;
+
+	$bar = array(
+		$foo
+	);
+
+	// Just like insecure_wpdb_query_15, except we'll escape $bar to make it safe enough
+	$bar = esc_sql( $bar );
+
+	$wpdb->get_results( "SELECT * FROM $wpdb->posts WHERE ID IN ('" . implode( "', '", $bar ) . "') LIMIT 1" ); // safe
+}
