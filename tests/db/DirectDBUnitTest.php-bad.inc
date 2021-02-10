@@ -142,3 +142,12 @@ function insecure_wpdb_query_14() {
 
 	}
 }
+
+function insecure_wpdb_query_15( $foo ) {
+	global $wpdb;
+
+	$bar = $_POST['bad'];
+
+	// $foo is correctly escaped here, but variables in the left hand side of a prepare() are unsafe!
+	$wpdb->query( $wpdb->prepare( "SELECT * FROM $wpdb->users WHERE bar='$bar' AND foo=%s", $foo  ) ); // unsafe
+}
