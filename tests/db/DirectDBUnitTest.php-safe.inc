@@ -193,3 +193,10 @@ function secure_wpdb_query_12( $foo ) {
 
 	$wpdb->get_results( "SELECT * FROM $wpdb->posts WHERE ID IN ('" . implode( "', '", $bar ) . "') LIMIT 1" ); // safe
 }
+
+function false_positive_9() {
+	global $wpdb;
+
+	$where_statement = implode( ', ', array_map( 'esc_sql', $default_ids ) );
+	$wpdb->query( "DELETE FROM {$wpdb->some_table} WHERE ID IN ({$where_statement})" ); // safe
+}

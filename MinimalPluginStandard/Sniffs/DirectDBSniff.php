@@ -360,6 +360,16 @@ class DirectDBSniff extends Sniff {
 					// If we got this far, everything in the call is safe, so skip to the next statement.
 					$newPtr = $this->next_non_empty( $param['end'] + 1 );
 					continue;
+				} elseif ( 'array_map' === $this->tokens[ $newPtr ][ 'content' ] ) {
+					// Special handling for array_map() calls that map an escaping function
+					$function_params = PassedParameters::getParameters( $this->phpcsFile, $newPtr );
+					$mapped_function = trim( $function_params[1][ 'clean' ], '"\'' );
+					// If this is array_map( 'esc_sql', ... ) or similar, then we can move on to the next statement.
+					if ( isset( $this->escapingFunctions[ $mapped_function ] ) ) {
+						$param = end( $function_params );
+						$newPtr = $this->next_non_empty( $param['end'] + 1 ) ;
+						continue;
+					}
 				} elseif ( $this->is_wpdb_method_call( $newPtr, [ 'prepare' => true ] ) ) {
 					// It's a call to $wpdb->prepare(), safe.
 					return true;
