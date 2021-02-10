@@ -416,7 +416,7 @@ class DirectDBSniff extends Sniff {
 					$this->unsafe_expression = $this->tokens[ $newPtr ][ 'content' ];
 					$var = $this->get_complex_variable( $newPtr );
 					if ( $var ) {
-						$this->unsafe_expression = $var[0];
+						$this->unsafe_expression = '$' . $var[0];
 						if ( !empty( $var[1] ) ) {
 							$this->unsafe_expression .= '[' . implode( '][', $var[1] ) . ']';
 						}
