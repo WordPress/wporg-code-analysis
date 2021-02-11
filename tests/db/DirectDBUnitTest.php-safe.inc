@@ -200,3 +200,18 @@ function false_positive_9() {
 	$where_statement = implode( ', ', array_map( 'esc_sql', $default_ids ) );
 	$wpdb->query( "DELETE FROM {$wpdb->some_table} WHERE ID IN ({$where_statement})" ); // safe
 }
+
+function secure_wpdb_query_13( $foo ) {
+	global $wpdb;
+
+	$foo = esc_sql( $foo );
+
+	// Each of the elements in $foo was escaped above. We should treat the `foreach` similar to an assignment operator.
+	foreach ( $foo as $foo_i ) {
+		$wpdb->query( "SELECT * FROM $wpdb->posts WHERE ID = '$foo_i' LIMIT 1" ); // safe
+	}
+	// Same deal with an explicit index
+	foreach ( $foo as $j => $foo_j ) {
+		$wpdb->query( "SELECT * FROM $wpdb->posts WHERE ID = '$foo_j' LIMIT 1" ); // safe
+	}
+}
