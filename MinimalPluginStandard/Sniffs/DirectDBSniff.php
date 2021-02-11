@@ -150,6 +150,26 @@ class DirectDBSniff extends Sniff {
 		}
 
 	}
+
+	/**
+	 * Mark the variable at $stackPtr as being unsafe. Opposite of mark_sanitized_var().
+	 * Use this to reset a variable that might previously have been marked as sanitized.
+	 */
+	protected function mark_unsanitized_var( $stackPtr ) {
+
+		if ( \T_VARIABLE !== $this->tokens[ $stackPtr ][ 'code' ] ) {
+			return false;
+		}
+
+		// Find the closure or function scope of the variable.
+		$context = $this->phpcsFile->getCondition( $stackPtr, \T_CLOSURE )
+			|| $this->phpcsFile->getCondition( $stackPtr, \T_FUNCTION )
+			|| 'global';
+
+		$var = $this->get_complex_variable( $stackPtr );
+
+		unset( $this->sanitized_variables[ $context ][ $var[0] ] );
+	}
 	/**
 	 * Check if the variable at $stackPtr has been sanitized for SQL in the current scope.
 	 * $stackPtr must point to a T_VARIABLE. Handles arrays and (maybe) object properties.
@@ -334,8 +354,14 @@ class DirectDBSniff extends Sniff {
 		$this->unsafe_expression = null;
 
 		$newPtr = $stackPtr;
-		while ( $this->phpcsFile->findNext( Tokens::$functionNameTokens + Tokens::$textStringTokens + [ \T_VARIABLE => \T_VARIABLE, \T_INT_CAST => \T_INT_CAST, \T_BOOL_CAST => \T_BOOL_CAST ], $newPtr, $endPtr, false, null, true ) ) {
-
+		$tokens_to_find = array(
+			\T_VARIABLE => \T_VARIABLE,
+			\T_INT_CAST => \T_INT_CAST,
+			\T_BOOL_CAST => \T_BOOL_CAST,
+		)
+			+ Tokens::$functionNameTokens
+			+ Tokens::$textStringTokens;
+		while ( $this->phpcsFile->findNext( $tokens_to_find, $newPtr, $endPtr, false, null, true ) ) {
 			if ( in_array( $this->tokens[ $newPtr ][ 'code' ], Tokens::$functionNameTokens ) ) {
 				if ( isset( $this->escapingFunctions[ $this->tokens[ $newPtr ][ 'content' ] ] ) ) {
 					// Function call to an escaping function.
@@ -582,10 +608,31 @@ class DirectDBSniff extends Sniff {
     			// If the expression being assigned is safe (ie escaped) then mark the variable as sanitized.
     			if ( $this->expression_is_safe( $nextToken + 1 ) ) {
 					$this->mark_sanitized_var( $stackPtr );
+				} else {
+					$this->mark_unsanitized_var( $stackPtr );
 				}
     		}
 
     		return; // ??
+		}
+
+		// Handle foreach ( $foo as $bar ), which is similar to assignment
+		$nextToken = $this->next_non_empty( $stackPtr + 1 );
+		if ( \T_AS === $this->tokens[ $nextToken ][ 'code' ] ) {
+			$as_var = $this->next_non_empty( $nextToken + 1 );
+			$lookahead = $this->next_non_empty( $as_var + 1 );
+			if ( \T_DOUBLE_ARROW === $this->tokens[ $lookahead ][ 'code' ] ) {
+				// It's foreach ( $foo as $i => $as_var )
+				$as_var = $this->next_non_empty( $lookahead + 1 );
+			}
+			if ( \T_VARIABLE === $this->tokens[ $as_var ][ 'code' ] ) {
+				// $as_var is effectively being assigned to. So if the LHS expression is safe, $as_var is also safe.
+				if ( $this->expression_is_safe( $stackPtr, $nextToken ) ) {
+					$this->mark_sanitized_var( $as_var );
+				} else {
+					$this->mark_unsanitized_var( $as_var );
+				}
+			}
 		}
 
 		// We're only interested in wpdb method calls to risky functions
