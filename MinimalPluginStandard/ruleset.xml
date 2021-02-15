@@ -138,6 +138,9 @@
 				<element key="plugin_dir_url" value="plugin_dir_url" />
 				<element key="plugins_url" value="plugins_url" />
 				<element key="admin_url" value="admin_url" />
+				<element key="sanitize_text_field" value="sanitize_text_field" />
+				<element key="sanitize_textarea_field" value="sanitize_textarea_field" />
+				<element key="get_locale" value="get_locale" />
 			</property>
 		</properties>
 	</rule>
