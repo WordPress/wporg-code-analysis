@@ -148,7 +148,7 @@
 	</rule>
 	<!-- This one is for the developer, not us -->
 	<rule ref="WordPress.Security.EscapeOutput.DeprecatedWhitelistCommentFound">
-		<type>warning</type>
+		<severity>0</severity>
 	</rule>
 
 
