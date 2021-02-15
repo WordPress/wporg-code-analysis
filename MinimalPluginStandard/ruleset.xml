@@ -133,6 +133,7 @@
 			<property name="customAutoEscapedFunctions" type="array">
 				<element key="__" value="__" />
 				<element key="_e" value="_e" />
+				<element key="_x" value="_x" />
 				<element key="wp_create_nonce" value="wp_create_nonce" />
 				<element key="plugin_dir_url" value="plugin_dir_url" />
 			</property>
