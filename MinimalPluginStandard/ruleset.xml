@@ -126,9 +126,21 @@
 	<!-- <rule ref="WordPress.Security.NonceVerification"/> -->
 
 	<!-- All untrusted data should be escaped before output. -->
-	<!-- <rule ref="WordPress.Security.EscapeOutput">
+	<rule ref="WordPress.Security.EscapeOutput">
+		<type>error</type>
+		<properties>
+			<!-- Some common functions that might technically require output escaping, but rarely cause anything but false positives -->
+			<property name="customAutoEscapedFunctions" type="array">
+				<element key="__" value="__" />
+				<element key="_e" value="_e" />
+				<element key="wp_create_nonce" value="wp_create_nonce" />
+				<element key="plugin_dir_url" value="plugin_dir_url" />
+			</property>
+		</properties>
+	</rule>
+	<rule ref="WordPress.Security.EscapeOutput.UnsafePrintingFunction">
 		<type>warning</type>
-	</rule> -->
+	</rule>
 
 	<!-- Prohibit the use of the backtick operator. -->
 	<rule ref="Generic.PHP.BacktickOperator"/>
