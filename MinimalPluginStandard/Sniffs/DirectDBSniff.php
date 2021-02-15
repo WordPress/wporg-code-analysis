@@ -451,7 +451,7 @@ class DirectDBSniff extends Sniff {
 						// Get the variable in a format understood by _is_sanitized()
 						$complex_var = $this->get_complex_variable_from_string( $var );
 						// If it's not a $wpdb->table variable, check for sanitizing
-						if ( 'wpdb' !== $complex_var[0] ) {
+						if ( 'wpdb' !== $complex_var[0] && false === strpos( $var, '$this->table' ) ) {
 							// Where are we?
 							$context = $this->get_context( $newPtr );
 

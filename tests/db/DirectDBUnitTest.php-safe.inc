@@ -221,3 +221,10 @@ function false_positive_10() {
 
 	$total = $this->wpdb->get_var($sql);
 }
+
+function false_positive_11() {
+	global $wpdb;
+	$now = $this->datetime();
+	$sql = $wpdb->prepare("SELECT COUNT(*) FROM {$this->table} WHERE available_at <= %s", $now);
+	return $wpdb->get_var($sql);
+}
