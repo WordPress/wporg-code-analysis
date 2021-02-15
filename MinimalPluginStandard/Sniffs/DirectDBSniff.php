@@ -428,9 +428,6 @@ class DirectDBSniff extends Sniff {
 					}
 					// It wasn't safe!
 					return false;
-				#} elseif ( $this->is_wpdb_method_call( $newPtr, [ 'prepare' => true ] ) ) {
-				#	// It's a call to $wpdb->prepare(), safe.
-				#	return true;
 				} elseif ( $this->is_wpdb_property( $newPtr ) ) {
 					// It's $wpdb->tablename
 					$newPtr = $this->is_wpdb_property( $newPtr ) + 1;
@@ -624,19 +621,12 @@ class DirectDBSniff extends Sniff {
 			// Work out what we're assigning to the variable at $stackPtr    		
     		$nextToken = $this->phpcsFile->findNext( Tokens::$assignmentTokens, $stackPtr +1 , null, false, null, true );
 
-    		// Is it a call to $wpdb->prepare?
-    		// TODO: I think this is no longer needed here.
-    		#if ( $this->is_wpdb_method_call( $nextToken, ['prepare' => true] ) ) {
-    		#	$this->mark_sanitized_var( $stackPtr );
-    		#	return;
-    		#} else {
-    			// If the expression being assigned is safe (ie escaped) then mark the variable as sanitized.
-    			if ( $this->expression_is_safe( $nextToken + 1 ) ) {
-					$this->mark_sanitized_var( $stackPtr );
-				} else {
-					$this->mark_unsanitized_var( $stackPtr );
-				}
-    		#}
+			// If the expression being assigned is safe (ie escaped) then mark the variable as sanitized.
+			if ( $this->expression_is_safe( $nextToken + 1 ) ) {
+				$this->mark_sanitized_var( $stackPtr );
+			} else {
+				$this->mark_unsanitized_var( $stackPtr );
+			}
 
     		return; // ??
 		}
