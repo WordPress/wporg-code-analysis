@@ -215,3 +215,9 @@ function secure_wpdb_query_13( $foo ) {
 		$wpdb->query( "SELECT * FROM $wpdb->posts WHERE ID = '$foo_j' LIMIT 1" ); // safe
 	}
 }
+
+function false_positive_10() {
+	$sql = "SELECT COUNT(*) FROM `" . $this->wpdb->comments . "` WHERE comment_type = 'trackback';";
+
+	$total = $this->wpdb->get_var($sql);
+}
