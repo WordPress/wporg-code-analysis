@@ -127,7 +127,6 @@
 
 	<!-- All untrusted data should be escaped before output. -->
 	<rule ref="WordPress.Security.EscapeOutput">
-		<type>error</type>
 		<properties>
 			<!-- Some common functions that might technically require output escaping, but rarely cause anything but false positives -->
 			<property name="customAutoEscapedFunctions" type="array">
@@ -147,6 +146,11 @@
 	<rule ref="WordPress.Security.EscapeOutput.UnsafePrintingFunction">
 		<type>warning</type>
 	</rule>
+	<!-- This one is for the developer, not us -->
+	<rule ref="WordPress.Security.EscapeOutput.DeprecatedWhitelistCommentFound">
+		<type>warning</type>
+	</rule>
+
 
 	<!-- Prohibit the use of the backtick operator. -->
 	<rule ref="Generic.PHP.BacktickOperator"/>
