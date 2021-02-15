@@ -131,6 +131,12 @@ class DirectDBSniff extends Sniff {
 	);
 
 	/**
+	 * Keep track of sanitized and unsanitized variables
+	 */
+	protected $sanitized_variables = [];
+	protected $unsanitized_variables = [];
+
+	/**
 	 * Get the name of the function containing the code at a given point.
 	 */
 	public function get_function_name( $stackPtr ) {
@@ -165,6 +171,13 @@ class DirectDBSniff extends Sniff {
 			$this->sanitized_variables[ $context ][ $var[0] ] = true;
 		}
 
+		// Sanitizing only overrides a previously unsafe assignment if it's at a lower level (ie not withing a conditional)
+		if ( isset( $this->unsanitized_variables[ $context ][ $var[0] ] ) ) {
+			if ( $this->tokens[ $stackPtr ][ 'level' ] === 1 ||
+				$this->tokens[ $stackPtr ][ 'level' ] < $this->unsanitized_variables[ $context ][ $var[0] ] ) {
+					unset( $this->unsanitized_variables[ $context ][ $var[0] ] );
+				}
+		}
 	}
 
 	/**
@@ -185,7 +198,10 @@ class DirectDBSniff extends Sniff {
 		$var = $this->get_complex_variable( $stackPtr );
 
 		unset( $this->sanitized_variables[ $context ][ $var[0] ] );
+
+		$this->unsanitized_variables[ $context ][ $var[0] ] = $this->tokens[ $stackPtr ][ 'level' ];
 	}
+
 	/**
 	 * Check if the variable at $stackPtr has been sanitized for SQL in the current scope.
 	 * $stackPtr must point to a T_VARIABLE. Handles arrays and (maybe) object properties.
@@ -204,6 +220,12 @@ class DirectDBSniff extends Sniff {
 	}
 
 	protected function _is_sanitized_var( $var, $context ) {
+
+		// If it's ever been set to something unsanitized in this context then we have to consider it unsafe.
+		// See insecure_wpdb_query_17
+		if ( isset( $this->unsanitized_variables[ $context ][ $var[0] ] ) ) {
+			return false;
+		}
 
 		if ( isset( $this->sanitized_variables[ $context ][ $var[0] ] ) && $var[1] === $this->sanitized_variables[ $context ][ $var[0] ] ) {
 			// Check if it's sanitized exactly, with array indexes etc

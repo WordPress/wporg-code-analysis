@@ -228,3 +228,11 @@ function false_positive_11() {
 	$sql = $wpdb->prepare("SELECT COUNT(*) FROM {$this->table} WHERE available_at <= %s", $now);
 	return $wpdb->get_var($sql);
 }
+
+function secure_wpdb_query_14( $foo ) {
+
+	$foo = something();
+	$foo = esc_sql( something () );
+
+	$wpdb->query( "SELECT * FROM $wpdb->posts WHERE ID = '$foo'" ); // safe
+}
