@@ -60,6 +60,7 @@ class DirectDBSniff extends Sniff {
 		'current_time'   => true,
 		'mktime'         => true,
 		'get_post_types' => true,
+		'get_charset_collate' => true,
 	);
 
 	/**
