@@ -88,6 +88,8 @@ class DirectDBSniff extends Sniff {
 	 */
 	protected $warn_only_parameters = array(
 		'table',
+		'table_name',
+		'column_name',
 		'this', // typically something like $this->tablename
 	);
 
