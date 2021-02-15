@@ -136,6 +136,8 @@
 				<element key="_x" value="_x" />
 				<element key="wp_create_nonce" value="wp_create_nonce" />
 				<element key="plugin_dir_url" value="plugin_dir_url" />
+				<element key="plugins_url" value="plugins_url" />
+				<element key="admin_url" value="admin_url" />
 			</property>
 		</properties>
 	</rule>
