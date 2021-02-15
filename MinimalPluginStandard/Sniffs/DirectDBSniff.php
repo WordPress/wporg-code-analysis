@@ -103,6 +103,8 @@ class DirectDBSniff extends Sniff {
 		'table_name',
 		'column_name',
 		'this', // typically something like $this->tablename
+		'order_by',
+		'orderby',
 	);
 
 	/**
