@@ -17,7 +17,7 @@ if ( 'cli' != php_sapi_name() ) {
 	die();
 }
 
-$opts = getopt( '', array( 'slug:', 'report:', 'page:', 'number:', 'errors' ) );
+$opts = getopt( '', array( 'slug:', 'tag:', 'report:', 'page:', 'number:', 'errors' ) );
 if ( empty( $opts['report'] ) ) {
 	$opts['report'] = 'summary';
 }
@@ -26,6 +26,9 @@ if ( intval( $opts['page'] ) <= 1 ) {
 }
 if ( intval( $opts['number'] ) <= 1 ) {
 	$opts['number'] = 25;
+}
+if ( empty( $opts['tag'] ) || empty( $opts['slug'] ) ) {
+	$opts['tag'] = null;
 }
 
 // Fetch the slugs of the top plugins in the directory
@@ -59,15 +62,28 @@ function get_top_slugs( $plugins_to_retrieve, $starting_page = 1 ) {
 	return $out;
 }
 
+function get_dir_for_tag( $tag ) {
+	if ( !empty( $tag ) ) {
+		$dir = '/tags/' . basename( $tag );
+	} else {
+		$dir = '/trunk';
+	}
+
+	return $dir;
+}
+
 // Export a plugin to ./plugins/SLUG and return the full path to that directory
-function export_plugin( $slug ) {
+function export_plugin( $slug, $tag = null ) {
 
 	$tmpnam = tempnam( '/tmp', 'plugin-' . $slug );
+
+	$dir = get_dir_for_tag( $tag );
+
 	if ( $tmpnam ) {
 		$tmpnam = realpath( $tmpnam );
 		unlink( $tmpnam );
 		mkdir( $tmpnam ) || die( "Failed creating temp directory $tmpnam" );
-		$cmd = "svn export --force https://plugins.svn.wordpress.org/" . $slug . "/trunk " . $tmpnam;
+		$cmd = "svn export --force https://plugins.svn.wordpress.org/" . $slug . $dir . ' ' . $tmpnam;
 		shell_exec( $cmd );
 
 		return $tmpnam;
@@ -109,7 +125,7 @@ $phpcs->set_standard( dirname( __DIR__ ) . '/MinimalPluginStandard' );
 
 foreach ( $slugs as $slug ) {
 
-	$path = export_plugin( $slug );
+	$path = export_plugin( $slug, $opts['tag'] );
 	$args = array(
 		'extensions' => 'php', // Only check php files.
 		's' => true, // Show the name of the sniff triggering a violation.
@@ -124,7 +140,7 @@ foreach ( $slugs as $slug ) {
 	if ( isset( $plugins[$slug] ) ) {
 		echo number_format( $plugins[$slug]['installs'] ) . " active installs\n";
 		echo "last updated " . $plugins[$slug]['updated'] . "\n";
-		echo 'https://plugins.trac.wordpress.org/browser/' . $slug . "/trunk/\n";
+		echo 'https://plugins.trac.wordpress.org/browser/' . $slug . get_dir_for_tag( $opts['tag'] ) . "/\n";
 	}
 	echo str_repeat( '=', 80 ) . "\n";
 

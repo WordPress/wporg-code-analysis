@@ -167,3 +167,16 @@ function insecure_wpdb_query_16( $foo ) {
 	// $foo is correctly escaped here, but variables in the left hand side of a prepare() are unsafe!
 	$wpdb->query( $wpdb->prepare( "SELECT * FROM $wpdb->users WHERE bar='$bar' AND foo=%s", $foo  ) ); // unsafe
 }
+
+function insecure_wpdb_query_17( $foo ) {
+	global $wpdb;
+
+	if ( $something ) {
+		$bar = $foo;
+	} else {
+		$bar = esc_sql( $foo );
+	}
+
+	// This fails in some code paths, so it should trigger an error (but it's tricky to catch!)
+	$wpdb->query( "SELECT * FROM $wpdb->posts WHERE ID = '$bar'" ); // unsafe
+}

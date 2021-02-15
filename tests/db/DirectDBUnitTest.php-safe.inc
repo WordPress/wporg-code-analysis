@@ -215,3 +215,24 @@ function secure_wpdb_query_13( $foo ) {
 		$wpdb->query( "SELECT * FROM $wpdb->posts WHERE ID = '$foo_j' LIMIT 1" ); // safe
 	}
 }
+
+function false_positive_10() {
+	$sql = "SELECT COUNT(*) FROM `" . $this->wpdb->comments . "` WHERE comment_type = 'trackback';";
+
+	$total = $this->wpdb->get_var($sql);
+}
+
+function false_positive_11() {
+	global $wpdb;
+	$now = $this->datetime();
+	$sql = $wpdb->prepare("SELECT COUNT(*) FROM {$this->table} WHERE available_at <= %s", $now);
+	return $wpdb->get_var($sql);
+}
+
+function secure_wpdb_query_14( $foo ) {
+
+	$foo = something();
+	$foo = esc_sql( something () );
+
+	$wpdb->query( "SELECT * FROM $wpdb->posts WHERE ID = '$foo'" ); // safe
+}

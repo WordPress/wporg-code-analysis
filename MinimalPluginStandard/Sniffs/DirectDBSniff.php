@@ -45,10 +45,22 @@ class DirectDBSniff extends Sniff {
 	 * Functions that are neither safe nor unsafe. Their output is as safe as the data passed as parameters.
 	 */
 	protected $neutralFunctions = array(
-		'implode'      => true,
-		'join'         => true,
-		'array_keys'   => true,
-		'array_values' => true,
+		'implode'             => true,
+		'join'                => true,
+		'array_keys'          => true,
+		'array_values'        => true,
+		'sanitize_text_field' => true, // Note that this does not escape for SQL.
+	);
+
+	/**
+	 * Functions with output that can be assumed to be safe. Escaping is always preferred, but alerting on these is unnecessary noise.
+	 */
+	protected $implicitSafeFunctions = array(
+		'gmdate'         => true,
+		'current_time'   => true,
+		'mktime'         => true,
+		'get_post_types' => true,
+		'get_charset_collate' => true,
 	);
 
 	/**
@@ -88,7 +100,11 @@ class DirectDBSniff extends Sniff {
 	 */
 	protected $warn_only_parameters = array(
 		'table',
+		'table_name',
+		'column_name',
 		'this', // typically something like $this->tablename
+		'order_by',
+		'orderby',
 	);
 
 	/**
@@ -113,6 +129,12 @@ class DirectDBSniff extends Sniff {
         \T_OPEN_PARENTHESIS    => \T_OPEN_PARENTHESIS,
         \T_OBJECT              => \T_OBJECT,
 	);
+
+	/**
+	 * Keep track of sanitized and unsanitized variables
+	 */
+	protected $sanitized_variables = [];
+	protected $unsanitized_variables = [];
 
 	/**
 	 * Get the name of the function containing the code at a given point.
@@ -149,6 +171,13 @@ class DirectDBSniff extends Sniff {
 			$this->sanitized_variables[ $context ][ $var[0] ] = true;
 		}
 
+		// Sanitizing only overrides a previously unsafe assignment if it's at a lower level (ie not withing a conditional)
+		if ( isset( $this->unsanitized_variables[ $context ][ $var[0] ] ) ) {
+			if ( $this->tokens[ $stackPtr ][ 'level' ] === 1 ||
+				$this->tokens[ $stackPtr ][ 'level' ] < $this->unsanitized_variables[ $context ][ $var[0] ] ) {
+					unset( $this->unsanitized_variables[ $context ][ $var[0] ] );
+				}
+		}
 	}
 
 	/**
@@ -169,7 +198,10 @@ class DirectDBSniff extends Sniff {
 		$var = $this->get_complex_variable( $stackPtr );
 
 		unset( $this->sanitized_variables[ $context ][ $var[0] ] );
+
+		$this->unsanitized_variables[ $context ][ $var[0] ] = $this->tokens[ $stackPtr ][ 'level' ];
 	}
+
 	/**
 	 * Check if the variable at $stackPtr has been sanitized for SQL in the current scope.
 	 * $stackPtr must point to a T_VARIABLE. Handles arrays and (maybe) object properties.
@@ -188,6 +220,12 @@ class DirectDBSniff extends Sniff {
 	}
 
 	protected function _is_sanitized_var( $var, $context ) {
+
+		// If it's ever been set to something unsanitized in this context then we have to consider it unsafe.
+		// See insecure_wpdb_query_17
+		if ( isset( $this->unsanitized_variables[ $context ][ $var[0] ] ) ) {
+			return false;
+		}
 
 		if ( isset( $this->sanitized_variables[ $context ][ $var[0] ] ) && $var[1] === $this->sanitized_variables[ $context ][ $var[0] ] ) {
 			// Check if it's sanitized exactly, with array indexes etc
@@ -241,12 +279,12 @@ class DirectDBSniff extends Sniff {
 	 */
 	protected function is_wpdb_property( $stackPtr ) {
 		// It must be a variable
-		if ( \T_VARIABLE !== $this->tokens[ $stackPtr ][ 'code' ] ) {
+		if ( !in_array( $this->tokens[ $stackPtr ][ 'code' ], [ \T_VARIABLE, \T_STRING ] ) ) {
 			return false;
 		}
 
 		// $wpdb
-		if ( '$wpdb' !== $this->tokens[ $stackPtr ][ 'content' ] ) {
+		if ( !in_array( $this->tokens[ $stackPtr ][ 'content' ], [ '$wpdb', 'wpdb' ] ) ) {
 			return false;
 		}
 
@@ -374,6 +412,14 @@ class DirectDBSniff extends Sniff {
 						// Something went wrong here
 						return false;
 					}
+				} elseif ( isset( $this->implicitSafeFunctions[ $this->tokens[ $newPtr ][ 'content' ] ] ) ) {
+					// Function call that always returns implicitly safe output.
+					// Skip over the function's parameters and continue checking the remainder of the expression.
+					$function_params = PassedParameters::getParameters( $this->phpcsFile, $newPtr );
+					if ( $param = end( $function_params ) ) {
+						$newPtr = $this->next_non_empty( $param['end'] + 1 ) ;
+						continue;
+					}
 				} elseif ( isset( $this->neutralFunctions[ $this->tokens[ $newPtr ][ 'content' ] ] ) ) {
 					// It's a function like implode(), which is safe if all of the parameters are also safe.
 					$function_params = PassedParameters::getParameters( $this->phpcsFile, $newPtr );
@@ -407,9 +453,10 @@ class DirectDBSniff extends Sniff {
 					}
 					// It wasn't safe!
 					return false;
-				} elseif ( $this->is_wpdb_method_call( $newPtr, [ 'prepare' => true ] ) ) {
-					// It's a call to $wpdb->prepare(), safe.
-					return true;
+				} elseif ( $this->is_wpdb_property( $newPtr ) ) {
+					// It's $wpdb->tablename
+					$newPtr = $this->is_wpdb_property( $newPtr ) + 1;
+					continue;
 				} elseif ( isset( $this->safe_constants[ $this->tokens[ $newPtr ][ 'content' ] ] ) ) {
 					// It's a constant like ARRAY_A, it's safe.
 					return true;
@@ -428,7 +475,7 @@ class DirectDBSniff extends Sniff {
 						// Get the variable in a format understood by _is_sanitized()
 						$complex_var = $this->get_complex_variable_from_string( $var );
 						// If it's not a $wpdb->table variable, check for sanitizing
-						if ( 'wpdb' !== $complex_var[0] ) {
+						if ( 'wpdb' !== $complex_var[0] && false === strpos( $var, '$this->table' ) ) {
 							// Where are we?
 							$context = $this->get_context( $newPtr );
 
@@ -599,19 +646,12 @@ class DirectDBSniff extends Sniff {
 			// Work out what we're assigning to the variable at $stackPtr    		
     		$nextToken = $this->phpcsFile->findNext( Tokens::$assignmentTokens, $stackPtr +1 , null, false, null, true );
 
-    		// Is it a call to $wpdb->prepare?
-    		// TODO: I think this is no longer needed here.
-    		if ( $this->is_wpdb_method_call( $nextToken, ['prepare' => true] ) ) {
-    			$this->mark_sanitized_var( $stackPtr );
-    			return;
-    		} else {
-    			// If the expression being assigned is safe (ie escaped) then mark the variable as sanitized.
-    			if ( $this->expression_is_safe( $nextToken + 1 ) ) {
-					$this->mark_sanitized_var( $stackPtr );
-				} else {
-					$this->mark_unsanitized_var( $stackPtr );
-				}
-    		}
+			// If the expression being assigned is safe (ie escaped) then mark the variable as sanitized.
+			if ( $this->expression_is_safe( $nextToken + 1 ) ) {
+				$this->mark_sanitized_var( $stackPtr );
+			} else {
+				$this->mark_unsanitized_var( $stackPtr );
+			}
 
     		return; // ??
 		}
