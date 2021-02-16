@@ -147,6 +147,19 @@ class DirectDBSniff extends Sniff {
 	}
 
 	/**
+	 * Get the scope context of the code at a given point.
+	 */
+	public function get_context( $stackPtr ) {
+		if ( $context = $this->phpcsFile->getCondition( $stackPtr, \T_CLOSURE ) ) {
+			return $context;
+		} elseif ( $context = $this->phpcsFile->getCondition( $stackPtr, \T_FUNCTION ) ) {
+			return $context;
+		} else {
+			return 'global';
+		}
+	}
+
+	/**
 	 * Mark the variable at $stackPtr as being safely sanitized for use in a SQL context.
 	 * $stackPtr must point to a T_VARIABLE. Handles arrays and (maybe) object properties.
 	 */
@@ -157,9 +170,7 @@ class DirectDBSniff extends Sniff {
 		}
 
 		// Find the closure or function scope of the variable.
-		$context = $this->phpcsFile->getCondition( $stackPtr, \T_CLOSURE )
-			|| $this->phpcsFile->getCondition( $stackPtr, \T_FUNCTION )
-			|| 'global';
+		$context = $this->get_context( $stackPtr );
 
 		$var = $this->get_complex_variable( $stackPtr );
 
@@ -191,9 +202,7 @@ class DirectDBSniff extends Sniff {
 		}
 
 		// Find the closure or function scope of the variable.
-		$context = $this->phpcsFile->getCondition( $stackPtr, \T_CLOSURE )
-			|| $this->phpcsFile->getCondition( $stackPtr, \T_FUNCTION )
-			|| 'global';
+		$context = $this->get_context( $stackPtr );
 
 		$var = $this->get_complex_variable( $stackPtr );
 
@@ -238,20 +247,27 @@ class DirectDBSniff extends Sniff {
 		return false;
 	}
 
-	protected function get_context( $stackPtr ) {
-
-		// Find the closure or function scope of the variable.
-		return $this->phpcsFile->getCondition( $stackPtr, \T_CLOSURE )
-			|| $this->phpcsFile->getCondition( $stackPtr, \T_FUNCTION )
-			|| 'global';
-
-	}
-
 	/**
 	 * Helper function to return the next non-empty token starting at $stackPtr inclusive.
 	 */
 	protected function next_non_empty( $stackPtr, $local_only = true ) {
 		return $this->phpcsFile->findNext( Tokens::$emptyTokens, $stackPtr , null, true, null, $local_only );
+	}
+
+	/**
+	 * Find the token following the end of the current function call pointed to by $stackPtr.
+	 */
+	protected function end_of_function_call( $stackPtr ) {
+		if ( !in_array( $this->tokens[ $stackPtr ][ 'code' ], Tokens::$functionNameTokens ) ) {
+			return false;
+		}
+
+		$function_params = PassedParameters::getParameters( $this->phpcsFile, $stackPtr );
+		if ( $param = end( $function_params ) ) {
+			return $this->next_non_empty( $param['end'] + 1 );
+		}
+
+		return false;
 	}
 
 	/**
@@ -615,6 +631,33 @@ class DirectDBSniff extends Sniff {
 		return false;
 	}
 
+	public function is_suppressed_line( $stackPtr, $sniffs = [ 'WordPress.DB.PreparedSQL.NotPrepared', 'WordPress.DB.PreparedSQL.InterpolatedNotPrepared', 'WordPress.DB.DirectDatabaseQuery.DirectQuery', 'DB call', 'unprepared SQL', 'PreparedSQLPlaceholders replacement count'] ) {
+		if ( empty( $this->tokens[ $stackPtr ][ 'line' ] ) ) {
+			return false;
+		}
+
+		// We'll check all lines related to this function call, because placement can differ depending on exactly where we trigger in a multi-line query
+		$end = $this->end_of_function_call( $stackPtr );
+		if ( $end < $stackPtr ) {
+			$end = $stackPtr;
+		}
+
+		for ( $ptr = $stackPtr; $ptr <= $end; $ptr ++ ) {
+			foreach ( $sniffs as $sniff_name ) {
+				$line_no = $this->tokens[ $ptr ][ 'line' ];
+				if ( !empty( $this->phpcsFile->tokenizer->ignoredLines[ $line_no ] ) ) {
+					return true;
+				}
+				if ( $this->has_whitelist_comment( $sniff_name, $ptr ) ) {
+					return true;
+				}
+			}
+
+		}
+
+		return false;
+	}
+
 	/**
 	 * Returns an array of tokens this test wants to listen for.
 	 *
@@ -696,7 +739,7 @@ class DirectDBSniff extends Sniff {
 				// If the expression wasn't escaped safely, then alert.
 				if ( !$this->expression_is_safe( $methodParam[ 'start' ], $methodParam[ 'end' ] + 1 ) ) {
 					if ( $this->unsafe_expression ) {
-						if ( $this->is_warning_parameter( $this->unsafe_expression ) || $this->is_warning_sql( $methodParam[ 'clean' ] ) ) {
+						if ( $this->is_warning_parameter( $this->unsafe_expression ) || $this->is_warning_sql( $methodParam[ 'clean' ] ) || $this->is_suppressed_line( $methodPtr ) ) {
 							$this->phpcsFile->addWarning( 'Unescaped parameter %s used in $wpdb->%s(%s)',
 								$methodPtr,
 								'UnescapedDBParameter',
@@ -715,7 +758,7 @@ class DirectDBSniff extends Sniff {
 
 						}
 					} else {
-						if ( $this->is_warning_parameter( $methodParam[ 'clean' ] ) || $this->is_warning_sql( $methodParam[ 'clean' ] ) ) {
+						if ( $this->is_warning_parameter( $methodParam[ 'clean' ] ) || $this->is_warning_sql( $methodParam[ 'clean' ] ) || $this->is_suppressed_line( $methodPtr ) ) {
 							$this->phpcsFile->addWarning( 'Unescaped parameter %s used in $wpdb->%s',
 								$methodPtr,
 								'UnescapedDBParameter',

@@ -180,3 +180,43 @@ function insecure_wpdb_query_17( $foo ) {
 	// This fails in some code paths, so it should trigger an error (but it's tricky to catch!)
 	$wpdb->query( "SELECT * FROM $wpdb->posts WHERE ID = '$bar'" ); // unsafe
 }
+
+function insecure_wpdb_query_18( $where_clause ) {
+	global $wpdb;
+
+	// This should produce a warning instead of an error
+	$wpdb->query( $wpdb->prepare( "SELECT * FROM $wpdb->posts WHERE foo = %s AND $where_clause", $foo ) ); // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+	// Old school warning
+	$wpdb->query( $wpdb->prepare( "SELECT * FROM $wpdb->posts WHERE foo = %s AND $where_clause", $foo ) ); // phpcs:ignore cache ok, DB call ok, unprepared SQL ok.
+
+	// Also this
+
+	// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared
+	$wpdb->query( $wpdb->prepare( "SELECT * FROM $wpdb->posts WHERE foo = %s AND $where_clause", $foo ) ); // unsafe but suppressed
+	// phpcs:enable
+
+	// Error this time
+	$wpdb->query( $wpdb->prepare( "SELECT * FROM $wpdb->posts WHERE foo = %s AND $where_clause", $foo ) ); // unsafe
+
+	// Make sure we handle line numbers correctly
+	$wpdb->query( 
+		$wpdb->prepare( "SELECT * FROM $wpdb->posts WHERE foo = %s AND $where_clause", $foo )
+	); // phpcs:ignore DB call ok
+
+	$db_records_count = (int) $wpdb->get_var(
+		$coupon_subquery // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+	);
+}
+
+function dummy( ) {
+	// This should have no effect on other tests
+	$dummy_bar = esc_sql( $foo );
+}
+
+function insecure_wpdb_query_19() {
+
+	$sql = $wpdb->prepare( "SELECT * FROM $wpdb->posts WHERE foo = %s AND bar = '$dummy_bar'", $foo );
+
+	$wpdb->query( $sql ); // unsafe
+}
