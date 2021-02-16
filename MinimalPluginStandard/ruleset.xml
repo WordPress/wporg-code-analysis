@@ -143,6 +143,7 @@
 				<element key="get_bloginfo" value="get_bloginfo" /> <!-- only safe if 'display' filter is used -->
 			</property>
 		</properties>
+		<type>warning</type>
 	</rule>
 	<rule ref="WordPress.Security.EscapeOutput.UnsafePrintingFunction">
 		<type>warning</type>
