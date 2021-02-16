@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<ruleset name="MinimalPluginStandards">
+<ruleset name="MinimalPluginStandard">
   <description>Minimal coding standards for WordPress plugins.</description>
 
     <exclude-pattern>/**/test/*</exclude-pattern>
@@ -140,6 +140,7 @@
 				<element key="sanitize_text_field" value="sanitize_text_field" />
 				<element key="sanitize_textarea_field" value="sanitize_textarea_field" />
 				<element key="get_locale" value="get_locale" />
+				<element key="get_bloginfo" value="get_bloginfo" /> <!-- only safe if 'display' filter is used -->
 			</property>
 		</properties>
 	</rule>
