@@ -147,6 +147,19 @@ class DirectDBSniff extends Sniff {
 	}
 
 	/**
+	 * Get the scope context of the code at a given point.
+	 */
+	public function get_context( $stackPtr ) {
+		if ( $context = $this->phpcsFile->getCondition( $stackPtr, \T_CLOSURE ) ) {
+			return $context;
+		} elseif ( $context = $this->phpcsFile->getCondition( $stackPtr, \T_FUNCTION ) ) {
+			return $context;
+		} else {
+			return 'global';
+		}
+	}
+
+	/**
 	 * Mark the variable at $stackPtr as being safely sanitized for use in a SQL context.
 	 * $stackPtr must point to a T_VARIABLE. Handles arrays and (maybe) object properties.
 	 */
@@ -157,9 +170,7 @@ class DirectDBSniff extends Sniff {
 		}
 
 		// Find the closure or function scope of the variable.
-		$context = $this->phpcsFile->getCondition( $stackPtr, \T_CLOSURE )
-			|| $this->phpcsFile->getCondition( $stackPtr, \T_FUNCTION )
-			|| 'global';
+		$context = $this->get_context( $stackPtr );
 
 		$var = $this->get_complex_variable( $stackPtr );
 
@@ -191,9 +202,7 @@ class DirectDBSniff extends Sniff {
 		}
 
 		// Find the closure or function scope of the variable.
-		$context = $this->phpcsFile->getCondition( $stackPtr, \T_CLOSURE )
-			|| $this->phpcsFile->getCondition( $stackPtr, \T_FUNCTION )
-			|| 'global';
+		$context = $this->get_context( $stackPtr );
 
 		$var = $this->get_complex_variable( $stackPtr );
 
@@ -236,15 +245,6 @@ class DirectDBSniff extends Sniff {
 		}
 
 		return false;
-	}
-
-	protected function get_context( $stackPtr ) {
-
-		// Find the closure or function scope of the variable.
-		return $this->phpcsFile->getCondition( $stackPtr, \T_CLOSURE )
-			|| $this->phpcsFile->getCondition( $stackPtr, \T_FUNCTION )
-			|| 'global';
-
 	}
 
 	/**

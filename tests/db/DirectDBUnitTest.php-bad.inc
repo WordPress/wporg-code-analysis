@@ -190,9 +190,21 @@ function insecure_wpdb_query_18( $where_clause ) {
 	// Also this
 
 	// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared
-	$wpdb->query( $wpdb->prepare( "SELECT * FROM $wpdb->posts WHERE foo = %s AND $where_clause", $foo ) );
+	$wpdb->query( $wpdb->prepare( "SELECT * FROM $wpdb->posts WHERE foo = %s AND $where_clause", $foo ) ); // unsafe but suppressed
 	// phpcs:enable
 
 	// Error this time
-	$wpdb->query( $wpdb->prepare( "SELECT * FROM $wpdb->posts WHERE foo = %s AND $where_clause", $foo ) );
+	$wpdb->query( $wpdb->prepare( "SELECT * FROM $wpdb->posts WHERE foo = %s AND $where_clause", $foo ) ); // unsafe
+}
+
+function dummy( ) {
+	// This should have no effect on other tests
+	$dummy_bar = esc_sql( $foo );
+}
+
+function insecure_wpdb_query_19() {
+
+	$sql = $wpdb->prepare( "SELECT * FROM $wpdb->posts WHERE foo = %s AND bar = '$dummy_bar'", $foo );
+
+	$wpdb->query( $sql ); // unsafe
 }
