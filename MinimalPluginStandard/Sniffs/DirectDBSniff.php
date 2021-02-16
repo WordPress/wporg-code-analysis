@@ -631,7 +631,7 @@ class DirectDBSniff extends Sniff {
 		return false;
 	}
 
-	public function is_suppressed_line( $stackPtr, $sniffs = [ 'WordPress.DB.PreparedSQL.NotPrepared', 'WordPress.DB.PreparedSQL.InterpolatedNotPrepared', 'WordPress.DB.DirectDatabaseQuery.DirectQuery', 'DB call ok', 'unprepared SQL ok'] ) {
+	public function is_suppressed_line( $stackPtr, $sniffs = [ 'WordPress.DB.PreparedSQL.NotPrepared', 'WordPress.DB.PreparedSQL.InterpolatedNotPrepared', 'WordPress.DB.DirectDatabaseQuery.DirectQuery', 'DB call', 'unprepared SQL', 'PreparedSQLPlaceholders replacement count'] ) {
 		if ( empty( $this->tokens[ $stackPtr ][ 'line' ] ) ) {
 			return false;
 		}
@@ -648,11 +648,11 @@ class DirectDBSniff extends Sniff {
 				if ( !empty( $this->phpcsFile->tokenizer->ignoredLines[ $line_no ] ) ) {
 					return true;
 				}
+				if ( $this->has_whitelist_comment( $sniff_name, $ptr ) ) {
+					return true;
+				}
 			}
 
-			if ( $this->has_whitelist_comment( 'unprepared SQL', $ptr ) ) {
-				return true;
-			}
 		}
 
 		return false;
