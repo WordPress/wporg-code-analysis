@@ -615,6 +615,21 @@ class DirectDBSniff extends Sniff {
 		return false;
 	}
 
+	public function is_suppressed_line( $stackPtr, $sniffs = [ 'WordPress.DB.PreparedSQL.NotPrepared', 'WordPress.DB.PreparedSQL.InterpolatedNotPrepared'] ) {
+		if ( empty( $this->tokens[ $stackPtr ][ 'line' ] ) ) {
+			return false;
+		}
+
+		foreach ( $sniffs as $sniff_name ) {
+			$line_no = $this->tokens[ $stackPtr ][ 'line' ];
+			if ( !empty( $this->phpcsFile->tokenizer->ignoredLines[ $line_no ] ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	/**
 	 * Returns an array of tokens this test wants to listen for.
 	 *
@@ -696,7 +711,7 @@ class DirectDBSniff extends Sniff {
 				// If the expression wasn't escaped safely, then alert.
 				if ( !$this->expression_is_safe( $methodParam[ 'start' ], $methodParam[ 'end' ] + 1 ) ) {
 					if ( $this->unsafe_expression ) {
-						if ( $this->is_warning_parameter( $this->unsafe_expression ) || $this->is_warning_sql( $methodParam[ 'clean' ] ) ) {
+						if ( $this->is_warning_parameter( $this->unsafe_expression ) || $this->is_warning_sql( $methodParam[ 'clean' ] ) || $this->is_suppressed_line( $methodPtr ) ) {
 							$this->phpcsFile->addWarning( 'Unescaped parameter %s used in $wpdb->%s(%s)',
 								$methodPtr,
 								'UnescapedDBParameter',
@@ -715,7 +730,7 @@ class DirectDBSniff extends Sniff {
 
 						}
 					} else {
-						if ( $this->is_warning_parameter( $methodParam[ 'clean' ] ) || $this->is_warning_sql( $methodParam[ 'clean' ] ) ) {
+						if ( $this->is_warning_parameter( $methodParam[ 'clean' ] ) || $this->is_warning_sql( $methodParam[ 'clean' ] || $this->is_suppressed_line( $methodPtr ) ) ) {
 							$this->phpcsFile->addWarning( 'Unescaped parameter %s used in $wpdb->%s',
 								$methodPtr,
 								'UnescapedDBParameter',
