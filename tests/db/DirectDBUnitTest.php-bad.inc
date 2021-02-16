@@ -198,6 +198,15 @@ function insecure_wpdb_query_18( $where_clause ) {
 
 	// Error this time
 	$wpdb->query( $wpdb->prepare( "SELECT * FROM $wpdb->posts WHERE foo = %s AND $where_clause", $foo ) ); // unsafe
+
+	// Make sure we handle line numbers correctly
+	$wpdb->query( 
+		$wpdb->prepare( "SELECT * FROM $wpdb->posts WHERE foo = %s AND $where_clause", $foo )
+	); // phpcs:ignore DB call ok
+
+	$db_records_count = (int) $wpdb->get_var(
+		$coupon_subquery // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+	);
 }
 
 function dummy( ) {

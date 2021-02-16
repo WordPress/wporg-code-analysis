@@ -255,6 +255,22 @@ class DirectDBSniff extends Sniff {
 	}
 
 	/**
+	 * Find the token following the end of the current function call pointed to by $stackPtr.
+	 */
+	protected function end_of_function_call( $stackPtr ) {
+		if ( !in_array( $this->tokens[ $stackPtr ][ 'code' ], Tokens::$functionNameTokens ) ) {
+			return false;
+		}
+
+		$function_params = PassedParameters::getParameters( $this->phpcsFile, $stackPtr );
+		if ( $param = end( $function_params ) ) {
+			return $this->next_non_empty( $param['end'] + 1 );
+		}
+
+		return false;
+	}
+
+	/**
 	 * Is the T_STRING at $stackPtr a constant as set by define()?
 	 */
 	protected function is_defined_constant( $stackPtr ) {
@@ -620,9 +636,21 @@ class DirectDBSniff extends Sniff {
 			return false;
 		}
 
-		foreach ( $sniffs as $sniff_name ) {
-			$line_no = $this->tokens[ $stackPtr ][ 'line' ];
-			if ( !empty( $this->phpcsFile->tokenizer->ignoredLines[ $line_no ] ) ) {
+		// We'll check all lines related to this function call, because placement can differ depending on exactly where we trigger in a multi-line query
+		$end = $this->end_of_function_call( $stackPtr );
+		if ( $end < $stackPtr ) {
+			$end = $stackPtr;
+		}
+
+		for ( $ptr = $stackPtr; $ptr <= $end; $ptr ++ ) {
+			foreach ( $sniffs as $sniff_name ) {
+				$line_no = $this->tokens[ $ptr ][ 'line' ];
+				if ( !empty( $this->phpcsFile->tokenizer->ignoredLines[ $line_no ] ) ) {
+					return true;
+				}
+			}
+
+			if ( $this->has_whitelist_comment( 'unprepared SQL', $ptr ) ) {
 				return true;
 			}
 		}
@@ -730,7 +758,7 @@ class DirectDBSniff extends Sniff {
 
 						}
 					} else {
-						if ( $this->is_warning_parameter( $methodParam[ 'clean' ] ) || $this->is_warning_sql( $methodParam[ 'clean' ] || $this->is_suppressed_line( $methodPtr ) ) ) {
+						if ( $this->is_warning_parameter( $methodParam[ 'clean' ] ) || $this->is_warning_sql( $methodParam[ 'clean' ] ) || $this->is_suppressed_line( $methodPtr ) ) {
 							$this->phpcsFile->addWarning( 'Unescaped parameter %s used in $wpdb->%s',
 								$methodPtr,
 								'UnescapedDBParameter',

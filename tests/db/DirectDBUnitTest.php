@@ -38,7 +38,7 @@ class DisallowExtractSniffTest extends TestCase {
                 168,
                 181,
                 200,
-                212
+                221
             ], 
             $error_lines );
 
@@ -50,7 +50,9 @@ class DisallowExtractSniffTest extends TestCase {
                 149,
                 188,
                 191,
-                196
+                196,
+                203,
+                207
             ],
             $warning_lines );
 
