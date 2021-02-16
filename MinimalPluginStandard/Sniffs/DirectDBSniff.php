@@ -615,7 +615,7 @@ class DirectDBSniff extends Sniff {
 		return false;
 	}
 
-	public function is_suppressed_line( $stackPtr, $sniffs = [ 'WordPress.DB.PreparedSQL.NotPrepared', 'WordPress.DB.PreparedSQL.InterpolatedNotPrepared'] ) {
+	public function is_suppressed_line( $stackPtr, $sniffs = [ 'WordPress.DB.PreparedSQL.NotPrepared', 'WordPress.DB.PreparedSQL.InterpolatedNotPrepared', 'WordPress.DB.DirectDatabaseQuery.DirectQuery', 'DB call ok', 'unprepared SQL ok'] ) {
 		if ( empty( $this->tokens[ $stackPtr ][ 'line' ] ) ) {
 			return false;
 		}

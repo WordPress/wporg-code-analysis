@@ -187,6 +187,9 @@ function insecure_wpdb_query_18( $where_clause ) {
 	// This should produce a warning instead of an error
 	$wpdb->query( $wpdb->prepare( "SELECT * FROM $wpdb->posts WHERE foo = %s AND $where_clause", $foo ) ); // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
+	// Old school warning
+	$wpdb->query( $wpdb->prepare( "SELECT * FROM $wpdb->posts WHERE foo = %s AND $where_clause", $foo ) ); // phpcs:ignore cache ok, DB call ok, unprepared SQL ok.
+
 	// Also this
 
 	// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared
