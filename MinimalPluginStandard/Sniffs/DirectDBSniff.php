@@ -141,6 +141,7 @@ class DirectDBSniff extends Sniff {
 	 */
 	protected $sanitized_variables = [];
 	protected $unsanitized_variables = [];
+	protected $assignments = [];
 
 	/**
 	 * Get the name of the function containing the code at a given point.
@@ -169,7 +170,7 @@ class DirectDBSniff extends Sniff {
 	 * Mark the variable at $stackPtr as being safely sanitized for use in a SQL context.
 	 * $stackPtr must point to a T_VARIABLE. Handles arrays and (maybe) object properties.
 	 */
-	protected function mark_sanitized_var( $stackPtr ) {
+	protected function mark_sanitized_var( $stackPtr, $assignmentPtr = null ) {
 
 		if ( \T_VARIABLE !== $this->tokens[ $stackPtr ][ 'code' ] ) {
 			return false;
@@ -195,13 +196,18 @@ class DirectDBSniff extends Sniff {
 					unset( $this->unsanitized_variables[ $context ][ $var[0] ] );
 				}
 		}
+
+		if ( $assignmentPtr ) {
+			$end = $this->phpcsFile->findEndOfStatement( $assignmentPtr );
+			$this->assignments[ $context ][ $var[0] ][ $assignmentPtr ] = $this->phpcsFile->getTokensAsString( $stackPtr, $end - $stackPtr );
+		}
 	}
 
 	/**
 	 * Mark the variable at $stackPtr as being unsafe. Opposite of mark_sanitized_var().
 	 * Use this to reset a variable that might previously have been marked as sanitized.
 	 */
-	protected function mark_unsanitized_var( $stackPtr ) {
+	protected function mark_unsanitized_var( $stackPtr, $assignmentPtr = null ) {
 
 		if ( \T_VARIABLE !== $this->tokens[ $stackPtr ][ 'code' ] ) {
 			return false;
@@ -215,6 +221,12 @@ class DirectDBSniff extends Sniff {
 		unset( $this->sanitized_variables[ $context ][ $var[0] ] );
 
 		$this->unsanitized_variables[ $context ][ $var[0] ] = $this->tokens[ $stackPtr ][ 'level' ];
+
+		if ( $assignmentPtr ) {
+			$end = $this->phpcsFile->findEndOfStatement( $assignmentPtr );
+			$this->assignments[ $context ][ $var[0] ][ $assignmentPtr ] = $this->phpcsFile->getTokensAsString( $stackPtr, $end - $stackPtr );
+		}
+
 	}
 
 	/**
@@ -253,6 +265,19 @@ class DirectDBSniff extends Sniff {
 		return false;
 	}
 
+	protected function find_assignments( $stackPtr ) {
+		if ( \T_VARIABLE !== $this->tokens[ $stackPtr ][ 'code' ] ) {
+			return false;
+		}
+
+		// Find the closure or function scope of the variable.
+		$context = $this->get_context( $stackPtr );
+
+		$var = $this->get_complex_variable( $stackPtr );
+
+		return $this->assignments[ $context ][ $var[0] ];
+	}
+
 	/**
 	 * Helper function to return the next non-empty token starting at $stackPtr inclusive.
 	 */
@@ -274,6 +299,11 @@ class DirectDBSniff extends Sniff {
 		}
 
 		return false;
+	}
+
+	protected function get_expression_as_string( $stackPtr ) {
+		$end = $this->phpcsFile->findEndOfStatement( $stackPtr );
+		return $this->phpcsFile->getTokensAsString( $stackPtr, $end - $stackPtr );
 	}
 
 	/**
@@ -480,6 +510,7 @@ class DirectDBSniff extends Sniff {
 		// TODO: could produce warnings or give more context
 
 		$this->unsafe_expression = null;
+		$this->unsafe_ptr = null;
 
 		$newPtr = $stackPtr;
 		$tokens_to_find = array(
@@ -515,6 +546,9 @@ class DirectDBSniff extends Sniff {
 					$function_params = PassedParameters::getParameters( $this->phpcsFile, $newPtr );
 					foreach ( $function_params as $param ) {
 						if ( !$this->expression_is_safe( $param[ 'start' ], $param[ 'end' ] + 1 ) ) {
+							if ( empty( $this->unsafe_ptr ) ) {
+								$this->unsafe_ptr = $param[ 'start' ];
+							}
 							return false;
 						}
 					};
@@ -543,6 +577,9 @@ class DirectDBSniff extends Sniff {
 						continue;
 					}
 					// It wasn't safe!
+					if ( empty( $this->unsafe_ptr ) ) {
+						$this->unsafe_ptr = $first_param[ 'start' ];
+					}
 					return false;
 				} elseif ( $this->is_wpdb_property( $newPtr ) ) {
 					// It's $wpdb->tablename
@@ -608,6 +645,7 @@ class DirectDBSniff extends Sniff {
 				// then we can fail at this point.
 				if ( '$wpdb' !== $this->tokens[ $newPtr ][ 'content' ] && !$this->is_sanitized_var( $newPtr ) ) {
 					$this->unsafe_expression = $this->tokens[ $newPtr ][ 'content' ];
+					$this->unsafe_ptr = $newPtr;
 					$var = $this->get_complex_variable( $newPtr );
 					if ( $var ) {
 						$this->unsafe_expression = '$' . $var[0];
@@ -777,10 +815,10 @@ class DirectDBSniff extends Sniff {
 			if ( $this->expression_is_safe( $nextToken + 1 ) ) {
 				// Don't mark as safe if it's a concat, since that doesn't sanitize the initial part.
 				if ( $this->tokens[ $nextToken ][ 'code' ] !== \T_CONCAT_EQUAL ) {
-					$this->mark_sanitized_var( $stackPtr );
+					$this->mark_sanitized_var( $stackPtr, $nextToken + 1 );
 				}
 			} else {
-				$this->mark_unsanitized_var( $stackPtr );
+				$this->mark_unsanitized_var( $stackPtr, $nextToken + 1 );
 			}
 
 			return; // ??
@@ -839,11 +877,18 @@ class DirectDBSniff extends Sniff {
 			// If the expression wasn't escaped safely, then alert.
 			if ( !$this->expression_is_safe( $methodParam[ 'start' ], $methodParam[ 'end' ] + 1 ) ) {
 				if ( $this->unsafe_expression ) {
+					$extra_context = [];
+					if ( $assignments = $this->find_assignments( $this->unsafe_ptr ) ) {
+						foreach ( $assignments as $assignmentPtr => $code ) {
+							$extra_context[] = sprintf( "%s assigned at line %d:\n %s", $this->unsafe_expression, $this->tokens[ $assignmentPtr ][ 'line' ], $code );
+						}
+						#var_dump( $extra_context );
+					}
 					if ( $this->is_warning_parameter( $this->unsafe_expression ) || $this->is_warning_sql( $methodParam[ 'clean' ] ) || $this->is_suppressed_line( $methodPtr ) ) {
-						$this->phpcsFile->addWarning( 'Unescaped parameter %s used in $wpdb->%s(%s)',
+						$this->phpcsFile->addWarning( 'Unescaped parameter %s used in $wpdb->%s(%s)%s',
 							$methodPtr,
 							'UnescapedDBParameter',
-							[ $this->unsafe_expression, $method, $methodParam[ 'clean' ] ],
+							[ $this->unsafe_expression, $method, $methodParam[ 'clean' ], rtrim( "\n" . join( "\n", $extra_context ) ) ],
 							0,
 							false
 						);
