@@ -236,3 +236,39 @@ function secure_wpdb_query_14( $foo ) {
 
 	$wpdb->query( "SELECT * FROM $wpdb->posts WHERE ID = '$foo'" ); // safe
 }
+
+function secure_wpdb_query_15() {
+	// Example from WooCommerce
+		/** @var wpdb $wpdb */
+		global $wpdb;
+		$query = "SELECT a.action_id FROM {$wpdb->actionscheduler_actions} a";
+		$args  = [];
+		if ( ! empty( $params[ 'group' ] ) ) {
+			$query  .= " INNER JOIN {$wpdb->actionscheduler_groups} g ON g.group_id=a.group_id AND g.slug=%s";
+			$args[] = $params[ 'group' ];
+		}
+		$query  .= " WHERE a.hook=%s";
+		$args[] = $hook;
+		if ( ! is_null( $params[ 'args' ] ) ) {
+			$query  .= " AND a.args=%s";
+			$args[] = $this->get_args_for_query( $params[ 'args' ] );
+		}
+
+		$order = 'ASC';
+		if ( ! empty( $params[ 'status' ] ) ) {
+			$query  .= " AND a.status=%s";
+			$args[] = $params[ 'status' ];
+
+			if ( self::STATUS_PENDING == $params[ 'status' ] ) {
+				$order = 'ASC'; // Find the next action that matches.
+			} else {
+				$order = 'DESC'; // Find the most recent action that matches.
+			}
+		}
+
+		$query .= " ORDER BY scheduled_date_gmt $order LIMIT 1";
+
+		$query = $wpdb->prepare( $query, $args );
+
+		$id = $wpdb->get_var( $query );
+}
