@@ -301,3 +301,8 @@ function secure_wpdb_query_16() {
 
 	$result = $wpdb->get_row( $sql ); // safe!
 }
+
+function false_positive_13( $comment_ids ) {
+	$format_string = implode( ", ", array_fill( 0, count( $comment_ids ), '%s' ) );
+	$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->comments} WHERE comment_id IN ( " . $format_string . " )", $comment_ids ) );
+}
