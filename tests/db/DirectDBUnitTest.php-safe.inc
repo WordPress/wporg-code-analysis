@@ -306,3 +306,8 @@ function false_positive_13( $comment_ids ) {
 	$format_string = implode( ", ", array_fill( 0, count( $comment_ids ), '%s' ) );
 	$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->comments} WHERE comment_id IN ( " . $format_string . " )", $comment_ids ) );
 }
+
+function false_positive_14() {
+	$wpdb->query( sprintf( "DROP TABLE IF EXISTS %s",
+		$wpdb->prefix . 'contact_form_7' ) );
+}
