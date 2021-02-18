@@ -691,7 +691,10 @@ class DirectDBSniff extends Sniff {
 
 			// If the expression being assigned is safe (ie escaped) then mark the variable as sanitized.
 			if ( $this->expression_is_safe( $nextToken + 1 ) ) {
-				$this->mark_sanitized_var( $stackPtr );
+				// Don't mark as safe if it's a concat, since that doesn't sanitize the initial part.
+				if ( $this->tokens[ $nextToken ][ 'code' ] !== \T_CONCAT_EQUAL ) {
+					$this->mark_sanitized_var( $stackPtr );
+				}
 			} else {
 				$this->mark_unsanitized_var( $stackPtr );
 			}
