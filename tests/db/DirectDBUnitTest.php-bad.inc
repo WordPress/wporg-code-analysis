@@ -269,3 +269,17 @@ function insecure_wpdb_query_21() {
 
 	$result = $wpdb->get_row( $sql ); // unsafe
 }
+
+function insecure_wpdb_query_22() {
+	// Variable table names should generate warnings, not errors.
+
+	global $wpdb;
+
+	$wpdb->get_var( $wpdb->prepare( "SELECT * FROM {$this->my_table_name} WHERE foo=%d", $foo ) );
+	$wpdb->get_var( $wpdb->prepare( "SELECT * FROM ${this->my_table_name} WHERE foo=%d", $foo ) );
+	$wpdb->get_var( $wpdb->prepare( "SELECT * FROM {$this->get_table_name()} WHERE foo=%d", $foo ) );
+	$wpdb->get_var( $wpdb->prepare( "SELECT * FROM {$this->my_table_name}"
+		. " WHERE foo=%d", $foo ) );
+
+
+}
