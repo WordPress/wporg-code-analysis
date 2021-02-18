@@ -288,3 +288,16 @@ function false_positive_12( $tax_rate_id, $output_type = ARRAY_A ) {
 		$output_type
 	);
 }
+
+function secure_wpdb_query_16() {
+	// Test concatenation
+
+	global $wpdb;
+
+	$sql = "SELECT * FROM $wpdb->users WHERE 1=1"; // safe so far..
+	$foo = esc_sql( $foo );
+	$sql .= " AND display_name = '$foo'"; // also safe here
+	$sql .= $wpdb->prepare( ' LIMIT %d, %d', $offset, $limit ); // also safe here
+
+	$result = $wpdb->get_row( $sql ); // safe!
+}

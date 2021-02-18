@@ -257,3 +257,15 @@ function insecure_wpdb_query_20() {
 
 		$id = $wpdb->get_var( $query );
 }
+
+function insecure_wpdb_query_21() {
+	// Test concatenation
+
+	global $wpdb;
+
+	$sql = "SELECT * FROM $wpdb->users WHERE 1=1"; // safe so far..
+	$sql .= " AND display_name = '$foo'"; // but not here!
+	$sql .= $wpdb->prepare( ' LIMIT %d, %d', $offset, $limit ); // also safe here
+
+	$result = $wpdb->get_row( $sql ); // unsafe
+}
