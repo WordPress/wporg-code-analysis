@@ -311,3 +311,13 @@ function false_positive_14() {
 	$wpdb->query( sprintf( "DROP TABLE IF EXISTS %s",
 		$wpdb->prefix . 'contact_form_7' ) );
 }
+
+function false_positive_15() {
+	$media_id_string = join( ',', array_filter( array_map( 'absint', $media_results['media_ids'] ) ) );
+	if ( $media_id_string ) {
+		// Yes - this is really how wp-admin does it.
+		$wpdb->query( $wpdb->prepare(
+			"UPDATE $wpdb->posts SET post_parent = %d WHERE post_type = 'attachment' AND ID IN ( $media_id_string )",
+			$post_id
+		) );
+}
