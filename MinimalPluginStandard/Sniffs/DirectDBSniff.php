@@ -52,6 +52,7 @@ class DirectDBSniff extends Sniff {
 		'sanitize_text_field' => true, // Note that this does not escape for SQL.
 		'array_fill'          => true,
 		'sprintf'             => true, // Sometimes used to get around formatting table and column names in queries
+		'array_filter'        => true,
 	);
 
 	/**
