@@ -321,3 +321,20 @@ function false_positive_15() {
 			$post_id
 		) );
 }
+
+function false_positive_16() {
+	// array_walk() should be handled similar to array_map().
+    array_walk( $exclude, 'esc_sql' );
+	$where = sprintf(
+			"WHERE comment_type NOT IN ( '%s' )",
+			implode( "','", $exclude )
+	);
+
+	$count = $wpdb->get_results(
+		"SELECT comment_approved, COUNT(*) AS num_comments
+				FROM $wpdb->comments
+					{$where}
+					GROUP BY comment_approved
+			"
+	);
+}
