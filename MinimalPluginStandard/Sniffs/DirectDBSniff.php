@@ -50,6 +50,7 @@ class DirectDBSniff extends Sniff {
 		'array_keys'          => true,
 		'array_values'        => true,
 		'sanitize_text_field' => true, // Note that this does not escape for SQL.
+		'array_fill'          => true,
 	);
 
 	/**
@@ -61,6 +62,7 @@ class DirectDBSniff extends Sniff {
 		'mktime'         => true,
 		'get_post_types' => true,
 		'get_charset_collate' => true,
+		'count'          => true,
 	);
 
 	/**
