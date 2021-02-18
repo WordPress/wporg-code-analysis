@@ -272,3 +272,19 @@ function secure_wpdb_query_15() {
 
 		$id = $wpdb->get_var( $query );
 }
+
+function false_positive_12( $tax_rate_id, $output_type = ARRAY_A ) {
+	global $wpdb;
+
+	return $wpdb->get_row(
+		$wpdb->prepare(
+			"
+				SELECT *
+				FROM {$wpdb->prefix}woocommerce_tax_rates
+				WHERE tax_rate_id = %d
+			",
+			$tax_rate_id
+		),
+		$output_type
+	);
+}
