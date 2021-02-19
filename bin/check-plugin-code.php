@@ -32,7 +32,7 @@ require rtrim( $abspath, '/' ) . '/wp-load.php';
 require dirname( __DIR__ ) . '/includes/class-phpcs.php';
 
 $phpcs = new PHPCS();
-$phpcs->set_standard( dirname( __DIR__ ) . '/rulesets/reviewer-flags.xml' );
+$phpcs->set_standard( dirname( __DIR__ ) . '/MinimalPluginStandard' );
 
 $path = dirname( dirname( __DIR__ ) ) . '/' . $opts['slug'];
 $args = array(
