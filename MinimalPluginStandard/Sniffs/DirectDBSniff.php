@@ -7,6 +7,8 @@ use PHP_CodeSniffer\Util\Tokens;
 use PHP_CodeSniffer\Util\Variables;
 use PHPCSUtils\Utils\PassedParameters;
 
+require_once( dirname( dirname( __DIR__ ) ) . '/vendor/autoload.php' );
+
 /**
  * Flag Database direct queries.
  *

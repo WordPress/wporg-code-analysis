@@ -6,6 +6,8 @@ use WP_Error;
 
 defined( 'WPINC' ) || die();
 
+require_once( dirname( __DIR__ ) . '/vendor/autoload.php' );
+
 /**
  * Class PHPCS
  *
