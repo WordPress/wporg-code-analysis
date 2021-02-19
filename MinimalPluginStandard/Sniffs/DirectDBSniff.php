@@ -50,6 +50,9 @@ class DirectDBSniff extends Sniff {
 		'array_keys'          => true,
 		'array_values'        => true,
 		'sanitize_text_field' => true, // Note that this does not escape for SQL.
+		'array_fill'          => true,
+		'sprintf'             => true, // Sometimes used to get around formatting table and column names in queries
+		'array_filter'        => true,
 	);
 
 	/**
@@ -61,6 +64,7 @@ class DirectDBSniff extends Sniff {
 		'mktime'         => true,
 		'get_post_types' => true,
 		'get_charset_collate' => true,
+		'count'          => true,
 	);
 
 	/**
@@ -325,6 +329,74 @@ class DirectDBSniff extends Sniff {
 		return $nextToken;
 	}
 
+	// Based on the function from wp-includes/wp-db.php
+	protected function get_table_from_query( $query ) {
+		// Remove characters that can legally trail the table name.
+		$query = rtrim( $query, ';/-#' );
+	 
+		// Allow (select...) union [...] style queries. Use the first query's table name.
+		$query = ltrim( $query, "\r\n\t (" );
+	 
+		// Strip everything between parentheses except nested selects.
+		$query = preg_replace( '/\((?!\s*select)[^(]*?\)/is', '()', $query );
+	 
+		// Quickly match most common queries.
+		if ( preg_match(
+			'/^\s*(?:'
+				. 'SELECT.*?\s+FROM'
+				. '|INSERT(?:\s+LOW_PRIORITY|\s+DELAYED|\s+HIGH_PRIORITY)?(?:\s+IGNORE)?(?:\s+INTO)?'
+				. '|REPLACE(?:\s+LOW_PRIORITY|\s+DELAYED)?(?:\s+INTO)?'
+				. '|UPDATE(?:\s+LOW_PRIORITY)?(?:\s+IGNORE)?'
+				. '|DELETE(?:\s+LOW_PRIORITY|\s+QUICK|\s+IGNORE)*(?:.+?FROM)?'
+			. ')\s+((?:[0-9a-zA-Z$_.`-]|[\xC2-\xDF][\x80-\xBF])+)/is',
+			$query,
+			$maybe
+		) ) {
+			return str_replace( '`', '', $maybe[1] );
+		}
+	 
+		// SHOW TABLE STATUS and SHOW TABLES WHERE Name = 'wp_posts'
+		if ( preg_match( '/^\s*SHOW\s+(?:TABLE\s+STATUS|(?:FULL\s+)?TABLES).+WHERE\s+Name\s*=\s*("|\')((?:[0-9a-zA-Z$_.-]|[\xC2-\xDF][\x80-\xBF])+)\\1/is', $query, $maybe ) ) {
+			return $maybe[2];
+		}
+	 
+		/*
+		 * SHOW TABLE STATUS LIKE and SHOW TABLES LIKE 'wp\_123\_%'
+		 * This quoted LIKE operand seldom holds a full table name.
+		 * It is usually a pattern for matching a prefix so we just
+		 * strip the trailing % and unescape the _ to get 'wp_123_'
+		 * which drop-ins can use for routing these SQL statements.
+		 */
+		if ( preg_match( '/^\s*SHOW\s+(?:TABLE\s+STATUS|(?:FULL\s+)?TABLES)\s+(?:WHERE\s+Name\s+)?LIKE\s*("|\')((?:[\\\\0-9a-zA-Z$_.-]|[\xC2-\xDF][\x80-\xBF])+)%?\\1/is', $query, $maybe ) ) {
+			return str_replace( '\\_', '_', $maybe[2] );
+		}
+	 
+		// Big pattern for the rest of the table-related queries.
+		if ( preg_match(
+			'/^\s*(?:'
+				. '(?:EXPLAIN\s+(?:EXTENDED\s+)?)?SELECT.*?\s+FROM'
+				. '|DESCRIBE|DESC|EXPLAIN|HANDLER'
+				. '|(?:LOCK|UNLOCK)\s+TABLE(?:S)?'
+				. '|(?:RENAME|OPTIMIZE|BACKUP|RESTORE|CHECK|CHECKSUM|ANALYZE|REPAIR).*\s+TABLE'
+				. '|TRUNCATE(?:\s+TABLE)?'
+				. '|CREATE(?:\s+TEMPORARY)?\s+TABLE(?:\s+IF\s+NOT\s+EXISTS)?'
+				. '|ALTER(?:\s+IGNORE)?\s+TABLE'
+				. '|DROP\s+TABLE(?:\s+IF\s+EXISTS)?'
+				. '|CREATE(?:\s+\w+)?\s+INDEX.*\s+ON'
+				. '|DROP\s+INDEX.*\s+ON'
+				. '|LOAD\s+DATA.*INFILE.*INTO\s+TABLE'
+				. '|(?:GRANT|REVOKE).*ON\s+TABLE'
+				. '|SHOW\s+(?:.*FROM|.*TABLE)'
+			. ')\s+\(*\s*((?:[0-9a-zA-Z$_.`-]|[\xC2-\xDF][\x80-\xBF])+)\s*\)*/is',
+			$query,
+			$maybe
+		) ) {
+			return str_replace( '`', '', $maybe[1] );
+		}
+	 
+		return false;
+	}
+
 	/**
 	 * Returns an array representing a variable that may be non-scalar.
 	 *
@@ -449,6 +521,7 @@ class DirectDBSniff extends Sniff {
 					continue;
 				} elseif ( 'array_map' === $this->tokens[ $newPtr ][ 'content' ] ) {
 					// Special handling for array_map() calls that map an escaping function
+					// See also similar array_walk handler in process_token().
 					$function_params = PassedParameters::getParameters( $this->phpcsFile, $newPtr );
 					$mapped_function = trim( $function_params[1][ 'clean' ], '"\'' );
 					// If this is array_map( 'esc_sql', ... ) or similar, then we can move on to the next statement.
@@ -490,6 +563,15 @@ class DirectDBSniff extends Sniff {
 					foreach ( $matches[0] as $var ) {
 						// Get the variable in a format understood by _is_sanitized()
 						$complex_var = $this->get_complex_variable_from_string( $var );
+
+						// Does it look like a table name, "SELECT * FROM {$my_table}" or similar?
+						$var_placeholder = md5( $var );
+						$placeholder_query = str_replace( $var, $var_placeholder, $this->tokens[ $newPtr ][ 'content' ] );
+						if( $this->get_table_from_query( trim( $placeholder_query, '"' ) ) === $var_placeholder ) {
+							// Add the table variable name to the list of parameters that will only trigger a warning
+							$this->warn_only_parameters[] = trim( $var, '${}' );
+						}
+
 						// If it's not a $wpdb->table variable, check for sanitizing
 						if ( 'wpdb' !== $complex_var[0] && false === strpos( $var, '$this->table' ) ) {
 							// Where are we?
@@ -691,7 +773,10 @@ class DirectDBSniff extends Sniff {
 
 			// If the expression being assigned is safe (ie escaped) then mark the variable as sanitized.
 			if ( $this->expression_is_safe( $nextToken + 1 ) ) {
-				$this->mark_sanitized_var( $stackPtr );
+				// Don't mark as safe if it's a concat, since that doesn't sanitize the initial part.
+				if ( $this->tokens[ $nextToken ][ 'code' ] !== \T_CONCAT_EQUAL ) {
+					$this->mark_sanitized_var( $stackPtr );
+				}
 			} else {
 				$this->mark_unsanitized_var( $stackPtr );
 			}
@@ -715,6 +800,18 @@ class DirectDBSniff extends Sniff {
 				} else {
 					$this->mark_unsanitized_var( $as_var );
 				}
+			}
+		}
+
+		// Special case for array_walk. Handled here rather than in expression_is_safe() because it's a statement not an expression.
+		if ( in_array( $this->tokens[ $stackPtr ][ 'code' ], Tokens::$functionNameTokens )
+			&& 'array_walk' === $this->tokens[ $stackPtr ][ 'content' ] ) {
+			$function_params = PassedParameters::getParameters( $this->phpcsFile, $stackPtr );
+			$mapped_function = trim( $function_params[2][ 'clean' ], '"\'' );
+			// If it's an escaping function, then mark the referenced variable in the first parameter as sanitized.
+			if ( isset( $this->escapingFunctions[ $mapped_function ] ) ) {
+				$escaped_var = $this->next_non_empty( $function_params[ 1 ][ 'start' ] );
+				$this->mark_sanitized_var( $escaped_var );
 			}
 		}
 

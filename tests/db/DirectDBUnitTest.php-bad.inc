@@ -257,3 +257,29 @@ function insecure_wpdb_query_20() {
 
 		$id = $wpdb->get_var( $query );
 }
+
+function insecure_wpdb_query_21() {
+	// Test concatenation
+
+	global $wpdb;
+
+	$sql = "SELECT * FROM $wpdb->users WHERE 1=1"; // safe so far..
+	$sql .= " AND display_name = '$foo'"; // but not here!
+	$sql .= $wpdb->prepare( ' LIMIT %d, %d', $offset, $limit ); // also safe here
+
+	$result = $wpdb->get_row( $sql ); // unsafe
+}
+
+function insecure_wpdb_query_22() {
+	// Variable table names should generate warnings, not errors.
+
+	global $wpdb;
+
+	$wpdb->get_var( $wpdb->prepare( "SELECT * FROM {$this->my_table_name} WHERE foo=%d", $foo ) );
+	$wpdb->get_var( $wpdb->prepare( "SELECT * FROM ${this->my_table_name} WHERE foo=%d", $foo ) );
+	$wpdb->get_var( $wpdb->prepare( "SELECT * FROM {$this->get_table_name()} WHERE foo=%d", $foo ) );
+	$wpdb->get_var( $wpdb->prepare( "SELECT * FROM {$this->my_table_name}"
+		. " WHERE foo=%d", $foo ) );
+
+
+}

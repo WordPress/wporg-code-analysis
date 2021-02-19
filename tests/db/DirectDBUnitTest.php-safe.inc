@@ -288,3 +288,53 @@ function false_positive_12( $tax_rate_id, $output_type = ARRAY_A ) {
 		$output_type
 	);
 }
+
+function secure_wpdb_query_16() {
+	// Test concatenation
+
+	global $wpdb;
+
+	$sql = "SELECT * FROM $wpdb->users WHERE 1=1"; // safe so far..
+	$foo = esc_sql( $foo );
+	$sql .= " AND display_name = '$foo'"; // also safe here
+	$sql .= $wpdb->prepare( ' LIMIT %d, %d', $offset, $limit ); // also safe here
+
+	$result = $wpdb->get_row( $sql ); // safe!
+}
+
+function false_positive_13( $comment_ids ) {
+	$format_string = implode( ", ", array_fill( 0, count( $comment_ids ), '%s' ) );
+	$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->comments} WHERE comment_id IN ( " . $format_string . " )", $comment_ids ) );
+}
+
+function false_positive_14() {
+	$wpdb->query( sprintf( "DROP TABLE IF EXISTS %s",
+		$wpdb->prefix . 'contact_form_7' ) );
+}
+
+function false_positive_15() {
+	$media_id_string = join( ',', array_filter( array_map( 'absint', $media_results['media_ids'] ) ) );
+	if ( $media_id_string ) {
+		// Yes - this is really how wp-admin does it.
+		$wpdb->query( $wpdb->prepare(
+			"UPDATE $wpdb->posts SET post_parent = %d WHERE post_type = 'attachment' AND ID IN ( $media_id_string )",
+			$post_id
+		) );
+}
+
+function false_positive_16() {
+	// array_walk() should be handled similar to array_map().
+    array_walk( $exclude, 'esc_sql' );
+	$where = sprintf(
+			"WHERE comment_type NOT IN ( '%s' )",
+			implode( "','", $exclude )
+	);
+
+	$count = $wpdb->get_results(
+		"SELECT comment_approved, COUNT(*) AS num_comments
+				FROM $wpdb->comments
+					{$where}
+					GROUP BY comment_approved
+			"
+	);
+}
