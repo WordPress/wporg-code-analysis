@@ -521,6 +521,7 @@ class DirectDBSniff extends Sniff {
 					continue;
 				} elseif ( 'array_map' === $this->tokens[ $newPtr ][ 'content' ] ) {
 					// Special handling for array_map() calls that map an escaping function
+					// See also similar array_walk handler in process_token().
 					$function_params = PassedParameters::getParameters( $this->phpcsFile, $newPtr );
 					$mapped_function = trim( $function_params[1][ 'clean' ], '"\'' );
 					// If this is array_map( 'esc_sql', ... ) or similar, then we can move on to the next statement.
@@ -799,6 +800,18 @@ class DirectDBSniff extends Sniff {
 				} else {
 					$this->mark_unsanitized_var( $as_var );
 				}
+			}
+		}
+
+		// Special case for array_walk. Handled here rather than in expression_is_safe() because it's a statement not an expression.
+		if ( in_array( $this->tokens[ $stackPtr ][ 'code' ], Tokens::$functionNameTokens )
+			&& 'array_walk' === $this->tokens[ $stackPtr ][ 'content' ] ) {
+			$function_params = PassedParameters::getParameters( $this->phpcsFile, $stackPtr );
+			$mapped_function = trim( $function_params[2][ 'clean' ], '"\'' );
+			// If it's an escaping function, then mark the referenced variable in the first parameter as sanitized.
+			if ( isset( $this->escapingFunctions[ $mapped_function ] ) ) {
+				$escaped_var = $this->next_non_empty( $function_params[ 1 ][ 'start' ] );
+				$this->mark_sanitized_var( $escaped_var );
 			}
 		}
 
