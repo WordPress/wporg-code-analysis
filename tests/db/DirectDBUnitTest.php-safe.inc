@@ -320,6 +320,7 @@ function false_positive_15() {
 			"UPDATE $wpdb->posts SET post_parent = %d WHERE post_type = 'attachment' AND ID IN ( $media_id_string )",
 			$post_id
 		) );
+	}
 }
 
 function false_positive_16() {
