@@ -6,12 +6,16 @@ An experiment.
 
 1. Clone this repo in a local folder.
 
-`git clone git clone https://github.com/WordPress/wporg-code-analysis`
+```sh
+git clone git clone https://github.com/WordPress/wporg-code-analysis
+```
 
 2. Run Composer to install dependencies.
 
-`cd wporg-code-analysis`
-`composer install`
+```sh
+cd wporg-code-analysis
+composer install
+```
 
 # Usage
 
