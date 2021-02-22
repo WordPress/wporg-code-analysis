@@ -2,8 +2,18 @@
 
 An experiment.
 
-* Clone this repo in a local folder.
-* Run `composer install` to install dependencies.
+# Installation
+
+1. Clone this repo in a local folder.
+
+`git clone git clone https://github.com/WordPress/wporg-code-analysis`
+
+2. Run Composer to install dependencies.
+
+`cd wporg-code-analysis`
+`composer install`
+
+# Usage
 
 For normal use you do not need to install this as a WordPress plugin, nor does it require a WordPress install in order to work.
 
