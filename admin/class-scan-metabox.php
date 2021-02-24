@@ -150,6 +150,29 @@ class Scan_Metabox {
         //TODO: make it so it's possible to specify a tag via a dropdown
         $post = get_post( $post );
 
+        // Scan the published ZIP file.
+        if ( in_array( $post->post_status, [ 'publish', 'disabled', 'closed' ] ) ) {
+            // Need to fetch the zip remotely from the downloads server.
+            $zip_url = Template::download_link( $post );
+
+            $tmp_dir = Filesystem::temp_directory( $post->post_name );
+            $zip_file = $tmp_dir . '/' . basename( $zip_url );
+
+            $request = wp_safe_remote_get(
+                $zip_url,
+                array(
+                    'stream'   => true,
+                    'filename' => $zip_file,
+                )
+            );
+
+            if ( ! is_wp_error( $request ) ) {
+                return $zip_file;
+            }
+
+            // If not successful, we'll use the ZIP attached to the post, if possible.
+        }
+
         $zip_files = array();
         foreach ( get_attached_media( 'application/zip', $post ) as $zip_file ) {
             $zip_files[ $zip_file->post_date ] = array( get_attached_file( $zip_file->ID ), $zip_file );
@@ -162,20 +185,7 @@ class Scan_Metabox {
             return end( $zip_files )[0];
         }
 
-        // Approved plugins have no ZIPs yet, and exist in the limbo between ZIP attachment and downloadable ZIPs
-        if ( 'approved' === $post->post_status ) {
-            return false;
-        }
-
-        // Need to fetch the zip remotely
-        $zip_url = Template::download_link( $post );
-
-        $tmp_dir = Filesystem::temp_directory( $post->post_name );
-        $zip_file = $tmp_dir . '/' . basename( $zip_url );
-        if ( copy( $zip_url, $zip_file ) ) {
-            return $zip_file;
-        }
-
+        return false;
     }
 }
 
