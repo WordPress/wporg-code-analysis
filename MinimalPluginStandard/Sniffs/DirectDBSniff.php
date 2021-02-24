@@ -278,6 +278,35 @@ class DirectDBSniff extends Sniff {
 		return $this->assignments[ $context ][ $var[0] ];
 	}
 
+	protected function unwind_unsafe_assignments( $stackPtr, $limit = 10 ) {
+		$_unsafe_ptr = $this->unsafe_ptr;
+		$_unsafe_expression = $this->unsafe_expression;
+		$this->unsafe_ptr = null;
+
+		if ( --$limit < 0 ) {
+			return [];
+		}
+
+
+		$extra_context = [];
+		if ( $assignments = $this->find_assignments( $stackPtr ) ) {
+			foreach ( $assignments as $assignmentPtr => $code ) {
+				if ( $assignmentPtr < $stackPtr && !$this->expression_is_safe( $assignmentPtr) ) {
+					if ( $this->unsafe_ptr ) {
+						var_dump( "recursive unwind", $this->unwind_unsafe_assignments( $this->unsafe_ptr, $limit ) );
+					}
+				}
+				$extra_context[] = sprintf( "%s assigned at line %d:\n %s", $this->unsafe_expression, $this->tokens[ $assignmentPtr ][ 'line' ], $code );
+			}
+			var_dump( $extra_context );
+		}
+
+		$this->unsafe_expression = $_unsafe_expression;
+		$this->unsafe_ptr = $_unsafe_ptr;
+
+		return $extra_context;
+	}
+
 	/**
 	 * Helper function to return the next non-empty token starting at $stackPtr inclusive.
 	 */
@@ -877,13 +906,14 @@ class DirectDBSniff extends Sniff {
 			// If the expression wasn't escaped safely, then alert.
 			if ( !$this->expression_is_safe( $methodParam[ 'start' ], $methodParam[ 'end' ] + 1 ) ) {
 				if ( $this->unsafe_expression ) {
-					$extra_context = [];
-					if ( $assignments = $this->find_assignments( $this->unsafe_ptr ) ) {
-						foreach ( $assignments as $assignmentPtr => $code ) {
-							$extra_context[] = sprintf( "%s assigned at line %d:\n %s", $this->unsafe_expression, $this->tokens[ $assignmentPtr ][ 'line' ], $code );
-						}
-						#var_dump( $extra_context );
-					}
+					$extra_context = $this->unwind_unsafe_assignments( $this->unsafe_ptr );
+					var_dump( $extra_context );
+					#if ( $assignments = $this->find_assignments( $this->unsafe_ptr ) ) {
+					#	foreach ( $assignments as $assignmentPtr => $code ) {
+					#		$extra_context[] = sprintf( "%s assigned at line %d:\n %s", $this->unsafe_expression, $this->tokens[ $assignmentPtr ][ 'line' ], $code );
+					#	}
+					#	var_dump( $extra_context );
+					#}
 					if ( $this->is_warning_parameter( $this->unsafe_expression ) || $this->is_warning_sql( $methodParam[ 'clean' ] ) || $this->is_suppressed_line( $methodPtr ) ) {
 						$this->phpcsFile->addWarning( 'Unescaped parameter %s used in $wpdb->%s(%s)%s',
 							$methodPtr,
@@ -893,10 +923,10 @@ class DirectDBSniff extends Sniff {
 							false
 						);
 					} else {
-						$this->phpcsFile->addError( 'Unescaped parameter %s used in $wpdb->%s(%s)',
+						$this->phpcsFile->addError( 'Unescaped parameter %s used in $wpdb->%s(%s)%s',
 						$methodPtr,
 						'UnescapedDBParameter',
-						[ $this->unsafe_expression, $method, $methodParam[ 'clean' ] ],
+						[ $this->unsafe_expression, $method, $methodParam[ 'clean' ], rtrim( "\n" . join( "\n", $extra_context ) ) ],
 						0,
 						false
 					);
