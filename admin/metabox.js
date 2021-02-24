@@ -3,21 +3,21 @@
  */
 
 ( function( $, wp, pluginDirectory ) {
-    var ScanMetabox = {
-        ready: function() {
-            data = {
-                _ajax_nonce: $( '#scan_plugin_nonce' ).val(),
-                p:           $( '#post_ID' ).val(),
-            };
-            wp.ajax.post( 'scan-plugin', data ).always( function( response ) {
-                response = wpAjax.parseAjaxResponse( response );
+	var ScanMetabox = {
+		ready: function() {
+			data = {
+				_ajax_nonce: $( '#scan_plugin_nonce' ).val(),
+				p:           $( '#post_ID' ).val(),
+			};
+			wp.ajax.post( 'scan-plugin', data ).always( function( response ) {
+				response = wpAjax.parseAjaxResponse( response );
 
-                $( '#scan_plugin_output' ).html( response.responses[0].data );
+				$( '#scan_plugin_output' ).html( response.responses[0].data );
 
-            } );
-        }
+			} );
+		}
 
-    };
+	};
 
-    $( ScanMetabox.ready );
+	$( ScanMetabox.ready );
 } )( window.jQuery, window.wp, window.pluginDirectory );

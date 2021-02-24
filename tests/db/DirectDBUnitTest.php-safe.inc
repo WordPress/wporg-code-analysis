@@ -325,7 +325,7 @@ function false_positive_15() {
 
 function false_positive_16() {
 	// array_walk() should be handled similar to array_map().
-    array_walk( $exclude, 'esc_sql' );
+	array_walk( $exclude, 'esc_sql' );
 	$where = sprintf(
 			"WHERE comment_type NOT IN ( '%s' )",
 			implode( "','", $exclude )
@@ -342,8 +342,8 @@ function false_positive_16() {
 
 // From readme.md
 function secure_but_not_recommended( $ids, $status ) {
-    global $wpdb;
-    $in = "'" . join( "','", array_map( 'esc_sql', $ids) ) . "'";
-    $sql = "SELECT * FROM $wpdb->posts WHERE ID IN ($in)";
-    return $wpdb->get_results( $wpdb->prepare( $sql . " AND post_status = %s", $status ) );
+	global $wpdb;
+	$in = "'" . join( "','", array_map( 'esc_sql', $ids) ) . "'";
+	$sql = "SELECT * FROM $wpdb->posts WHERE ID IN ($in)";
+	return $wpdb->get_results( $wpdb->prepare( $sql . " AND post_status = %s", $status ) );
 }

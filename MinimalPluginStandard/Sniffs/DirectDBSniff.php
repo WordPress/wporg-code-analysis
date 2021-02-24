@@ -131,9 +131,9 @@ class DirectDBSniff extends Sniff {
 		\T_OBJECT_OPERATOR     => \T_OBJECT_OPERATOR,
 		\T_DOUBLE_COLON        => \T_DOUBLE_COLON,
 		\T_OPEN_CURLY_BRACKET  => \T_OPEN_CURLY_BRACKET,
-        \T_OPEN_SQUARE_BRACKET => \T_OPEN_SQUARE_BRACKET,
-        \T_OPEN_PARENTHESIS    => \T_OPEN_PARENTHESIS,
-        \T_OBJECT              => \T_OBJECT,
+		\T_OPEN_SQUARE_BRACKET => \T_OPEN_SQUARE_BRACKET,
+		\T_OPEN_PARENTHESIS    => \T_OPEN_PARENTHESIS,
+		\T_OBJECT              => \T_OBJECT,
 	);
 
 	/**
@@ -771,7 +771,7 @@ class DirectDBSniff extends Sniff {
 		if ( $this->is_assignment( $stackPtr ) ) {
 
 			// Work out what we're assigning to the variable at $stackPtr    		
-    		$nextToken = $this->phpcsFile->findNext( Tokens::$assignmentTokens, $stackPtr +1 , null, false, null, true );
+			$nextToken = $this->phpcsFile->findNext( Tokens::$assignmentTokens, $stackPtr +1 , null, false, null, true );
 
 			// If the expression being assigned is safe (ie escaped) then mark the variable as sanitized.
 			if ( $this->expression_is_safe( $nextToken + 1 ) ) {
@@ -783,7 +783,7 @@ class DirectDBSniff extends Sniff {
 				$this->mark_unsanitized_var( $stackPtr );
 			}
 
-    		return; // ??
+			return; // ??
 		}
 
 		// Handle foreach ( $foo as $bar ), which is similar to assignment

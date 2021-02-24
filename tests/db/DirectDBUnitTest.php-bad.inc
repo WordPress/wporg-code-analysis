@@ -286,8 +286,8 @@ function insecure_wpdb_query_22() {
 
 // From readme.md
 function insecure_do_not_use( $ids, $status ) {
-    global $wpdb;
-    $in = "'" . join( "','", array_map( 'sanitize_text_field', $ids) ) . "'";
-    $sql = "SELECT * FROM $wpdb->posts WHERE ID IN ($in)";
-    return $wpdb->get_results( $wpdb->prepare( $sql . " AND post_status = %s", $status ) );
+	global $wpdb;
+	$in = "'" . join( "','", array_map( 'sanitize_text_field', $ids) ) . "'";
+	$sql = "SELECT * FROM $wpdb->posts WHERE ID IN ($in)";
+	return $wpdb->get_results( $wpdb->prepare( $sql . " AND post_status = %s", $status ) );
 }
