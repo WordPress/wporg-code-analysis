@@ -1,7 +1,7 @@
 <?php
 namespace WordPressDotOrg\Code_Analysis;
 use WordPressdotorg\Plugin_Directory\Tools\Filesystem;
-use WordPressdotorg\Plugin_Directory\Email\Generic_To_Committers;
+use WordPressdotorg\Plugin_Directory\Email\Generic_To_Committers as Email_To_Committers;
 use WordPressdotorg\Plugin_Directory\Template;
 use WordPressdotorg\Plugin_Directory\Tools;
 use WP_Error;
@@ -234,7 +234,7 @@ class Scanner {
 
 		$body = ob_get_clean();
 
-		$email = new Generic_To_Committers(
+		$email = new Email_To_Committers(
 			$plugin,
 			array(
 				'subject' => 'Automated scanning has detected errors in ###PLUGIN###',
