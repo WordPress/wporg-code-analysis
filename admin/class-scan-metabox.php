@@ -6,6 +6,7 @@
 namespace WordPressdotorg\Code_Analysis\Admin;
 
 use WordPressDotOrg\Code_Analysis\PHPCS;
+use WordPressDotOrg\Code_Analysis\Scanner;
 
 /**
  * The Scan metabox.
@@ -22,15 +23,13 @@ class Scan_Metabox {
 			return false;
 		}
 
-		if ( isset( $results[ 'totals' ] ) ) {
-			printf(
-				'<p>Found %d errors and %d warnings in %d files (%0.2fs).</p>',
-				$results[ 'totals' ][ 'errors' ],
-				$results[ 'totals' ][ 'warnings' ],
-				count( $results[ 'files' ] ),
-				$results[ 'time_taken' ]
-			);
-		}
+		printf(
+			'<p>Found %d errors and %d warnings in %d files (%0.2fs).</p>',
+			$results[ 'totals' ][ 'errors' ],
+			$results[ 'totals' ][ 'warnings' ],
+			count( $results[ 'files' ] ),
+			$results[ 'time_taken' ]
+		);
 
 		echo '<pre style="white-space: pre-wrap;">';
 		foreach ( $results[ 'files' ] as $pathname => $file ) {

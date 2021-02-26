@@ -27,8 +27,8 @@ add_action( 'plugins_loaded', __NAMESPACE__ . '\load_files' );
  */
 function load_files() {
 	require PLUGIN_DIR . 'includes/class-phpcs.php';
+	require PLUGIN_DIR . 'includes/class-scanner.php';
 	require PLUGIN_DIR . 'admin/class-scan-metabox.php';
-
 }
 
 function register_admin_metabox( $post_type, $post ) {
