@@ -7,9 +7,6 @@ namespace WordPressdotorg\Code_Analysis\Admin;
 
 use WordPressDotOrg\Code_Analysis\PHPCS;
 
-use WordPressdotorg\Plugin_Directory\Tools\Filesystem;
-use WordPressdotorg\Plugin_Directory\Template;
-
 /**
  * The Scan metabox.
  *
@@ -19,13 +16,13 @@ class Scan_Metabox {
 	public static function display( $post = null ) {
 		$post = get_post( $post );
 
-		$zip_file = self::get_latest_zip_path( $post );
+		$zip_file = Scanner::get_latest_zip_path( $post );
 		if ( !$zip_file || !is_readable( $zip_file ) ) {
 			printf( '<p>Unable to scan %s</p>', $zip_file );
 			return false;
 		}
 
-		$results = self::get_scan_results_for_zip( $zip_file );
+		$results = Scanner::get_scan_results_for_zip( $zip_file );
 
 		if ( isset( $results[ 'totals' ] ) ) {
 			printf(
@@ -36,6 +33,11 @@ class Scan_Metabox {
 				$results[ 'time_taken' ]
 			);
 		}
+
+ini_set( 'xdebug.var_display_max_depth', -1 );
+ini_set( 'xdebug.var_display_max_children', -1 );
+ini_set( 'xdebug.var_display_max_data', -1 );
+var_dump( $results );
 
 		echo '<pre style="white-space: pre-wrap;">';
 		foreach ( $results[ 'files' ] as $pathname => $file ) {
@@ -66,7 +68,6 @@ class Scan_Metabox {
 	public static function display_ajax() {
 		echo '<div id="scan_plugin_output">Loading...</div>';
 		wp_nonce_field( 'scan-plugin', 'scan_plugin_nonce', false );
-
 	}
 
 	/**
@@ -106,7 +107,7 @@ class Scan_Metabox {
 		}
 
 		if ( $cached = get_transient( "code_scan_$post_id" ) ) {
-			return $cached;
+	//		return $cached;
 		}
 
 		// Set a temporary cached value for 2 minutes, to prevent a stampede of multiple scans running at once.
@@ -121,95 +122,6 @@ class Scan_Metabox {
 		return $out;
 	}
 
-	public static function get_scan_results_for_zip( $zip_file_path ) {
-
-		$out = wp_cache_get( $zip_file_path, 'wporg-code-analysis-scan' );
-
-		// Note that unzip() automatically removes the temp directory on shutdown
-		$unzip_dir = Filesystem::unzip( $zip_file_path );
-
-		if ( !$unzip_dir || !is_readable( $unzip_dir ) ) {
-			return false;
-		}
-
-		// FIXME: autoload?
-		require_once dirname( __DIR__ ) . '/includes/class-phpcs.php';
-
-		$now = microtime( true );
-
-		$phpcs = new PHPCS();
-		$phpcs->set_standard( dirname( __DIR__ ) . '/MinimalPluginStandard' );
-
-		$args = array(
-			'extensions' => 'php', // Only check php files.
-			's' => true, // Show the name of the sniff triggering a violation.
-		);
-
-		$result = $phpcs->run_json_report( $unzip_dir, $args, 'array' );
-
-		// Count the time running PHPCS.
-		$result['time_taken'] = microtime( true ) - $now;
-
-		// Add context to the results
-		foreach ( $result['files'] as $filename => $data ) {
-			foreach ( $data['messages'] as $i => $message ) {
-				$result['files'][ $filename ]['messages'][ $i ]['context'] = array();
-
-				if ( $source = file( $unzip_dir . '/' . $filename ) ) {
-					$context = array_slice( $source, $message['line'] - 3, 5, true );
-					foreach ( $context as $line => $data ) {
-						// Lines are indexed from 0 in file(), but from 1 in PHPCS.
-						$result['files'][ $filename ]['messages'][ $i ]['context'][ $line + 1 ] = rtrim( $data, "\r\n" );
-					}
-				}
-			}
-		}
-
-		//TODO: cache this?
-
-		return $result;
-	}
-
-	public static function get_latest_zip_path( $post = null ) {
-		//TODO: make it so it's possible to specify a tag via a dropdown
-		$post = get_post( $post );
-
-		// Scan the published ZIP file.
-		if ( in_array( $post->post_status, [ 'publish', 'disabled', 'closed' ] ) ) {
-			// Need to fetch the zip remotely from the downloads server.
-			$zip_url = Template::download_link( $post );
-
-			$tmp_dir = Filesystem::temp_directory( $post->post_name );
-			$zip_file = $tmp_dir . '/' . basename( $zip_url );
-
-			$request = wp_safe_remote_get(
-				$zip_url,
-				array(
-					'stream'   => true,
-					'filename' => $zip_file,
-				)
-			);
-
-			if ( ! is_wp_error( $request ) ) {
-				return $zip_file;
-			}
-
-			// If not successful, we'll use the ZIP attached to the post, if possible.
-		}
-
-		$zip_files = array();
-		foreach ( get_attached_media( 'application/zip', $post ) as $zip_file ) {
-			$zip_files[ $zip_file->post_date ] = array( get_attached_file( $zip_file->ID ), $zip_file );
-		}
-		uksort( $zip_files, function ( $a, $b ) {
-			return strtotime( $a ) < strtotime( $b );
-		} );
-
-		if ( count( $zip_files ) ) {
-			return end( $zip_files )[0];
-		}
-
-		return false;
-	}
+	
 }
 
