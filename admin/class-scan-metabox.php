@@ -16,13 +16,11 @@ class Scan_Metabox {
 	public static function display( $post = null ) {
 		$post = get_post( $post );
 
-		$zip_file = Scanner::get_latest_zip_path( $post );
-		if ( !$zip_file || !is_readable( $zip_file ) ) {
-			printf( '<p>Unable to scan %s</p>', $zip_file );
+		$results = Scanner::get_scan_results_for_plugin( $post );
+		if ( ! $results ) {
+			printf( '<p>Unable to scan.</p>' );
 			return false;
 		}
-
-		$results = Scanner::get_scan_results_for_zip( $zip_file );
 
 		if ( isset( $results[ 'totals' ] ) ) {
 			printf(
@@ -33,11 +31,6 @@ class Scan_Metabox {
 				$results[ 'time_taken' ]
 			);
 		}
-
-ini_set( 'xdebug.var_display_max_depth', -1 );
-ini_set( 'xdebug.var_display_max_children', -1 );
-ini_set( 'xdebug.var_display_max_data', -1 );
-var_dump( $results );
 
 		echo '<pre style="white-space: pre-wrap;">';
 		foreach ( $results[ 'files' ] as $pathname => $file ) {

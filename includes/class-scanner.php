@@ -7,6 +7,16 @@ use WP_Error;
 defined( 'WPINC' ) || die();
 
 class Scanner {
+
+	public static function get_scan_results_for_plugin( $post ) {
+		$zip_file = self::get_zip_path( $post );
+		if ( ! $zip_file || ! is_readable( $zip_file ) ) {
+			return false;
+		}
+
+		return self::get_scan_results_for_zip( $zip_file );
+	}
+
 	public static function get_scan_results_for_zip( $zip_file_path ) {
 
 		$out = wp_cache_get( $zip_file_path, 'wporg-code-analysis-scan' );
@@ -56,7 +66,7 @@ class Scanner {
 		return $result;
 	}
 
-	public static function get_latest_zip_path( $post = null ) {
+	public static function get_zip_path( $post = null ) {
 		//TODO: make it so it's possible to specify a tag via a dropdown
 		$post = get_post( $post );
 
