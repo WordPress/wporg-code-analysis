@@ -25,12 +25,16 @@ class Scan_Metabox {
 			return false;
 		}
 
-		$now = microtime( true );
-		list( $results, $zip_dir ) = self::get_scan_results_for_zip( $zip_file );
-		$delta = microtime( true ) - $now;
+		$results = self::get_scan_results_for_zip( $zip_file );
 
 		if ( isset( $results[ 'totals' ] ) ) {
-			printf( '<p>Found %d errors and %d warnings in %d files (%0.2fs).</p>', $results[ 'totals' ][ 'errors' ], $results[ 'totals' ][ 'warnings' ], count( $results[ 'files' ] ), $delta );
+			printf(
+				'<p>Found %d errors and %d warnings in %d files (%0.2fs).</p>',
+				$results[ 'totals' ][ 'errors' ],
+				$results[ 'totals' ][ 'warnings' ],
+				count( $results[ 'files' ] ),
+				$results[ 'time_taken' ]
+			);
 		}
 
 		echo '<pre style="white-space: pre-wrap;">';
@@ -43,10 +47,8 @@ class Scan_Metabox {
 				}
 				printf( "%s %s in <a href='https://plugins.trac.wordpress.org/browser/%s/trunk/%s#L%d'>%s line %d</a>\n", esc_html( $message[ 'type' ] ), esc_html( $message[ 'source' ] ), esc_attr( $slug ), esc_attr( $filename ), $message[ 'line' ], esc_html( $filename ), $message[ 'line' ] );
 				echo esc_html( $message[ 'message' ] ) . "\n";
-				if ( $source = file( $zip_dir . '/' . $pathname ) ) {
-					$context = array_slice( $source, $message['line'] - 3, 5, true );
-					foreach ( $context as $line_no => $context_line ) {
-						$line_no += 1; // Ironic that source code lines are conventionally 1-indexed
+				if ( $message['context'] ) {
+					foreach ( $message['context'] as $line_no => $context_line ) {
 						$line = $line_no . '&emsp;' . esc_html( rtrim( $context_line ) ). "\n";
 						if ( $line_no == $message['line'] ) {
 							echo '<b>' . $line . '</b>';
@@ -133,6 +135,8 @@ class Scan_Metabox {
 		// FIXME: autoload?
 		require_once dirname( __DIR__ ) . '/includes/class-phpcs.php';
 
+		$now = microtime( true );
+
 		$phpcs = new PHPCS();
 		$phpcs->set_standard( dirname( __DIR__ ) . '/MinimalPluginStandard' );
 
@@ -141,9 +145,29 @@ class Scan_Metabox {
 			's' => true, // Show the name of the sniff triggering a violation.
 		);
 
-		//TODO: cache this?
 		$result = $phpcs->run_json_report( $unzip_dir, $args, 'array' );
-		return [ $result, $unzip_dir ];
+
+		// Count the time running PHPCS.
+		$result['time_taken'] = microtime( true ) - $now;
+
+		// Add context to the results
+		foreach ( $result['files'] as $filename => $data ) {
+			foreach ( $data['messages'] as $i => $message ) {
+				$result['files'][ $filename ]['messages'][ $i ]['context'] = array();
+
+				if ( $source = file( $unzip_dir . '/' . $filename ) ) {
+					$context = array_slice( $source, $message['line'] - 3, 5, true );
+					foreach ( $context as $line => $data ) {
+						// Lines are indexed from 0 in file(), but from 1 in PHPCS.
+						$result['files'][ $filename ]['messages'][ $i ]['context'][ $line + 1 ] = rtrim( $data, "\r\n" );
+					}
+				}
+			}
+		}
+
+		//TODO: cache this?
+
+		return $result;
 	}
 
 	public static function get_latest_zip_path( $post = null ) {
