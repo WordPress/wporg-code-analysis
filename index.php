@@ -53,3 +53,6 @@ function register_admin_metabox( $post_type, $post ) {
 
 add_action( 'add_meta_boxes', __NAMESPACE__ . '\register_admin_metabox', 10, 2 );
 add_filter( 'wp_ajax_scan-plugin', array( __NAMESPACE__ . '\Admin\Scan_Metabox', 'get_ajax_response' ) );
+
+// TODO: Async this?
+add_action( 'wporg_plugins_imported', array( __NAMESPACE__ . '\Scanner', 'scan_imported_plugin' ), 10, 5 );

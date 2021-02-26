@@ -1,15 +1,17 @@
 <?php
 namespace WordPressDotOrg\Code_Analysis;
 use WordPressdotorg\Plugin_Directory\Tools\Filesystem;
+use WordPressdotorg\Plugin_Directory\Email\Generic_To_Committers;
 use WordPressdotorg\Plugin_Directory\Template;
+use WordPressdotorg\Plugin_Directory\Tools;
 use WP_Error;
 
 defined( 'WPINC' ) || die();
 
 class Scanner {
 
-	public static function get_scan_results_for_plugin( $post ) {
-		$zip_file = self::get_zip_path( $post );
+	public static function get_scan_results_for_plugin( $post, $version = 'latest' ) {
+		$zip_file = self::get_zip_path( $post, $version );
 		if ( ! $zip_file || ! is_readable( $zip_file ) ) {
 			return false;
 		}
@@ -82,14 +84,14 @@ class Scanner {
 		return $result;
 	}
 
-	public static function get_zip_path( $post = null ) {
-		//TODO: make it so it's possible to specify a tag via a dropdown
+	public static function get_zip_path( $post = null, $version = 'latest' ) {
+		//TODO: make it so it's possible to scan a specific ZIP based on $version
 		$post = get_post( $post );
 
 		// Scan the published ZIP file.
 		if ( in_array( $post->post_status, [ 'publish', 'disabled', 'closed' ] ) ) {
 			// Need to fetch the zip remotely from the downloads server.
-			$zip_url = Template::download_link( $post );
+			$zip_url = Template::download_link( $post, $version );
 
 			$tmp_dir = Filesystem::temp_directory( $post->post_name );
 			$zip_file = $tmp_dir . '/' . basename( $zip_url );
@@ -124,7 +126,7 @@ class Scanner {
 		return false;
 	}
 
-	public static function get_result_hash( $results ) {
+	protected static function get_result_hash( $results ) {
 		$hash = '';
 
 		// Generate a hash of the warning/error the violated rule and the code responsible.
@@ -136,5 +138,110 @@ class Scanner {
 		}
 
 		return $hash ? sha1( $hash ) : 'all-clear';
+	}
+
+	public static function scan_imported_plugin( $plugin, $stable_tag, $old_stable_tag, $changed_svn_tags, $svn_revision ) {
+		$to_scan = array_unique( array_merge(
+			array( $stable_tag ), // always scan the current stable release
+			$changed_svn_tags
+		) );
+
+		$already_notified     = get_post_meta( $plugin->ID, '_scan_notified', true ) ?: [];
+		$hashes_seen_this_run = [];
+
+		// Clean out any old scan notifications.
+		// Re-send the scan results after a month if a change is made.
+		foreach ( $already_notified as $key => $time ) {
+			if ( $time < time() - MONTH_IN_SECONDS ) {
+				unset( $already_notified[ $key ] );
+			}
+		}
+
+		foreach ( $to_scan as $tag ) {
+			$result = self::get_scan_results_for_plugin( $plugin, $tag );
+			$hash   = $result['hash'];
+			$key    = $tag . ':' . $hash; // Unique hash to identify whether this result has been seen before.
+
+			// Check to see if the plugin authors have been notified about this result yet.
+			if ( isset( $already_notified[ $key ] ) ) {
+				continue;
+			}
+
+			// Record it as the author being notified.
+			$already_notified[ $key ] = time();
+
+			// Don't notify for two different tags with the same result.
+			if ( isset( $hashes_seen_this_run[ $hash ] ) ) {
+				continue;
+			}
+			$hashes_seen_this_run[ $hash ] = true;
+
+			// Only notify when there's errors.
+			if ( $result['totals']['errors'] > 0 ) {
+				self::notify_plugin_authors( $plugin, $result, $tag );
+			}
+		}
+
+		update_post_meta( $plugin->ID, '_scan_notified', $already_notified );
+	}
+
+	public static function notify_plugin_authors( $plugin, $results, $tag ) {
+		ob_start();
+
+		printf(
+			"Found %d errors in %d files.\n\n",
+			$results[ 'totals' ][ 'errors' ],
+			count( $results[ 'files' ] )
+		);
+
+		$last_file = false;
+		foreach ( $results[ 'files' ] as $pathname => $file ) {
+			list( $slug, $filename ) = explode( '/', $pathname, 2 );
+			foreach ( $file[ 'messages' ] as $message ) {
+				// Skip warnings for now
+				if ( 'WARNING' === $message['type'] ) {
+					continue;
+				}
+
+				if ( $last_file !== $filename ) {
+					printf(
+						"File: %s (https://plugins.trac.wordpress.org/browser/%s/%s/%s)\n",
+						$filename,
+						$plugin->post_name,
+						( 'trunk' === $tag ? 'trunk' : 'tags/' . $tag ),
+						$filename
+					);
+					$last_file = $filename;
+				}
+
+				// The error/warning
+				printf(
+					"Line %d - %s %s\n%s\n",
+					$message['line'],
+					$message['type'],
+					$message['source'],
+					$message['message']
+				);
+
+				if ( $message['context'] ) {
+					foreach ( $message['context'] as $line_no => $context_line ) {
+						echo $line_no . "\t" . $context_line . "\n";
+					}
+					echo "\n";
+				}
+			}
+		}
+
+		$body = ob_get_clean();
+
+		$email = new Generic_To_Committers(
+			$plugin,
+			array(
+				'subject' => 'Automated scanning has detected errors in ###PLUGIN###',
+				'body'    => $body,
+			)
+		);
+
+		$email->send();
 	}
 }
