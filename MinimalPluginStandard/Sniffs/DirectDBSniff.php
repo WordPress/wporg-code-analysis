@@ -541,6 +541,20 @@ class DirectDBSniff extends Sniff {
 		$this->unsafe_expression = null;
 		$this->unsafe_ptr = null;
 
+		$this->unsafe_ptr = $this->check_expression( $stackPtr, $endPtr );
+
+		if ( $this->unsafe_ptr ) {
+			$this->unsafe_expression = $this->get_expression_as_string( $this->unsafe_ptr );
+			var_dump( "unsafe: ", $this->tokens[ $this->unsafe_ptr ] );
+		}
+		return ! $this->unsafe_ptr;
+	}
+
+	/**
+	 * Find the first unsafe thing in the given expression, if any.
+	 * It's considered safe IFF everything is either escaped or constant.
+	 */
+	public function check_expression( $stackPtr, $endPtr = null ) {
 		$newPtr = $stackPtr;
 		$tokens_to_find = array(
 			\T_VARIABLE => \T_VARIABLE,
@@ -549,7 +563,8 @@ class DirectDBSniff extends Sniff {
 		)
 			+ Tokens::$functionNameTokens
 			+ Tokens::$textStringTokens;
-		while ( $this->phpcsFile->findNext( $tokens_to_find, $newPtr, $endPtr, false, null, true ) ) {
+		while ( $newPtr && $this->phpcsFile->findNext( $tokens_to_find, $newPtr, $endPtr, false, null, true ) ) {
+			#var_dump( $newPtr, $this->tokens[ $newPtr ] ); 
 			if ( in_array( $this->tokens[ $newPtr ][ 'code' ], Tokens::$functionNameTokens ) ) {
 				if ( isset( $this->escapingFunctions[ $this->tokens[ $newPtr ][ 'content' ] ] ) ) {
 					// Function call to an escaping function.
@@ -558,27 +573,23 @@ class DirectDBSniff extends Sniff {
 					if ( $param = end( $function_params ) ) {
 						$newPtr = $this->next_non_empty( $param['end'] + 1 ) ;
 						continue;
-					} else {
-						// Something went wrong here
-						return false;
 					}
 				} elseif ( isset( $this->implicitSafeFunctions[ $this->tokens[ $newPtr ][ 'content' ] ] ) ) {
 					// Function call that always returns implicitly safe output.
 					// Skip over the function's parameters and continue checking the remainder of the expression.
 					$function_params = PassedParameters::getParameters( $this->phpcsFile, $newPtr );
 					if ( $param = end( $function_params ) ) {
-						$newPtr = $this->next_non_empty( $param['end'] + 1 ) ;
+						$newPtr = $this->next_non_empty( $param['end'] + 1 );
 						continue;
 					}
 				} elseif ( isset( $this->neutralFunctions[ $this->tokens[ $newPtr ][ 'content' ] ] ) ) {
 					// It's a function like implode(), which is safe if all of the parameters are also safe.
 					$function_params = PassedParameters::getParameters( $this->phpcsFile, $newPtr );
 					foreach ( $function_params as $param ) {
-						if ( !$this->expression_is_safe( $param[ 'start' ], $param[ 'end' ] + 1 ) ) {
-							if ( empty( $this->unsafe_ptr ) ) {
-								$this->unsafe_ptr = $param[ 'start' ];
-							}
-							return false;
+						$innerPtr = $this->check_expression( $param[ 'start' ], $param[ 'end' ] + 1 );
+						if ( $innerPtr ) {
+							var_dump( "neutral functions found inner fail at $innerPtr" );
+							return $innerPtr;
 						}
 					};
 					// If we got this far, everything in the call is safe, so skip to the next statement.
@@ -596,34 +607,38 @@ class DirectDBSniff extends Sniff {
 						continue;
 					}
 				} elseif ( 'prepare' === $this->tokens[ $newPtr ][ 'content' ] ) {
+					var_dump( 'prepare! line ' . $this->tokens[ $newPtr ][ 'line' ] );
 					// It's wpdb->prepare(). The first parameter needs to be checked, the remainder are escaped.
 					$function_params = PassedParameters::getParameters( $this->phpcsFile, $newPtr );
+					var_dump( 'params', $function_params );
 					$first_param = reset( $function_params );
-					if ( $this->expression_is_safe( $first_param[ 'start' ], $first_param[ 'end' ] + 1 ) ) {
-						// It's safe, so skip past the prepare().
-						$param = end( $function_params );
-						$newPtr = $this->next_non_empty( $param['end'] + 1 ) ;
-						continue;
+					if ( $inner = $this->check_expression( $first_param[ 'start' ], $first_param[ 'end' ] + 1 ) ) {
+						var_dump( "found bad thing in prepare inner", $this->tokens[ $inner ] );
+						return $inner;
 					}
-					// It wasn't safe!
-					if ( empty( $this->unsafe_ptr ) ) {
-						$this->unsafe_ptr = $first_param[ 'start' ];
-					}
-					return false;
+					// It's safe, so skip past the prepare().
+					$param = end( $function_params );
+					$newPtr = $this->next_non_empty( $param['end'] + 1 );
+					var_dump( "skipping prepare to ", $this->tokens[ $newPtr ][ 'content' ] );
+					var_dump( $newPtr );
+					continue;
 				} elseif ( $this->is_wpdb_property( $newPtr ) ) {
+					var_dump( "wpdb property", $this->get_expression_as_string( $newPtr ) );
 					// It's $wpdb->tablename
 					$newPtr = $this->is_wpdb_property( $newPtr ) + 1;
 					continue;
 				} elseif ( isset( $this->safe_constants[ $this->tokens[ $newPtr ][ 'content' ] ] ) ) {
 					// It's a constant like ARRAY_A, it's safe.
-					return true;
+					$newPtr = $this->next_non_empty( $newPtr + 1 );
+					continue;
 				} elseif ( $this->is_defined_constant( $newPtr ) ) {
 					// It looks like some other constant, assume it's safe and skip over it
-					++ $newPtr;
+					$newPtr = $this->next_non_empty( $newPtr + 1 );
 					continue;
 				} else {
 					// First function call was something else. It should be wrapped in an escape.
-					return false;
+					var_dump( "found something else at $newPtr", $this->tokens[ $newPtr ] );
+					return $newPtr;
 				}
 			} elseif ( in_array( $this->tokens[ $newPtr ][ 'code' ], [ \T_DOUBLE_QUOTED_STRING, \T_HEREDOC ] ) ) {
 				// It's a string that might have variables
@@ -647,8 +662,9 @@ class DirectDBSniff extends Sniff {
 
 							// If we've found an unsanitized var then fail early
 							if ( ! $this->_is_sanitized_var( $complex_var, $context ) ) {
-								$this->unsafe_expression = $var;
-								return false;
+								#$this->unsafe_expression = $var;
+								var_dump( "found unsafe interpolated $var" );
+								return $newPtr;
 							}
 						}
 					}
@@ -657,15 +673,17 @@ class DirectDBSniff extends Sniff {
 			} elseif ( \T_VARIABLE === $this->tokens[ $newPtr ][ 'code' ] ) {
 				// Allow for things like $this->wpdb->prepare()
 				if ( '$this' === $this->tokens[ $newPtr ][ 'content' ] ) {
-					if ( 'wpdb' === $this->tokens[ $newPtr + 2 ][ 'content' ] ) {
+					if ( 'wpdb' === $this->tokens[ $newPtr + 2 ][ 'content' ] && '->' === $this->tokens[ $newPtr + 3 ] ) {
 						// Continue the loop from the wpdb->prepare() part
-						$newPtr += 2;
+						var_dump( "found this->wpdb, jump to", $this->tokens[ $newPtr + 4 ] );
+						$newPtr += 4;
 						continue;
 					}
 				}
 
 				// Also $wpdb->tablename
 				if ( $lookahead = $this->is_wpdb_property( $newPtr ) ) {
+					var_dump( "found wpdb property " . $this->tokens[ $newPtr ][ 'content' ] . " at $newPtr" );
 					$newPtr = $lookahead;
 					continue;
 				}
@@ -673,20 +691,21 @@ class DirectDBSniff extends Sniff {
 				// If the expression contains an unsanitized variable and we haven't already found an escaping function,
 				// then we can fail at this point.
 				if ( '$wpdb' !== $this->tokens[ $newPtr ][ 'content' ] && !$this->is_sanitized_var( $newPtr ) ) {
-					$this->unsafe_expression = $this->tokens[ $newPtr ][ 'content' ];
-					$this->unsafe_ptr = $newPtr;
-					$var = $this->get_complex_variable( $newPtr );
-					if ( $var ) {
-						$this->unsafe_expression = '$' . $var[0];
-						if ( !empty( $var[1] ) ) {
-							$this->unsafe_expression .= '[' . implode( '][', $var[1] ) . ']';
-						}
-					}
-					return false;
+					#$this->unsafe_expression = $this->tokens[ $newPtr ][ 'content' ];
+					#$this->unsafe_ptr = $newPtr;
+					#$var = $this->get_complex_variable( $newPtr );
+					#if ( $var ) {
+					#	$this->unsafe_expression = '$' . $var[0];
+					#	if ( !empty( $var[1] ) ) {
+					#		$this->unsafe_expression .= '[' . implode( '][', $var[1] ) . ']';
+					#	}
+					#}
+					return $newPtr;
 				}
 			} elseif ( in_array( $this->tokens[ $newPtr ][ 'code' ], Tokens::$castTokens ) ) {
 				// We're safely casting to an int or bool
-				return true;
+				$newPtr = $this->next_non_empty( $this->phpcsFile->findEndOfStatement( $newPtr ) );
+				var_dump( "next statement after cast", $this->tokens[ $newPtr ] );
 			} elseif ( \T_CONSTANT_ENCAPSED_STRING === $this->tokens[ $newPtr ][ 'code' ] ) {
 				// A constant string is ok, but we want to check what's after it
 			}
@@ -699,7 +718,7 @@ class DirectDBSniff extends Sniff {
 		}
 
 		// If we found nothing unsafe, it was probably just a scalar value.
-		return true;
+		return false;
 	}
 
 	/**
@@ -833,6 +852,7 @@ class DirectDBSniff extends Sniff {
 		static $line_no = null;
 		if ( $this->tokens[ $stackPtr ][ 'line' ] !== $line_no ) {
 			$line_no = $this->tokens[ $stackPtr ][ 'line' ];
+			echo "$line_no\n";
 		}
 
 		if ( $this->is_assignment( $stackPtr ) ) {
