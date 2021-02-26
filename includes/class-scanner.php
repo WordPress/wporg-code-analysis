@@ -53,9 +53,23 @@ class Scanner {
 
 				if ( $source = file( $unzip_dir . '/' . $filename ) ) {
 					$context = array_slice( $source, $message['line'] - 3, 5, true );
+
+					// Determine how many whitespace characters are prefixed on the lines.
+					$strip_chars = (int)array_reduce(
+						$context,
+						function( $carry, $item ) {
+							if ( ! trim( $item ) || ! preg_match( '!^(\s+)\S!', $item, $m ) ) {
+								return $carry;
+							}
+							$prefixed_whitespace = strlen( $m[1] ?? '' );
+
+							return is_null( $carry ) ? $prefixed_whitespace : min( $carry, $prefixed_whitespace );
+						}
+					);
+
 					foreach ( $context as $line => $data ) {
 						// Lines are indexed from 0 in file(), but from 1 in PHPCS.
-						$result['files'][ $filename ]['messages'][ $i ]['context'][ $line + 1 ] = rtrim( $data, "\r\n" );
+						$result['files'][ $filename ]['messages'][ $i ]['context'][ $line + 1 ] = rtrim( substr( $data, $strip_chars ), "\r\n" );
 					}
 				}
 			}

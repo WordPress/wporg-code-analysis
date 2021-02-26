@@ -43,7 +43,7 @@ class Scan_Metabox {
 				echo esc_html( $message[ 'message' ] ) . "\n";
 				if ( $message['context'] ) {
 					foreach ( $message['context'] as $line_no => $context_line ) {
-						$line = $line_no . '&emsp;' . esc_html( rtrim( $context_line ) ). "\n";
+						$line = $line_no . '&emsp;' . esc_html( $context_line ). "\n";
 						if ( $line_no == $message['line'] ) {
 							echo '<b>' . $line . '</b>';
 						} else {
