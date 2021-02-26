@@ -61,6 +61,8 @@ class Scanner {
 			}
 		}
 
+		$result['hash'] = self::get_result_hash( $result );
+
 		//TODO: cache this?
 
 		return $result;
@@ -106,5 +108,19 @@ class Scanner {
 		}
 
 		return false;
+	}
+
+	public static function get_result_hash( $results ) {
+		$hash = '';
+
+		// Generate a hash of the warning/error the violated rule and the code responsible.
+		// This results in a consistent hash even if the line numbers change.
+		foreach ( $results['files'] as $file => $details ) {
+			foreach ( $details['messages'] as $message ) {
+				$hash .= sha1( $message['type'] . $message['source'] . implode( ' ', $message['context'] ), true );
+			}
+		}
+
+		return $hash ? sha1( $hash ) : 'all-clear';
 	}
 }
