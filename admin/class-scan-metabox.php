@@ -99,7 +99,7 @@ class Scan_Metabox {
 		}
 
 		if ( $cached = get_transient( "code_scan_$post_id" ) ) {
-	//		return $cached;
+			return $cached;
 		}
 
 		// Set a temporary cached value for 2 minutes, to prevent a stampede of multiple scans running at once.
