@@ -189,6 +189,7 @@ class DirectDBSniff extends Sniff {
 		$var = $this->get_variable_as_string( $stackPtr );
 		$var = ltrim( $var, '$' );
 
+		var_dump( "sanitized: $var on line " . $this->tokens[ $stackPtr ][ 'line' ] );
 		$this->sanitized_variables[ $context ][ $var ] = true;
 
 		// Sanitizing only overrides a previously unsafe assignment if it's at a lower level (ie not withing a conditional)
@@ -220,6 +221,8 @@ class DirectDBSniff extends Sniff {
 
 		$var = $this->get_variable_as_string( $stackPtr );
 		$var = ltrim( $var, '$' );
+
+		var_dump( "UNsanitized: $var on line " . $this->tokens[ $stackPtr ][ 'line' ] );
 
 		unset( $this->sanitized_variables[ $context ][ $var ] );
 
@@ -296,7 +299,7 @@ class DirectDBSniff extends Sniff {
 		$var = $this->get_variable_as_string( $stackPtr );
 		$var = ltrim( $var, '$' );
 
-		return $this->assignments[ $context ][ $var[0] ];
+		return $this->assignments[ $context ][ $var ];
 	}
 
 	protected function unwind_unsafe_assignments( $stackPtr, $limit = 10 ) {
@@ -311,14 +314,23 @@ class DirectDBSniff extends Sniff {
 
 		$extra_context = [];
 		if ( $assignments = $this->find_assignments( $stackPtr ) ) {
-			#var_dump( $assignments );
-			foreach ( $assignments as $assignmentPtr => $code ) {
+			var_dump( $assignments );
+			foreach ( array_reverse( $assignments ) as $assignmentPtr => $code ) {
 				$unsafe_ptr = $this->check_expression( $assignmentPtr );
 				if ( $assignmentPtr < $stackPtr && $unsafe_ptr ) {
 					var_dump( "recursive unwind", $this->tokens[ $unsafe_ptr ], $this->unwind_unsafe_assignments( $unsafe_ptr, $limit ) );
 				}
 				#var_dump( $this->tokens[ $assignmentPtr ][ 'content' ] );
-				$extra_context[] = sprintf( "%s assigned at line %d:\n %s", $this->get_variable_as_string( $stackPtr ), $this->tokens[ $assignmentPtr ][ 'line' ], $code );
+				if ( $unsafe_ptr ) {
+					$how = 'unsafely';
+				} else {
+					$how = 'safely';
+				}
+				$extra_context[] = sprintf( "%s assigned %s at line %d:\n %s", $this->get_variable_as_string( $stackPtr ), $how, $this->tokens[ $assignmentPtr ][ 'line' ], $code );
+				
+				if ( $more_vars = $this->find_variables_in_expression( $assignmentPtr ) ) {
+					var_dump( "more vars to check", $more_vars );
+				}
 			}
 			var_dump( $extra_context );
 		}
@@ -576,13 +588,15 @@ class DirectDBSniff extends Sniff {
 
 		$newPtr = $stackPtr;
 		while( $this->phpcsFile->findNext( $tokens_to_find, $newPtr, $endPtr, false, null, true ) ) {
-			if ( in_array( $this->tokens[ $stackPtr ][ 'code' ], [ \T_DOUBLE_QUOTED_STRING, \T_HEREDOC ] ) ) {
+			if ( in_array( $this->tokens[ $newPtr ][ 'code' ], [ \T_DOUBLE_QUOTED_STRING, \T_HEREDOC ] ) ) {
 				// It must be a variable within the string that's the unsafe thing
 				if ( preg_match_all( self::REGEX_COMPLEX_VARS, $this->tokens[ $stackPtr ][ 'content' ], $matches) ) {
 					foreach ( $matches[0] as $var ) {
 						$out[] = trim( $var, '{}' );;
 					}
 				}
+			} elseif ( \T_VARIABLE === $this->tokens[ $stackPtr ][ 'code' ] ) {
+				$out[] = $this->get_variable_as_string( $newPtr );
 			}
 			++ $newPtr;
 		}
