@@ -380,7 +380,7 @@ class DirectDBSniff extends Sniff {
 
 	protected function get_expression_as_string( $stackPtr ) {
 		$end = $this->phpcsFile->findEndOfStatement( $stackPtr );
-		return $this->phpcsFile->getTokensAsString( $stackPtr, $end - $stackPtr );
+		return $this->phpcsFile->getTokensAsString( $stackPtr, $end - $stackPtr + 1 );
 	}
 
 	protected function get_variable_as_string( $stackPtr ) {
@@ -600,7 +600,7 @@ class DirectDBSniff extends Sniff {
 				$context = $this->get_context( $newPtr );
 
 				// If we've found an unsanitized var then fail early
-				if ( ! $this->_is_sanitized_var( $var, $context ) ) {			
+				if ( ! $this->_is_sanitized_var( $var, $context ) ) {
 					return $var;
 				}
 			}
