@@ -996,46 +996,26 @@ class DirectDBSniff extends Sniff {
 			$methodParam = reset( PassedParameters::getParameters( $this->phpcsFile, $methodPtr ) );
 			// If the expression wasn't escaped safely, then alert.
 			if ( $unsafe_ptr = $this->check_expression( $methodParam[ 'start' ], $methodParam[ 'end' ] + 1 ) ) {
-					$extra_context = $this->unwind_unsafe_assignments( $unsafe_ptr );
-					$unsafe_expression = $this->get_unsafe_expression_as_string( $unsafe_ptr );
+				$extra_context = $this->unwind_unsafe_assignments( $unsafe_ptr );
+				$unsafe_expression = $this->get_unsafe_expression_as_string( $unsafe_ptr );
 
-					if ( $this->is_warning_parameter( $unsafe_expression ) || $this->is_warning_sql( $methodParam[ 'clean' ] ) || $this->is_suppressed_line( $methodPtr ) ) {
-						$this->phpcsFile->addWarning( 'Unescaped parameter %s used in $wpdb->%s(%s)%s',
-							$methodPtr,
-							'UnescapedDBParameter',
-							[ $unsafe_expression, $method, $methodParam[ 'clean' ], rtrim( "\n" . join( "\n", $extra_context ) ) ],
-							0,
-							false
-						);
-					} else {
-						$this->phpcsFile->addError( 'Unescaped parameter %s used in $wpdb->%s(%s)%s',
+				if ( $this->is_warning_parameter( $unsafe_expression ) || $this->is_warning_sql( $methodParam[ 'clean' ] ) || $this->is_suppressed_line( $methodPtr ) ) {
+					$this->phpcsFile->addWarning( 'Unescaped parameter %s used in $wpdb->%s(%s)%s',
 						$methodPtr,
 						'UnescapedDBParameter',
 						[ $unsafe_expression, $method, $methodParam[ 'clean' ], rtrim( "\n" . join( "\n", $extra_context ) ) ],
 						0,
 						false
 					);
-
-					}
-/*				} else {
-					if ( $this->is_warning_parameter( $methodParam[ 'clean' ] ) || $this->is_warning_sql( $methodParam[ 'clean' ] ) || $this->is_suppressed_line( $methodPtr ) ) {
-						$this->phpcsFile->addWarning( 'Unescaped parameter %s used in $wpdb->%s',
-							$methodPtr,
-							'UnescapedDBParameter',
-							[ $methodParam[ 'clean' ], $method ],
-							0,
-							false
-						);
-					} else {
-						$this->phpcsFile->addError( 'Unescaped parameter %s used in $wpdb->%s',
-							$methodPtr,
-							'UnescapedDBParameter',
-							[ $methodParam[ 'clean' ], $method ],
-							0,
-							false
-						);
-					}
-				} */
+				} else {
+					$this->phpcsFile->addError( 'Unescaped parameter %s used in $wpdb->%s(%s)%s',
+						$methodPtr,
+						'UnescapedDBParameter',
+						[ $unsafe_expression, $method, $methodParam[ 'clean' ], rtrim( "\n" . join( "\n", $extra_context ) ) ],
+						0,
+						false
+					);
+				}
 				return; // Only need to error on the first occurrence
 			}
 		}
