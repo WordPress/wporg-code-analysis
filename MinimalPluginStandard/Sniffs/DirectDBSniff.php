@@ -105,12 +105,12 @@ class DirectDBSniff extends Sniff {
 	 * For example, 'SELECT * FROM {$table}' is commonly used and typically a red herring.
 	 */
 	protected $warn_only_parameters = array(
-		'table',
-		'table_name',
-		'column_name',
-		'this', // typically something like $this->tablename
-		'order_by',
-		'orderby',
+		'$table',
+		'$table_name',
+		'$column_name',
+		'$this', // typically something like $this->tablename
+		'$order_by',
+		'$orderby',
 	);
 
 	/**
@@ -187,7 +187,6 @@ class DirectDBSniff extends Sniff {
 		$context = $this->get_context( $stackPtr );
 
 		$var = $this->get_variable_as_string( $stackPtr );
-		$var = ltrim( $var, '$' );
 
 		$this->sanitized_variables[ $context ][ $var ] = true;
 
@@ -219,7 +218,6 @@ class DirectDBSniff extends Sniff {
 		$context = $this->get_context( $stackPtr );
 
 		$var = $this->get_variable_as_string( $stackPtr );
-		$var = ltrim( $var, '$' );
 
 		unset( $this->sanitized_variables[ $context ][ $var ] );
 
@@ -245,7 +243,6 @@ class DirectDBSniff extends Sniff {
 		$context = $this->get_context( $stackPtr );
 
 		$var = $this->get_variable_as_string( $stackPtr );
-		$var = ltrim( $var, '$' );
 
 		return $this->_is_sanitized_var( $var, $context );
 	}
@@ -255,10 +252,8 @@ class DirectDBSniff extends Sniff {
 	 */
 	protected function _is_sanitized_var( $var, $context ) {
 
-		$var = ltrim( $var, '$' );
-
 		// If it's $wpdb->tablename then it's implicitly safe
-		if ( 'wpdb->' === substr( $var, 0, 6 ) || 'this->table' === substr( $var, 0, 11 ) ) {
+		if ( '$wpdb->' === substr( $var, 0, 7 ) || '$this->table' === substr( $var, 0, 12 ) ) {
 			return true;
 		}
 
@@ -273,7 +268,7 @@ class DirectDBSniff extends Sniff {
 		}
 
 		// Is it an array or an object? If so, was the whole array sanitized?
-		if ( preg_match( '/^(\w+)\W/', $var, $matches ) ) {
+		if ( preg_match( '/^([$]\w+)\W/', $var, $matches ) ) {
 			$var_array = $matches[1];
 			if ( isset( $this->unsanitized_variables[ $context ][ $var_array ] ) ) {
 				return false;
@@ -295,7 +290,6 @@ class DirectDBSniff extends Sniff {
 		$context = $this->get_context( $stackPtr );
 
 		$var = $this->get_variable_as_string( $stackPtr );
-		$var = ltrim( $var, '$' );
 
 		return $this->assignments[ $context ][ $var ];
 	}
@@ -326,7 +320,6 @@ class DirectDBSniff extends Sniff {
 
 				if ( $more_vars = $this->find_variables_in_expression( $assignmentPtr ) ) {
 					foreach ( $more_vars as $var_name ) {
-						$var_name = trim( $var_name, '${}' );
 						$context = $this->get_context( $assignmentPtr );
 						if ( isset( $this->assignments[ $context ][ $var_name ] ) ) {
 							foreach ( array_reverse( $this->assignments[ $context ][ $var_name ], true ) as $assignmentPtr => $code ) {
@@ -336,7 +329,7 @@ class DirectDBSniff extends Sniff {
 								} else {
 									$how = 'safely';
 								}
-								$extra_context[] = sprintf( "%s assigned %s at line %d:\n %s", '$' . $var_name, $how, $this->tokens[ $assignmentPtr ][ 'line' ], $code );
+								$extra_context[] = sprintf( "%s assigned %s at line %d:\n %s", $var_name, $how, $this->tokens[ $assignmentPtr ][ 'line' ], $code );
 								if ( $unsafe_ptr < $stackPtr ) {
 									$extra_context = array_merge( $extra_context, $this->unwind_unsafe_assignments( $unsafe_ptr + 1, $limit ) );
 								}
@@ -391,7 +384,7 @@ class DirectDBSniff extends Sniff {
 	}
 
 	protected function get_variable_as_string( $stackPtr ) {
-		// It must be a variable.
+
 		if ( \T_VARIABLE !== $this->tokens[ $stackPtr ][ 'code' ] ) {
 			return false;
 		}
@@ -441,6 +434,28 @@ class DirectDBSniff extends Sniff {
 		return $out;
 	}
 
+	/**
+	 * Find interpolated variable names in a "string" or heredoc.
+	 * 
+	 * @param $stackPtr Stack pointer to a double quoted string or heredoc.
+	 * 
+	 * @return array|bool Array of variable names, or false if $stackPtr was not a double quoted string or heredoc.
+	 */
+	protected function get_interpolated_variables( $stackPtr ) {
+		// It must be an interpolated string.
+		if ( in_array( $this->tokens[ $stackPtr ][ 'code' ], [ \T_DOUBLE_QUOTED_STRING, \T_HEREDOC ] ) ) {
+			$out = array();
+			if ( preg_match_all( self::REGEX_COMPLEX_VARS, $this->tokens[ $stackPtr ][ 'content' ], $matches) ) {
+				foreach ( $matches[0] as $var ) {
+					// Normalize variations like {$foo} and ${foo}
+					$out[] = '$' . trim( $var, '${}' );
+				}
+			}
+			return $out;
+		}
+
+		return false;
+	}
 	/**
 	 * Is the T_STRING at $stackPtr a constant as set by define()?
 	 */
@@ -572,23 +587,21 @@ class DirectDBSniff extends Sniff {
 	function get_unsafe_expression_as_string( $stackPtr ) {
 		if ( in_array( $this->tokens[ $stackPtr ][ 'code' ], [ \T_DOUBLE_QUOTED_STRING, \T_HEREDOC ] ) ) {
 			// It must be a variable within the string that's the unsafe thing
-			if ( preg_match_all( self::REGEX_COMPLEX_VARS, $this->tokens[ $stackPtr ][ 'content' ], $matches) ) {
-				foreach ( $matches[0] as $var ) {
-					// Does it look like a table name, "SELECT * FROM {$my_table}" or similar?
-					$var_placeholder = md5( $var );
-					$placeholder_query = str_replace( $var, $var_placeholder, $this->tokens[ $stackPtr ][ 'content' ] );
-					if( $this->get_table_from_query( trim( $placeholder_query, '"' ) ) === $var_placeholder ) {
-						// Add the table variable name to the list of parameters that will only trigger a warning
-						$this->warn_only_parameters[] = trim( $var, '${}' );
-					}
+			foreach ( $this->get_interpolated_variables( $stackPtr ) as $var ) {
+				// Does it look like a table name, "SELECT * FROM {$my_table}" or similar?
+				$var_placeholder = md5( $var );
+				$placeholder_query = str_replace( $var, $var_placeholder, $this->tokens[ $stackPtr ][ 'content' ] );
+				if( $this->get_table_from_query( trim( $placeholder_query, '"' ) ) === $var_placeholder ) {
+					// Add the table variable name to the list of parameters that will only trigger a warning
+					$this->warn_only_parameters[] = $var;
+				}
 
-					// Where are we?
-					$context = $this->get_context( $newPtr );
+				// Where are we?
+				$context = $this->get_context( $newPtr );
 
-					// If we've found an unsanitized var then fail early
-					if ( ! $this->_is_sanitized_var( $var, $context ) ) {			
-						return $var;
-					}
+				// If we've found an unsanitized var then fail early
+				if ( ! $this->_is_sanitized_var( $var, $context ) ) {			
+					return $var;
 				}
 			}
 		} elseif ( $where = $this->check_expression( $stackPtr ) ) {
@@ -610,12 +623,7 @@ class DirectDBSniff extends Sniff {
 		$newPtr = $stackPtr;
 		while( $this->phpcsFile->findNext( $tokens_to_find, $newPtr, $endPtr, false, null, true ) ) {
 			if ( in_array( $this->tokens[ $newPtr ][ 'code' ], [ \T_DOUBLE_QUOTED_STRING, \T_HEREDOC ] ) ) {
-				// It must be a variable within the string that's the unsafe thing
-				if ( preg_match_all( self::REGEX_COMPLEX_VARS, $this->tokens[ $newPtr ][ 'content' ], $matches) ) {
-					foreach ( $matches[0] as $var ) {
-						$out[] = trim( $var, '{}' );;
-					}
-				}
+				$out = array_merge( $out, $this->get_interpolated_variables( $newPtr ) );
 			} elseif ( \T_VARIABLE === $this->tokens[ $newPtr ][ 'code' ] ) {
 				$out[] = $this->get_variable_as_string( $newPtr );
 			}
@@ -728,24 +736,21 @@ class DirectDBSniff extends Sniff {
 				}
 			} elseif ( in_array( $this->tokens[ $newPtr ][ 'code' ], [ \T_DOUBLE_QUOTED_STRING, \T_HEREDOC ] ) ) {
 				// It's a string that might have variables
-				if ( preg_match_all( self::REGEX_COMPLEX_VARS, $this->tokens[ $newPtr ][ 'content' ], $matches) ) {
-					foreach ( $matches[0] as $var ) {
-						// Does it look like a table name, "SELECT * FROM {$my_table}" or similar?
-						$var_placeholder = md5( $var );
-						$placeholder_query = str_replace( $var, $var_placeholder, $this->tokens[ $newPtr ][ 'content' ] );
-						if( $this->get_table_from_query( trim( $placeholder_query, '"' ) ) === $var_placeholder ) {
-							// Add the table variable name to the list of parameters that will only trigger a warning
-							$this->warn_only_parameters[] = trim( $var, '${}' );
-						}
+				foreach ( $this->get_interpolated_variables( $newPtr ) as $var ) {
+					// Does it look like a table name, "SELECT * FROM {$my_table}" or similar?
+					$var_placeholder = md5( $var );
+					$placeholder_query = preg_replace( '/[${]*' . preg_quote( ltrim( $var, '$' ) ) . '[}]*/', $var_placeholder, $this->tokens[ $newPtr ][ 'content' ] );
+					if( $this->get_table_from_query( trim( $placeholder_query, '"' ) ) === $var_placeholder ) {
+						// Add the table variable name to the list of parameters that will only trigger a warning
+						$this->warn_only_parameters[] = $var;
+					}
 
-						// Where are we?
-						$context = $this->get_context( $newPtr );
-						$var = trim( $var, '${}' );
+					// Where are we?
+					$context = $this->get_context( $newPtr );
 
-						// If we've found an unsanitized var then fail early
-						if ( ! $this->_is_sanitized_var( $var, $context ) ) {
-							return $newPtr;
-						}
+					// If we've found an unsanitized var then fail early
+					if ( ! $this->_is_sanitized_var( $var, $context ) ) {
+						return $newPtr;
 					}
 				}
 
@@ -851,7 +856,7 @@ class DirectDBSniff extends Sniff {
 
 	public function is_warning_parameter( $parameter_name ) {
 		foreach ( $this->warn_only_parameters as $warn_param ) {
-			if ( preg_match( '/^[${]*' . preg_quote( $warn_param ) . '(?:\b|$)/', $parameter_name ) ) {
+			if ( preg_match( '/^' . preg_quote( $warn_param ) . '(?:\b|$)/', $parameter_name ) ) {
 				return true;
 			}
 		}
