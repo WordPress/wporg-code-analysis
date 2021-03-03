@@ -597,7 +597,7 @@ class DirectDBSniff extends Sniff {
 				}
 
 				// Where are we?
-				$context = $this->get_context( $newPtr );
+				$context = $this->get_context( $stackPtr );
 
 				// If we've found an unsanitized var then fail early
 				if ( ! $this->_is_sanitized_var( $var, $context ) ) {
