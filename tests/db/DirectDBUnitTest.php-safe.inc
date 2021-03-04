@@ -350,7 +350,7 @@ function secure_but_not_recommended( $ids, $status ) {
 
 function false_positive_17() {
 	$meta_id = 'meta_id';
-	$sql = 'SELECT ' . $meta_id . ' as id, meta_value FROM ' . $table . '
+	$sql = 'SELECT ' . $meta_id . ' as id, meta_value FROM mytable
 	WHERE meta_value like %s';
 
 	$sql = $wpdb->prepare($sql, '%' . $url . '%');
