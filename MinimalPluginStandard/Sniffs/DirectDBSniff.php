@@ -352,7 +352,7 @@ class DirectDBSniff extends Sniff {
 		$this->unsafe_expression = $_unsafe_expression;
 		$this->unsafe_ptr = $_unsafe_ptr;
 
-		return $extra_context;
+		return array_unique( $extra_context );
 	}
 
 	/**
