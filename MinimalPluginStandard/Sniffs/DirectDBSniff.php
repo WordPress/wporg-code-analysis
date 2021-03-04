@@ -323,15 +323,20 @@ class DirectDBSniff extends Sniff {
 						$context = $this->get_context( $assignmentPtr );
 						if ( isset( $this->assignments[ $context ][ $var_name ] ) ) {
 							foreach ( array_reverse( $this->assignments[ $context ][ $var_name ], true ) as $assignmentPtr => $code ) {
-								$unsafe_ptr = $this->check_expression( $assignmentPtr );
-								if ( $unsafe_ptr ) {
-									$how = 'unsafely';
-								} else {
-									$how = 'safely';
-								}
-								$extra_context[] = sprintf( "%s assigned %s at line %d:\n %s", $var_name, $how, $this->tokens[ $assignmentPtr ][ 'line' ], $code );
-								if ( $unsafe_ptr < $stackPtr ) {
-									$extra_context = array_merge( $extra_context, $this->unwind_unsafe_assignments( $unsafe_ptr + 1, $limit ) );
+								if ( $assignmentPtr < $stackPtr ) {
+									$unsafe_ptr = $this->check_expression( $assignmentPtr );
+									if ( $unsafe_ptr ) {
+										$how = 'unsafely';
+									} else {
+										$how = 'safely';
+									}
+									$extra_context[] = sprintf( "%s assigned %s at line %d:\n %s", $var_name, $how, $this->tokens[ $assignmentPtr ][ 'line' ], $code );
+									if ( $unsafe_ptr < $stackPtr ) {
+										$extra_context = array_merge( $extra_context, $this->unwind_unsafe_assignments( $unsafe_ptr + 1, $limit ) );
+									}
+									if ( $unsafe_ptr ) {
+										break;
+									}
 								}
 							}
 						}
@@ -339,6 +344,11 @@ class DirectDBSniff extends Sniff {
 					}
 				} else {
 					// Stop when there's nothing left to unwind.
+					break;
+				}
+
+				// Stop when we've found 
+				if ( $unsafe_ptr ) {
 					break;
 				}
 
