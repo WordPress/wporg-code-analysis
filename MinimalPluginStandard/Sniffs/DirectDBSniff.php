@@ -333,19 +333,15 @@ class DirectDBSniff extends Sniff {
 								if ( $unsafe_ptr < $stackPtr ) {
 									$extra_context = array_merge( $extra_context, $this->unwind_unsafe_assignments( $unsafe_ptr + 1, $limit ) );
 								}
-								if ( $unsafe_ptr ) {
-									break;
-								}
 							}
 						}
 
 					}
-				}
-
-				// If we found an unsafe assignment to the var in question then stop here, there's no point going further.
-				if ( $unsafe_ptr ) {
+				} else {
+					// Stop when there's nothing left to unwind.
 					break;
 				}
+
 			}
 		}
 
