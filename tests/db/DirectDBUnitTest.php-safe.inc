@@ -347,3 +347,13 @@ function secure_but_not_recommended( $ids, $status ) {
 	$sql = "SELECT * FROM $wpdb->posts WHERE ID IN ($in)";
 	return $wpdb->get_results( $wpdb->prepare( $sql . " AND post_status = %s", $status ) );
 }
+
+function false_positive_17() {
+	$meta_id = 'meta_id';
+	$sql = 'SELECT ' . $meta_id . ' as id, meta_value FROM ' . $table . '
+	WHERE meta_value like %s';
+
+	$sql = $wpdb->prepare($sql, '%' . $url . '%');
+
+	$rsmeta = $wpdb->get_results($sql, ARRAY_A);
+}
