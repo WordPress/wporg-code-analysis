@@ -46,7 +46,6 @@ class DisallowExtractSniffTest extends TestCase {
 			$error_lines );
 
 		$warning_lines = array_keys( $phpcsFile->getWarnings() );
-
 		$this->assertEquals(
 			[
 				89,
@@ -59,7 +58,8 @@ class DisallowExtractSniffTest extends TestCase {
 				278,
 				279,
 				280,
-				281
+				281,
+				301
 			],
 			$warning_lines );
 

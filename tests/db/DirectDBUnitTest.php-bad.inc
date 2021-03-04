@@ -291,3 +291,14 @@ function insecure_do_not_use( $ids, $status ) {
 	$sql = "SELECT * FROM $wpdb->posts WHERE ID IN ($in)";
 	return $wpdb->get_results( $wpdb->prepare( $sql . " AND post_status = %s", $status ) );
 }
+
+class Example_Test_Class {
+	public static function insecure_wpdb_query_23() {
+		if ($purge_days > 30) {
+			$table_name = DB::table('visit');
+			$date_string = TimeZone::getCurrentDate('Y-m-d', '-' . $purge_days);
+
+			$result = $wpdb->query($wpdb->prepare("DELETE FROM {$table_name} WHERE `last_counter` < %s", $date_string)); // technically unsafe but a warning only
+		}
+	}
+}
