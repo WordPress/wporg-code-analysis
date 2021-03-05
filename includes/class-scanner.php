@@ -16,7 +16,13 @@ class Scanner {
 			return false;
 		}
 
-		return self::get_scan_results_for_zip( $zip_file );
+		set_time_limit( 3 * MINUTE_IN_SECONDS );
+
+		$results = self::get_scan_results_for_zip( $zip_file );
+
+		set_time_limit( 0 );
+
+		return $results;
 	}
 
 	public static function get_scan_results_for_zip( $zip_file_path ) {
