@@ -242,6 +242,9 @@ class Scanner {
 			)
 		);
 
-		$email->send();
+		// $email->send();
+		// Temporarily don't email it to the author, just log it in the job output.
+		echo "Email Subject: " . $email->subject() . "\n Email Body: " . $email->body();
+
 	}
 }
