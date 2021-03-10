@@ -249,8 +249,13 @@ class Scanner {
 		);
 
 		// $email->send();
-		// Temporarily don't email it to the author, just log it in the job output.
-		echo "Email Subject: " . $email->subject() . "\n Email Body: " . $email->body();
-
+		// Temporarily don't email it to the author, just log it on WordPress.org instead.
+		if ( defined( 'PLUGIN_REVIEW_ALERT_SLACK_CHANNEL' ) && function_exists( 'slack_dm' ) ) {
+			\slack_dm(
+				'*' . $email->subject() . "*\n" . $email->body(),
+				PLUGIN_REVIEW_ALERT_SLACK_CHANNEL,
+				true
+			);
+		}
 	}
 }
