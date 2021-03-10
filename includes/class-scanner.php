@@ -251,8 +251,12 @@ class Scanner {
 		// $email->send();
 		// Temporarily don't email it to the author, just log it on WordPress.org instead.
 		if ( defined( 'PLUGIN_REVIEW_ALERT_SLACK_CHANNEL' ) && function_exists( 'slack_dm' ) ) {
+			$slack_body = $email->body();
+			// Convert the code blocks to slack code blocks.
+			$slack_body = preg_replace( '!((\n\d+[^\n]*)+)!sm', "\n```\$1\n```", $slack_body );
+
 			\slack_dm(
-				'*' . $email->subject() . "*\n" . $email->body(),
+				'*' . $email->subject() . "*\n" . $slack_body,
 				PLUGIN_REVIEW_ALERT_SLACK_CHANNEL,
 				true
 			);
