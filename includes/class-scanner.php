@@ -166,15 +166,14 @@ class Scanner {
 		foreach ( $to_scan as $tag ) {
 			$result = self::get_scan_results_for_plugin( $plugin, $tag );
 			$hash   = $result['hash'];
-			$key    = $tag . ':' . $hash; // Unique hash to identify whether this result has been seen before.
 
 			// Check to see if the plugin authors have been notified about this result yet.
-			if ( isset( $already_notified[ $key ] ) ) {
+			if ( isset( $already_notified[ $hash ] ) ) {
 				continue;
 			}
 
 			// Record it as the author being notified.
-			$already_notified[ $key ] = time();
+			$already_notified[ $hash ] = time();
 
 			// Don't notify for two different tags with the same result.
 			if ( isset( $hashes_seen_this_run[ $hash ] ) ) {
