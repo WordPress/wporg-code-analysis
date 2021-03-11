@@ -15,6 +15,7 @@ function insecure_nonce_2() {
 function insecure_nonce_3() {
 	if ( isset( $_POST['my_nonce_field'] ) && ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['my_nonce_field'] ) ), 'my_nonce' ) ) { // unsafe!
 		return;
+	}
 }
 
 function insecure_nonce_4() {

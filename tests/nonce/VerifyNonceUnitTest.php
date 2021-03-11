@@ -20,49 +20,12 @@ class VerifyNonceUnitTest extends TestCase {
 
 		$this->assertEquals(
 			[
-				14,
-				22,
-				30,
-				38,
-				45,
-				52,
-				59,
-				66,
-				75,
-				82,
-				97,
-				106,
-				113,
-				120,
-				140,
-				159,
-				168,
-				181,
-				200,
-				221,
-				258,
-				270,
-				292
+				5,
+				11,
+				16,
+				21,
 			], 
 			$error_lines );
-
-		$warning_lines = array_keys( $phpcsFile->getWarnings() );
-		$this->assertEquals(
-			[
-				89,
-				149,
-				188,
-				191,
-				196,
-				203,
-				207,
-				278,
-				279,
-				280,
-				281,
-				301
-			],
-			$warning_lines );
 
 	}
 

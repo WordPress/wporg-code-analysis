@@ -100,13 +100,14 @@ class VerifyNonceSniff extends Sniff {
 	 */
 	protected function scope_contains_error_terminator( $start, $end ) {
 
-		$stackPtr = $this->phpcsFile->findNext( Tokens::$functionNameTokens, $start, $end, false, null, false );
+		$stackPtr = $this->phpcsFile->findNext( Tokens::$functionNameTokens + [ \T_RETURN => \T_RETURN ], $start, $end, false, null, false );
 		while ( $stackPtr <= $end && $stackPtr ) {
-			var_dump( $this->tokens[ $stackPtr ][ 'content' ] );
 			if ( in_array( $this->tokens[ $stackPtr ][ 'content' ], array(
 					'exit',
 					'die',
 					'wp_send_json_error',
+					'wp_nonce_ays',
+					'return',
 				) ) ) {
 					return $stackPtr;
 			}
