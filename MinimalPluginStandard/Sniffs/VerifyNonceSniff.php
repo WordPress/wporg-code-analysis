@@ -196,9 +196,9 @@ class VerifyNonceSniff extends Sniff {
 						var_dump( "else", $this->tokens[ $elsePtr ] );
 						list( $expression_start, $expression_end ) = $this->get_expression_from_condition( $ifPtr );
 						list( $scope_start, $scope_end ) = $this->get_scope_from_condition( $elsePtr );
-						#var_dump( "checking else", $this->tokens_as_string( $expression_start, $expression_end ), $this->tokens_as_string( $scope_start, $scope_end ) );
 
-						if ( $this->expression_contains_and( $expression_start, $expression_end ) && $this->scope_contains_error_terminator( $scope_start, $scope_end ) ) {
+						// In this case it doesn't matter if there's a logical AND, but the else clause must contain a terminator.
+						if ( ! $this->scope_contains_error_terminator( $scope_start, $scope_end ) ) {
 							var_dump( "error in", $this->tokens_as_string( $scope_start, $scope_end ) );
 							$this->phpcsFile->addError( 'Unsafe use of wp_verify_nonce() in expression %s.',
 								$stackPtr,
