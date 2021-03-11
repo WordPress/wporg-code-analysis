@@ -34,3 +34,10 @@ function false_positive_1( $nonce ) {
 	return wp_verify_nonce( $nonce, $this->get_nonce_action() ); // safe
 }
 
+function safe_example_4() {
+	if ( ( wp_verify_nonce( $nonce, 'my-nonce' ) ) ) {
+		do_something();
+	} else {
+		die();
+	}
+}
