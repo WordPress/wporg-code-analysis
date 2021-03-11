@@ -105,6 +105,10 @@ class VerifyNonceSniff extends Sniff {
 	 */
 	protected function is_assignment_statement( $stackPtr ) {
 		$start = $this->phpcsFile->findStartOfStatement( $stackPtr );
+		while ( !empty( $this->tokens[ $start ][ 'nested_parenthesis' ] ) ) {
+			$paren = array_key_first( $this->tokens[ $start ][ 'nested_parenthesis' ] );
+			$start = $this->phpcsFile->findStartOfStatement( $paren - 1 );
+		}
 		return $this->is_assignment( $start );
 	}
 
