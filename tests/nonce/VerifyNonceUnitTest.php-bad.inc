@@ -21,3 +21,11 @@ function insecure_nonce_3() {
 function insecure_nonce_4() {
 	wp_verify_nonce( $_POST['my_nonce_field'], 'my-action' ); // unsafe!
 }
+
+function insecure_nonce_5() {
+	if ( $something || wp_verify_nonce( $_REQUEST['my-nonce'], 'post-nonce' ) ) {
+		do_something();
+	} else {
+		wp_nonce_ays();
+	}
+}

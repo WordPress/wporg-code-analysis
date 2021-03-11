@@ -18,3 +18,19 @@ function safe_example_2() {
 		// Do stuff here.
 	}
 }
+
+function safe_example_3() {
+	if ( wp_verify_nonce( $nonce, 'my-nonce' ) ) { // safe since the action is in the first clause
+		$result = do_some_stuff();
+	} else {
+		$result = 'error';
+	}
+
+	return $result;
+}
+
+function false_positive_1( $nonce ) {
+	// Helper function example
+	return wp_verify_nonce( $nonce, $this->get_nonce_action() ); // safe
+}
+

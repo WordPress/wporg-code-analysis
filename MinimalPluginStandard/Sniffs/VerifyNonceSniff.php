@@ -88,6 +88,18 @@ class VerifyNonceSniff extends Sniff {
 	}
 
 	/**
+	 * Is the expression part of a return statement?
+	 */
+	protected function is_return_statement( $stackPtr ) {
+		$start = $this->phpcsFile->findStartOfStatement( $stackPtr );
+		if ( \T_RETURN === $this->tokens[ $start ][ 'code' ] ) {
+			return $start;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Does the given scope contain an exit, die, wp_send_json_error(), or similar statement that's sufficient to handle a nonce failure?
 	 */
 	protected function scope_contains_error_terminator( $start, $end ) {
@@ -117,6 +129,18 @@ class VerifyNonceSniff extends Sniff {
 		$tokens = [
 			\T_BOOLEAN_AND => \T_BOOLEAN_AND,
 			\T_LOGICAL_AND => \T_LOGICAL_AND,
+			
+		];
+		return $this->phpcsFile->findNext( $tokens, $start, $end, false, null, false );
+	}
+
+	/**
+	 * Does the given expression contain multiple 'or' clauses like `$foo || bar()` or `foo() or $bar`?
+	 */
+	protected function expression_contains_or( $start, $end ) {
+		$tokens = [
+			\T_BOOLEAN_OR => \T_BOOLEAN_OR,
+			\T_LOGICAL_OR => \T_LOGICAL_OR,
 			
 		];
 		return $this->phpcsFile->findNext( $tokens, $start, $end, false, null, false );
@@ -162,6 +186,7 @@ class VerifyNonceSniff extends Sniff {
 					list( $expression_start, $expression_end ) = $this->get_expression_from_condition( $ifPtr );
 					list( $scope_start, $scope_end ) = $this->get_scope_from_condition( $ifPtr );
 
+					// if ( $something && ! wp_verify_nonce( ... ) )
 					if ( $this->expression_contains_and( $expression_start, $expression_end ) && $this->scope_contains_error_terminator( $scope_start, $scope_end ) ) {
 						$this->phpcsFile->addError( 'Unsafe use of wp_verify_nonce() in expression %s.',
 							$stackPtr,
@@ -180,9 +205,8 @@ class VerifyNonceSniff extends Sniff {
 						list( $expression_start, $expression_end ) = $this->get_expression_from_condition( $ifPtr );
 						list( $scope_start, $scope_end ) = $this->get_scope_from_condition( $elsePtr );
 
-						// In this case it doesn't matter if there's a logical AND, but the else clause must contain a terminator.
-						if ( ! $this->scope_contains_error_terminator( $scope_start, $scope_end ) ) {
-							var_dump( "error in", $this->tokens_as_string( $scope_start, $scope_end ) );
+						// if ( $something || wp_verify_nonce( ... ) )
+						if ( $this->expression_contains_or( $expression_start, $expression_end ) && $this->scope_contains_error_terminator( $scope_start, $scope_end ) ) {
 							$this->phpcsFile->addError( 'Unsafe use of wp_verify_nonce() in expression %s.',
 								$stackPtr,
 								'UnsafeVerifyNonceElse',
@@ -190,21 +214,23 @@ class VerifyNonceSniff extends Sniff {
 								0,
 								false
 							);
-	
 						}
 	
 					}
 				}
 
 			} else {
-				// wp_verify_nonce() used as an unconditional statement - most likely mistaken for check_admin_referer()
-				$this->phpcsFile->addError( 'Unconditional call to wp_verify_nonce().',
-				$stackPtr,
-				'UnsafeVerifyNonceStatement',
-				[],
-				0,
-				false
-			);
+				
+				if ( !$this->is_return_statement( $stackPtr ) ) {
+					// wp_verify_nonce() used as an unconditional statement - most likely mistaken for check_admin_referer()
+					$this->phpcsFile->addError( 'Unconditional call to wp_verify_nonce().',
+					$stackPtr,
+					'UnsafeVerifyNonceStatement',
+					[],
+					0,
+					false
+					);
+				}
 
 			}
 
