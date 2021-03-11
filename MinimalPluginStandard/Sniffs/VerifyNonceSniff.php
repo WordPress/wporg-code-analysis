@@ -224,7 +224,7 @@ class VerifyNonceSniff extends Sniff {
 
 						// if ( $something || wp_verify_nonce( ... ) )
 						if ( $this->expression_contains_or( $expression_start, $expression_end ) && $this->scope_contains_error_terminator( $scope_start, $scope_end ) ) {
-							$this->phpcsFile->addError( 'Unsafe use of wp_verify_nonce() in expression %s.',
+							$this->phpcsFile->addError( 'Possibly unsafe use of wp_verify_nonce() in expression %s.',
 								$stackPtr,
 								'UnsafeVerifyNonceElse',
 								[ $this->tokens_as_string( $expression_start, $expression_end ) ], // [ $unsafe_expression, $method, $methodParam[ 'clean' ], rtrim( "\n" . join( "\n", $extra_context ) ) ],
