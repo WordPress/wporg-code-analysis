@@ -66,9 +66,7 @@ class Scanner {
 					$strip_chars = (int)array_reduce(
 						$context,
 						function( $carry, $item ) {
-							if ( ! trim( $item ) || ! preg_match( '!^(\s+)\S!', $item, $m ) ) {
-								return $carry;
-							}
+							preg_match( '!^(\s+)\S!', $item, $m );
 							$prefixed_whitespace = strlen( $m[1] ?? '' );
 
 							return is_null( $carry ) ? $prefixed_whitespace : min( $carry, $prefixed_whitespace );
