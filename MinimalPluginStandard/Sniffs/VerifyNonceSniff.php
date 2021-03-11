@@ -101,6 +101,14 @@ class VerifyNonceSniff extends Sniff {
 	}
 
 	/**
+	 * Is the expression part of an assignment?
+	 */
+	protected function is_assignment_statement( $stackPtr ) {
+		$start = $this->phpcsFile->findStartOfStatement( $stackPtr );
+		return $this->is_assignment( $start );
+	}
+
+	/**
 	 * Does the given scope contain an exit, die, wp_send_json_error(), or similar statement that's sufficient to handle a nonce failure?
 	 */
 	protected function scope_contains_error_terminator( $start, $end ) {
@@ -226,7 +234,7 @@ class VerifyNonceSniff extends Sniff {
 
 			} else {
 				
-				if ( !$this->is_return_statement( $stackPtr ) ) {
+				if ( !$this->is_return_statement( $stackPtr ) && !$this->is_assignment_statement( $stackPtr ) ) {
 					// wp_verify_nonce() used as an unconditional statement - most likely mistaken for check_admin_referer()
 					$this->phpcsFile->addError( 'Unconditional call to wp_verify_nonce().',
 					$stackPtr,

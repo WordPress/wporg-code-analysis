@@ -41,3 +41,9 @@ function safe_example_4() {
 		die();
 	}
 }
+
+function safe_example_5() {
+	$check = wp_verify_nonce(sanitize_text_field($_POST['security']), 'my-nonce');
+	if (!$check)
+		return;
+}
