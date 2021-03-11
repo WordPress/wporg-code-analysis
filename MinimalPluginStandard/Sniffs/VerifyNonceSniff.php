@@ -104,7 +104,11 @@ class VerifyNonceSniff extends Sniff {
 	 */
 	protected function scope_contains_error_terminator( $start, $end ) {
 
-		$stackPtr = $this->phpcsFile->findNext( Tokens::$functionNameTokens + [ \T_RETURN => \T_RETURN ], $start, $end, false, null, false );
+		$tokens_to_search =
+			Tokens::$functionNameTokens +
+			[ \T_RETURN => \T_RETURN ];
+
+		$stackPtr = $this->phpcsFile->findNext( $tokens_to_search, $start, $end, false, null, false );
 		while ( $stackPtr <= $end && $stackPtr ) {
 			if ( in_array( $this->tokens[ $stackPtr ][ 'content' ], array(
 					'exit',
@@ -116,7 +120,7 @@ class VerifyNonceSniff extends Sniff {
 					return $stackPtr;
 			}
 
-			$stackPtr = $this->phpcsFile->findNext( Tokens::$functionNameTokens, $stackPtr + 1, $end, false, null, false );
+			$stackPtr = $this->phpcsFile->findNext( $tokens_to_search, $stackPtr + 1, $end, false, null, false );
 		}
 
 		return false;
