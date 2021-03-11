@@ -357,3 +357,52 @@ function false_positive_17() {
 
 	$rsmeta = $wpdb->get_results($sql, ARRAY_A);
 }
+
+function false_positive_18() {
+	global $wpdb;
+	$ratings_max = intval(get_option('postratings_max'));
+	$ratings_custom = intval(get_option('postratings_customrating'));
+	$min_time = strtotime('-'.$time, current_time('timestamp'));
+	$output = '';
+	if(!empty($mode) && $mode != 'both') {
+			$where = $wpdb->prepare( "$wpdb->posts.post_type = %s", $mode );
+	} else {
+			$where = '1=1';
+	}
+	if($ratings_custom && $ratings_max == 2) {
+			$order_by = 'ratings_score';
+	} else {
+			$order_by = 'ratings_average';
+	}
+	$temp = stripslashes(get_option('postratings_template_mostrated'));
+	$sql = $wpdb->prepare(
+			"SELECT COUNT($wpdb->ratings.rating_postid) AS ratings_users, SUM($wpdb->ratings.rating_rating) AS ratings_score, ROUND(((SUM($wpdb->ratings.rating_rating)/COUNT($wpdb->ratings.rating_postid))), 2) AS ratings_average, $wpdb->posts.ID FROM $wpdb->posts LEFT JOIN $wpdb->ratings ON $wpdb->ratings.rating_postid = $wpdb->posts.ID WHERE rating_timestamp >= $min_time AND $wpdb->posts.post_password = '' AND $wpdb->posts.post_date < NOW() AND $wpdb->posts.post_status = 'publish' AND $where GROUP BY $wpdb->ratings.rating_postid ORDER BY ratings_users DESC, $order_by DESC LIMIT %d",
+			$limit
+	);
+}
+
+function false_positive_19() {
+	$now = new \DateTime();
+	$day = (int)$now->format('d');
+	$month = (int)$now->format('m');
+	$year = (int)$now->format('Y');
+	$type = $_POST['type'];
+
+	if( $type === 'review' || $type === 'order' ){
+
+		$product_id = (int)$_POST['product_id'];
+		$product = wc_get_product( $product_id );
+
+		if( ! $product ){
+			response( false );
+		}
+
+		$stats = $wpdb->get_row( "SELECT * FROM {$wpdb->prefix}woomotiv_stats
+			WHERE product_id={$product_id} AND popup_type IN ('order' , 'review')
+			AND the_day=$day 
+			AND the_month=$month 
+			AND the_year=$year
+		");
+	}
+	
+}

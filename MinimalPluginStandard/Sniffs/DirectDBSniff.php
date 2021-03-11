@@ -67,6 +67,7 @@ class DirectDBSniff extends Sniff {
 		'get_post_types' => true,
 		'get_charset_collate' => true,
 		'count'          => true,
+		'strtotime'      => true,
 	);
 
 	/**
@@ -784,6 +785,7 @@ class DirectDBSniff extends Sniff {
 			} elseif ( in_array( $this->tokens[ $newPtr ][ 'code' ], Tokens::$castTokens ) ) {
 				// We're safely casting to an int or bool
 				$newPtr = $this->next_non_empty( $this->phpcsFile->findEndOfStatement( $newPtr ) );
+				continue;
 			} elseif ( \T_CONSTANT_ENCAPSED_STRING === $this->tokens[ $newPtr ][ 'code' ] ) {
 				// A constant string is ok, but we want to check what's after it
 			}
