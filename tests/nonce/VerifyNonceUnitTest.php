@@ -25,6 +25,7 @@ class VerifyNonceUnitTest extends TestCase {
 				22,
 				26,
 				34,
+				38,
 			], 
 			$error_lines );
 

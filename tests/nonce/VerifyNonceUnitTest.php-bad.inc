@@ -33,3 +33,11 @@ function insecure_nonce_5() {
 function insecure_nonce_6() {
 	if ( ! isset( $_REQUEST['nonce'] ) && ! wp_verify_nonce( $_REQUEST['nonce'], 'nonce' ) ) return; // unsafe!
 }
+
+function insecure_nonce_7() {
+	if (!isset($_GET['my-nonce']) && !wp_verify_nonce($_GET['my-nonce'], 'delete')) {
+		if (!current_user_can('editor') || !current_user_can('administrator')) {
+			return false;
+		}
+	}
+}
