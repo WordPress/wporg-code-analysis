@@ -29,3 +29,7 @@ function insecure_nonce_5() {
 		wp_nonce_ays();
 	}
 }
+
+function insecure_nonce_6() {
+	if ( ! isset( $_REQUEST['nonce'] ) && ! wp_verify_nonce( $_REQUEST['nonce'], 'nonce' ) ) return; // unsafe!
+}
