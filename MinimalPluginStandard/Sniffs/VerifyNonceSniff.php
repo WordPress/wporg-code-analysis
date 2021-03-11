@@ -34,10 +34,11 @@ class VerifyNonceSniff extends Sniff {
 	 */
 	protected function is_conditional_expression( $stackPtr ) {
 		if ( $this->tokens[ $stackPtr ][ 'nested_parenthesis' ] ) {
-			$start = array_key_last( $this->tokens[ $stackPtr ][ 'nested_parenthesis' ] );
-			$ownerPtr = $this->tokens[ $start ][ 'parenthesis_owner' ];
-			if ( in_array( $this->tokens[ $ownerPtr ][ 'code' ], [ \T_IF, \T_ELSEIF ] ) ) {
-				return $ownerPtr;
+			foreach ( array_reverse( $this->tokens[ $stackPtr ][ 'nested_parenthesis' ], true ) as $start => $end ) {
+				$ownerPtr = $this->tokens[ $start ][ 'parenthesis_owner' ];
+				if ( in_array( $this->tokens[ $ownerPtr ][ 'code' ], [ \T_IF, \T_ELSEIF ] ) ) {
+					return $ownerPtr;
+				}
 			}
 		}
 
