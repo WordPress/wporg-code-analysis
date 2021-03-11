@@ -47,3 +47,8 @@ function safe_example_5() {
 	if (!$check)
 		return;
 }
+
+function safe_example_6() {
+	$is_valid = ( isset( $_POST[ 'my_nonce' ] ) && wp_verify_nonce( $_POST[ 'my_nonce' ], 'something' ) ) ? true : false;
+	return $is_valid;
+}
