@@ -31,6 +31,10 @@ class Scan_Metabox {
 			$results[ 'time_taken' ]
 		);
 
+		if ( empty( $results[ 'files' ] ) ) {
+			return;
+		}
+
 		echo '<pre style="white-space: pre-wrap;">';
 		foreach ( $results[ 'files' ] as $pathname => $file ) {
 			list( $slug, $filename ) = explode( '/', $pathname, 2 );

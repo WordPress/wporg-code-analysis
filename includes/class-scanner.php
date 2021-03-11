@@ -51,6 +51,11 @@ class Scanner {
 
 		$result = $phpcs->run_json_report( $unzip_dir, $args, 'array' );
 
+		// If no response, either malformed output or PHP encountered an error.
+		if ( ! $result ) {
+			return false;
+		}
+
 		// Count the time running PHPCS.
 		$result['time_taken'] = microtime( true ) - $now;
 
