@@ -15,7 +15,6 @@ class VerifyNonceUnitTest extends TestCase {
 		$phpcsFile = new LocalFile($fixtureFile, $ruleset, $config);
 		$phpcsFile->process();
 		$foundErrors = $phpcsFile->getErrors();
-		var_dump( $foundErrors );
 		$error_lines = array_keys($foundErrors);
 
 		$this->assertEquals(
@@ -39,7 +38,6 @@ class VerifyNonceUnitTest extends TestCase {
 		$phpcsFile = new LocalFile($fixtureFile, $ruleset, $config);
 		$phpcsFile->process();
 		$foundErrors = $phpcsFile->getErrors();
-		var_dump( $foundErrors );
 		$lines = array_keys($foundErrors);
 
 		$this->assertEquals(
