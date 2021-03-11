@@ -213,6 +213,16 @@ class VerifyNonceSniff extends Sniff {
 					}
 				}
 
+			} else {
+				// wp_verify_nonce() used as an unconditional statement - most likely mistaken for check_admin_referer()
+				$this->phpcsFile->addError( 'Unconditional call to wp_verify_nonce().',
+				$stackPtr,
+				'UnsafeVerifyNonceStatement',
+				[],
+				0,
+				false
+			);
+
 			}
 
 
