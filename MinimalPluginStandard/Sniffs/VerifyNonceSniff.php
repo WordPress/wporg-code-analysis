@@ -240,7 +240,7 @@ class VerifyNonceSniff extends Sniff {
 				
 				if ( !$this->is_return_statement( $stackPtr ) && !$this->is_assignment_statement( $stackPtr ) ) {
 					// wp_verify_nonce() used as an unconditional statement - most likely mistaken for check_admin_referer()
-					$this->phpcsFile->addError( 'Unconditional call to wp_verify_nonce().',
+					$this->phpcsFile->addError( 'Unconditional call to wp_verify_nonce(). Consider using check_admin_referer() instead.',
 					$stackPtr,
 					'UnsafeVerifyNonceStatement',
 					[],
