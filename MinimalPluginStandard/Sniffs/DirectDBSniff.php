@@ -67,6 +67,7 @@ class DirectDBSniff extends Sniff {
 		'get_post_types' => true,
 		'get_charset_collate' => true,
 		'count'          => true,
+		'strtotime'      => true,
 	);
 
 	/**
