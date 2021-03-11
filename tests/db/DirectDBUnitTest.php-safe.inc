@@ -380,3 +380,29 @@ function false_positive_18() {
 			$limit
 	);
 }
+
+function false_positive_19() {
+	$now = new \DateTime();
+	$day = (int)$now->format('d');
+	$month = (int)$now->format('m');
+	$year = (int)$now->format('Y');
+	$type = $_POST['type'];
+
+	if( $type === 'review' || $type === 'order' ){
+
+		$product_id = (int)$_POST['product_id'];
+		$product = wc_get_product( $product_id );
+
+		if( ! $product ){
+			response( false );
+		}
+
+		$stats = $wpdb->get_row( "SELECT * FROM {$wpdb->prefix}woomotiv_stats
+			WHERE product_id={$product_id} AND popup_type IN ('order' , 'review')
+			AND the_day=$day 
+			AND the_month=$month 
+			AND the_year=$year
+		");
+	}
+	
+}
