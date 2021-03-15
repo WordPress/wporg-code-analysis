@@ -302,3 +302,16 @@ class Example_Test_Class {
 		}
 	}
 }
+
+
+function insecure_wpdb_query_23() {
+	$foo = $something ? $_POST['foo'] : 'bar';
+
+	return $wpdb->query( "SELECT * FROM $wpdb->table WHERE foo='$foo'" );
+}
+
+function insecure_wpdb_query_24() {
+	$foo = $_POST['foo'] ?: 'bar';
+
+	return $wpdb->query( "SELECT * FROM $wpdb->table WHERE foo='$foo'" );
+}

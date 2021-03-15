@@ -518,6 +518,64 @@ class DirectDBSniff extends Sniff {
 		return $nextToken;
 	}
 
+	/**
+	 * Find the end of the current expression, being aware of bracket context etc.
+	 * 
+	 * @return int A pointer to the last token in the expression.
+	 */
+	protected function find_end_of_expression( $stackPtr ) {
+
+		if ( isset( $this->tokens[ $stackPtr ][ 'parenthesis_closer' ] ) ) {
+			return $this->tokens[ $stackPtr ][ 'parenthesis_closer' ];
+		}
+
+		$stops = array (
+			\T_SEMICOLON,
+			\T_COMMA,
+		);
+		$prev = $stackPtr;
+		$next = $this->next_non_empty( $stackPtr );
+		while ( $next ) {
+			if ( in_array( $this->tokens[ $next ][ 'code' ], $stops ) ) {
+				return $prev;
+			}
+			// If we found nested parens, jump to the end
+			if ( \T_OPEN_PARENTHESIS === $this->tokens[ $next ][ 'code' ] && isset( $this->tokens[ $next ][ 'parenthesis_closer' ] ) ) {
+				$prev = $this->tokens[ $next ][ 'parenthesis_closer' ];
+				$next = $prev + 1;
+				continue;
+			}
+
+			$prev = $next;
+			$next = $this->next_non_empty( $next + 1 );
+		}
+
+		return $next;
+	}
+
+	/**
+	 * Is $stackPtr within the conditional part of a ternary expression?
+	 * 
+	 * @param	$allow_empty True to allow short ternary `?:` with empty middle expression; False to require the middle expression.
+	 * 
+	 * @return false|int A pointer to the ? operator, or false if it is not a ternary.
+	 */
+	protected function is_ternary_condition( $stackPtr, $allow_empty = false ) {
+
+		$end_of_expression = $this->find_end_of_expression( $stackPtr );
+		$next = $this->next_non_empty( $end_of_expression + 1 );
+
+		$ternaryPtr = $this->phpcsFile->findNext( [ \T_INLINE_THEN => \T_INLINE_THEN ], $stackPtr, $end_of_expression, false, null, true );
+		if ( $ternaryPtr && !$allow_empty ) {
+			// If it's followed immediately by `:` then the middle expression is empty.
+			$lookahead = $this->next_non_empty( $ternaryPtr + 1 );
+			if ( \T_INLINE_ELSE === $this->tokens[ $lookahead ][ 'code' ] ) {
+				return false;
+			}
+		}
+		return $ternaryPtr;
+	}
+
 	// Based on the function from wp-includes/wp-db.php
 	protected function get_table_from_query( $query ) {
 		// Remove characters that can legally trail the table name.
@@ -673,7 +731,11 @@ class DirectDBSniff extends Sniff {
 			+ Tokens::$functionNameTokens
 			+ Tokens::$textStringTokens;
 		while ( $newPtr && $this->phpcsFile->findNext( $tokens_to_find, $newPtr, $endPtr, false, null, true ) ) {
-			if ( in_array( $this->tokens[ $newPtr ][ 'code' ], Tokens::$functionNameTokens ) ) {
+			if ( $ternaryPtr = $this->is_ternary_condition( $newPtr ) ) {
+				// We're in the first part of a ternary condition. It doesn't matter if the condition is safe or not.
+				$newPtr = $this->next_non_empty( $ternaryPtr + 1 );
+				continue;
+			} elseif ( in_array( $this->tokens[ $newPtr ][ 'code' ], Tokens::$functionNameTokens ) ) {
 				if ( isset( $this->escapingFunctions[ $this->tokens[ $newPtr ][ 'content' ] ] ) ) {
 					// Function call to an escaping function.
 					// Skip over the function's parameters and continue checking the remainder of the expression.
