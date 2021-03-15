@@ -556,14 +556,23 @@ class DirectDBSniff extends Sniff {
 	/**
 	 * Is $stackPtr within the conditional part of a ternary expression?
 	 * 
+	 * @param	$allow_empty True to allow short ternary `?:` with empty middle expression; False to require the middle expression.
+	 * 
 	 * @return false|int A pointer to the ? operator, or false if it is not a ternary.
 	 */
-	protected function is_ternary_condition( $stackPtr ) {
+	protected function is_ternary_condition( $stackPtr, $allow_empty = false ) {
 
 		$end_of_expression = $this->find_end_of_expression( $stackPtr );
 		$next = $this->next_non_empty( $end_of_expression + 1 );
 
 		$ternaryPtr = $this->phpcsFile->findNext( [ \T_INLINE_THEN => \T_INLINE_THEN ], $stackPtr, $end_of_expression, false, null, true );
+		if ( $ternaryPtr && !$allow_empty ) {
+			// If it's followed immediately by `:` then the middle expression is empty.
+			$lookahead = $this->next_non_empty( $ternaryPtr + 1 );
+			if ( \T_INLINE_ELSE === $this->tokens[ $lookahead ][ 'code' ] ) {
+				return false;
+			}
+		}
 		return $ternaryPtr;
 	}
 
