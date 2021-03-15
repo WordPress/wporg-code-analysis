@@ -406,3 +406,16 @@ function false_positive_19() {
 	}
 	
 }
+
+function secure_wpdb_query_17() {
+	$foo = $_POST['option'] ? 'foo' : 'bar';
+
+	$wpdb->query( "SELECT * FROM $wpdb->mytable WHERE name = '$foo'" ); // safe because $foo is always assigned a literal
+}
+
+function secure_wpdb_query_18() {
+	// Same but with extra parentheses
+	$foo = ( ($_POST['option']) ? 'foo' : 'bar' );
+
+	$wpdb->query( "SELECT * FROM $wpdb->mytable WHERE name = '$foo'" ); // safe because $foo is always assigned a literal
+}
