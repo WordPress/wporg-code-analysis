@@ -39,6 +39,15 @@ class DirectDBSniff extends Sniff {
 		'wp_parse_id_list'           => true,
 	);
 
+	/**
+	 * Functions that are often mistaken for SQL escaping functions, but are not SQL safe.
+	 */
+	protected $notEscapingFunctions = array(
+		'addslashes',
+		'addcslashes',
+		'sanitize_text_field',
+	);
+
 	// None of these are SQL safe
 	protected $sanitizingFunctions = array();
 	protected $unslashingFunctions = array();
@@ -112,6 +121,10 @@ class DirectDBSniff extends Sniff {
 		'$this', // typically something like $this->tablename
 		'$order_by',
 		'$orderby',
+		'$where',
+		'$wheres',
+		'$join',
+		'$joins',
 	);
 
 	/**
@@ -282,15 +295,24 @@ class DirectDBSniff extends Sniff {
 		return false;
 	}
 
-	protected function find_assignments( $stackPtr ) {
-		if ( \T_VARIABLE !== $this->tokens[ $stackPtr ][ 'code' ] ) {
+	/**
+	 * Return a list of assignment statements for the variable at $stackPtr, within the same scope.
+	 * 
+	 * @param $var_name The variable name. Optional; can be used if $stackPtr doesn't refer to the exact variable.
+	 */
+	protected function find_assignments( $stackPtr, $var_name = null ) {
+		if ( is_null( $var_name ) && \T_VARIABLE !== $this->tokens[ $stackPtr ][ 'code' ] ) {
 			return false;
 		}
 
 		// Find the closure or function scope of the variable.
 		$context = $this->get_context( $stackPtr );
 
-		$var = $this->get_variable_as_string( $stackPtr );
+		if ( is_null( $var_name ) ) {
+			$var = $this->get_variable_as_string( $stackPtr );
+		} else {
+			$var = $var_name;
+		}
 
 		return $this->assignments[ $context ][ $var ];
 	}
@@ -304,25 +326,63 @@ class DirectDBSniff extends Sniff {
 			return [];
 		}
 
-
+		$vars_to_explain = [
+			$this->get_variable_as_string( $stackPtr ) => true,
+		];
 		$extra_context = [];
-		if ( $assignments = $this->find_assignments( $stackPtr ) ) {
+		$from = $stackPtr;
+		while( $vars_to_explain && --$limit >= 0 ) {
+			foreach ( $vars_to_explain as $var => $dummy ) {
+				if ( $assignments = $this->find_assignments( $from, $var ) ) {
+					foreach ( array_reverse( $assignments, true ) as $assignmentPtr => $code ) {
+						$unsafe_ptr = $this->check_expression( $assignmentPtr );
+						if ( $unsafe_ptr ) {
+							$how = 'unsafely';
+							$extra_context[] = sprintf( "%s assigned %s at line %d:\n %s", $var, $how, $this->tokens[ $assignmentPtr ][ 'line' ], $code );
+							foreach( $this->find_functions_in_expression( $assignmentPtr ) as $func ) {
+								if ( in_array( $func, $this->notEscapingFunctions ) ) {
+									$extra_context[] = sprintf( "Note: %s() is not a SQL escaping function", $func );
+									break;
+								}
+							}
+							unset( $vars_to_explain[ $var ] );
+						}
+		
+						if ( $more_vars = $this->find_variables_in_expression( $assignmentPtr ) ) {
+							foreach ( $more_vars as $var_name ) {
+								if ( $var_name !== $var ) {
+									$vars_to_explain[ $var_name ] = true;
+								}
+							}
+						}
+					}
+				}
+
+			}
+
+
+		}
+
+		if ( false && ( $assignments = $this->find_assignments( $stackPtr ) ) ) {
 			foreach ( array_reverse( $assignments, true ) as $assignmentPtr => $code ) {
 				$unsafe_ptr = $this->check_expression( $assignmentPtr );
+				$var = $this->get_variable_as_string( $stackPtr );
 				if ( $assignmentPtr < $stackPtr && $unsafe_ptr ) {
-					$extra_context = array_merge( $extra_context, $this->unwind_unsafe_assignments( $unsafe_ptr + 1, $limit ) );
+					#$extra_context = array_merge( $extra_context, $this->unwind_unsafe_assignments( $unsafe_ptr + 1, $limit ) );
 				}
 				if ( $unsafe_ptr ) {
 					$how = 'unsafely';
+					unset( $vars_to_explain[ $var ] );
 				} else {
 					$how = 'safely';
 				}
-				$extra_context[] = sprintf( "%s assigned %s at line %d:\n %s", $this->get_variable_as_string( $stackPtr ), $how, $this->tokens[ $assignmentPtr ][ 'line' ], $code );
+				$extra_context[] = sprintf( "qqq %s assigned %s at line %d:\n %s", $var, $how, $this->tokens[ $assignmentPtr ][ 'line' ], $code );
 
 				if ( $more_vars = $this->find_variables_in_expression( $assignmentPtr ) ) {
 					foreach ( $more_vars as $var_name ) {
 						$context = $this->get_context( $assignmentPtr );
-						if ( isset( $this->assignments[ $context ][ $var_name ] ) ) {
+						if ( $assignments = $this->find_assignments( $stackPtr, $var_name ) ) {
+							var_dump( $var_name, $this->assignments[ $context ][ $var_name ] );
 							foreach ( array_reverse( $this->assignments[ $context ][ $var_name ], true ) as $assignmentPtr => $code ) {
 								if ( $assignmentPtr < $stackPtr ) {
 									$unsafe_ptr = $this->check_expression( $assignmentPtr );
@@ -331,12 +391,13 @@ class DirectDBSniff extends Sniff {
 									} else {
 										$how = 'safely';
 									}
-									$extra_context[] = sprintf( "%s assigned %s at line %d:\n %s", $var_name, $how, $this->tokens[ $assignmentPtr ][ 'line' ], $code );
+									$extra_context[] = sprintf( "zzz %s assigned %s at line %d:\n %s", $var_name, $how, $this->tokens[ $assignmentPtr ][ 'line' ], $code );
 									if ( $unsafe_ptr < $stackPtr ) {
+										var_dump( "unwinding from line " . $this->tokens[ $unsafe_ptr + 1][ 'line' ] );
 										$extra_context = array_merge( $extra_context, $this->unwind_unsafe_assignments( $unsafe_ptr + 1, $limit ) );
 									}
 									if ( $unsafe_ptr ) {
-										break;
+										#break;
 									}
 								}
 							}
@@ -345,12 +406,12 @@ class DirectDBSniff extends Sniff {
 					}
 				} else {
 					// Stop when there's nothing left to unwind.
-					break;
+					#break;
 				}
 
 				// Stop when we've found 
 				if ( $unsafe_ptr ) {
-					break;
+					#break;
 				}
 
 			}
@@ -697,6 +758,25 @@ class DirectDBSniff extends Sniff {
 
 		return $out;
 	}
+
+	function find_functions_in_expression( $stackPtr, $endPtr = null ) {
+		$out = array();
+
+		$newPtr = $stackPtr;
+		while( $newPtr = $this->phpcsFile->findNext( [ \T_STRING ], $newPtr, $endPtr, false, null, true ) ) {
+			$lookahead = $this->next_non_empty( $newPtr + 1 );
+			if ( $lookahead && ( is_null( $endPtr ) || $lookahead <= $endPtr ) ) {
+				if ( \T_OPEN_PARENTHESIS === $this->tokens[ $lookahead ][ 'code' ] ) {
+					$out[] = $this->tokens[ $newPtr ][ 'content' ];
+				}
+			}
+			$newPtr = $lookahead + 1;
+		}
+
+		return $out;
+	}
+
+
 
 	/**
 	 * Decide if an expression (that is used as a parameter to $wpdb->query() or similar) is safely escaped.

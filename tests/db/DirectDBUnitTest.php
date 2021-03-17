@@ -15,6 +15,7 @@ class DisallowExtractSniffTest extends TestCase {
 		$phpcsFile = new LocalFile($fixtureFile, $ruleset, $config);
 		$phpcsFile->process();
 		$foundErrors = $phpcsFile->getErrors();
+		var_dump( $foundErrors[ 328 ] );
 		$error_lines = array_keys($foundErrors);
 
 		$this->assertEquals(
@@ -44,6 +45,7 @@ class DisallowExtractSniffTest extends TestCase {
 				292,
 				310,
 				316,
+				328,
 			], 
 			$error_lines );
 
