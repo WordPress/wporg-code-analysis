@@ -419,3 +419,15 @@ function secure_wpdb_query_18() {
 
 	$wpdb->query( "SELECT * FROM $wpdb->mytable WHERE name = '$foo'" ); // safe because $foo is always assigned a literal
 }
+
+function false_positive_20($exclude = array()) {
+	$exclude = apply_filters('pta_sus_delete_expired_signups_exclusions', $exclude);
+		$sql = "DELETE FROM ".$this->tables['signup']['name']." WHERE %s > ADDDATE(date, 1)";
+	if(!empty($exclude)) {
+			$clean_ids = array_map('absint', $exclude);
+			$exclusions = implode(',', $clean_ids);
+				$sql .= " AND id NOT IN ($exclusions)";
+		}
+		$safe_sql = $this->wpdb->prepare($sql, $this->now);
+	return $this->wpdb->query($safe_sql);
+}
