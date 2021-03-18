@@ -46,6 +46,7 @@ class DirectDBSniff extends Sniff {
 		'addslashes',
 		'addcslashes',
 		'sanitize_text_field',
+		'sanitize_title',
 	);
 
 	// None of these are SQL safe
@@ -77,6 +78,11 @@ class DirectDBSniff extends Sniff {
 		'get_charset_collate' => true,
 		'count'          => true,
 		'strtotime'      => true,
+		'uniqid'         => true,
+		'md5'            => true,
+		'sha1'           => true,
+		'rand'           => true,
+		'mt_rand'        => true,
 	);
 
 	/**
@@ -326,15 +332,21 @@ class DirectDBSniff extends Sniff {
 			return [];
 		}
 
-		$vars_to_explain = [
-			$this->get_variable_as_string( $stackPtr ) => true,
-		];
+		$vars_to_explain = [];
+		if ( $var = $this->get_variable_as_string( $stackPtr ) ) {
+			$vars_to_explain[ $var ] = true;
+		}
 		$extra_context = [];
 		$from = $stackPtr;
 		while( $vars_to_explain && --$limit >= 0 ) {
 			foreach ( $vars_to_explain as $var => $dummy ) {
 				if ( $assignments = $this->find_assignments( $from, $var ) ) {
 					foreach ( array_reverse( $assignments, true ) as $assignmentPtr => $code ) {
+						// Ignore assignments that happen later in the execution flow.
+						if ( $assignmentPtr >= $stackPtr ) {
+							continue;
+						}
+
 						$unsafe_ptr = $this->check_expression( $assignmentPtr );
 						if ( $unsafe_ptr ) {
 							$how = 'unsafely';
@@ -350,10 +362,16 @@ class DirectDBSniff extends Sniff {
 		
 						if ( $more_vars = $this->find_variables_in_expression( $assignmentPtr ) ) {
 							foreach ( $more_vars as $var_name ) {
-								if ( $var_name !== $var ) {
-									$vars_to_explain[ $var_name ] = true;
+								if ( $var_name && $var_name !== $var ) {
+									if ( !$this->_is_sanitized_var( $var_name, $this->get_context( $assignmentPtr ) ) ) {
+										$vars_to_explain[ $var_name ] = true;
+									}
 								}
 							}
+						}
+
+						if ( !isset( $vars_to_explain[ $var ] ) ) {
+							break; // out of the assignments loop
 						}
 					}
 				}
@@ -363,59 +381,6 @@ class DirectDBSniff extends Sniff {
 
 		}
 
-		if ( false && ( $assignments = $this->find_assignments( $stackPtr ) ) ) {
-			foreach ( array_reverse( $assignments, true ) as $assignmentPtr => $code ) {
-				$unsafe_ptr = $this->check_expression( $assignmentPtr );
-				$var = $this->get_variable_as_string( $stackPtr );
-				if ( $assignmentPtr < $stackPtr && $unsafe_ptr ) {
-					#$extra_context = array_merge( $extra_context, $this->unwind_unsafe_assignments( $unsafe_ptr + 1, $limit ) );
-				}
-				if ( $unsafe_ptr ) {
-					$how = 'unsafely';
-					unset( $vars_to_explain[ $var ] );
-				} else {
-					$how = 'safely';
-				}
-				$extra_context[] = sprintf( "qqq %s assigned %s at line %d:\n %s", $var, $how, $this->tokens[ $assignmentPtr ][ 'line' ], $code );
-
-				if ( $more_vars = $this->find_variables_in_expression( $assignmentPtr ) ) {
-					foreach ( $more_vars as $var_name ) {
-						$context = $this->get_context( $assignmentPtr );
-						if ( $assignments = $this->find_assignments( $stackPtr, $var_name ) ) {
-							var_dump( $var_name, $this->assignments[ $context ][ $var_name ] );
-							foreach ( array_reverse( $this->assignments[ $context ][ $var_name ], true ) as $assignmentPtr => $code ) {
-								if ( $assignmentPtr < $stackPtr ) {
-									$unsafe_ptr = $this->check_expression( $assignmentPtr );
-									if ( $unsafe_ptr ) {
-										$how = 'unsafely';
-									} else {
-										$how = 'safely';
-									}
-									$extra_context[] = sprintf( "zzz %s assigned %s at line %d:\n %s", $var_name, $how, $this->tokens[ $assignmentPtr ][ 'line' ], $code );
-									if ( $unsafe_ptr < $stackPtr ) {
-										var_dump( "unwinding from line " . $this->tokens[ $unsafe_ptr + 1][ 'line' ] );
-										$extra_context = array_merge( $extra_context, $this->unwind_unsafe_assignments( $unsafe_ptr + 1, $limit ) );
-									}
-									if ( $unsafe_ptr ) {
-										#break;
-									}
-								}
-							}
-						}
-
-					}
-				} else {
-					// Stop when there's nothing left to unwind.
-					#break;
-				}
-
-				// Stop when we've found 
-				if ( $unsafe_ptr ) {
-					#break;
-				}
-
-			}
-		}
 
 		$this->unsafe_expression = $_unsafe_expression;
 		$this->unsafe_ptr = $_unsafe_ptr;
