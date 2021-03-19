@@ -95,7 +95,7 @@ class DirectDBSniff extends Sniff {
 		'replace' => true,
 		'update'  => true,
 		'insert'  => true,
-		'prepare' => true,
+		#'prepare' => true,
 	);
 
 	/**
@@ -821,6 +821,7 @@ class DirectDBSniff extends Sniff {
 				$newPtr = $this->next_non_empty( $ternaryPtr + 1 );
 				continue;
 			} elseif ( in_array( $this->tokens[ $newPtr ][ 'code' ], Tokens::$functionNameTokens ) ) {
+				var_dump( $this->tokens[ $newPtr ][ 'content' ] . '()' );
 				if ( isset( $this->escapingFunctions[ $this->tokens[ $newPtr ][ 'content' ] ] ) ) {
 					// Function call to an escaping function.
 					// Skip over the function's parameters and continue checking the remainder of the expression.
@@ -868,6 +869,7 @@ class DirectDBSniff extends Sniff {
 						var_dump( "prepare failed with", $this->phpcsFile->getTokensAsString( $first_param['start'], $first_param['end'] - $first_param['end'] + 1 ));
 						return $inner;
 					}
+					var_dump( "prepare succeeded with first param", $first_param );
 					// It's safe, so skip past the prepare().
 					$param = end( $function_params );
 					$newPtr = $this->next_non_empty( $param['end'] + 1 );
@@ -923,6 +925,7 @@ class DirectDBSniff extends Sniff {
 
 				// Also $wpdb->tablename
 				if ( $lookahead = $this->is_wpdb_property( $newPtr ) ) {
+					var_dump( "wpdb property", $this->phpcsFile->getTokensAsString( $newPtr, $lookahead - $newPtr + 1 ) );
 					$newPtr = $lookahead;
 					continue;
 				}
@@ -930,14 +933,17 @@ class DirectDBSniff extends Sniff {
 				// If the expression contains an unsanitized variable and we haven't already found an escaping function,
 				// then we can fail at this point.
 				if ( '$wpdb' !== $this->tokens[ $newPtr ][ 'content' ] && !$this->is_sanitized_var( $newPtr ) ) {
+					var_dump( "failing at unknown var " . $this->get_variable_as_string( $newPtr ) );
 					return $newPtr;
 				}
+				var_dump( "var must be ok " . $this->get_variable_as_string( $newPtr ) );
 				// Continue from the end of the variable
-				if ( $endPtr = $this->find_end_of_variable( $newPtr ) ) {
-					if ( $endPtr > $newPtr ) {
-						var_dump( "skipping over ". $this->phpcsFile->getTokensAsString( $newPtr, $endPtr - $newPtr + 1 ), $this->get_variable_as_string( $newPtr ) );
-						var_dump( "next token is ", $this->tokens[ $endPtr ] );
-						$newPtr = $endPtr + 1;
+				if ( $lookahead = $this->find_end_of_variable( $newPtr ) ) {
+					var_dump( "end pointer for $newPtr is $lookahead");
+					if ( $looakhead > $newPtr ) {
+						var_dump( "skipping over ". $this->phpcsFile->getTokensAsString( $newPtr, $lookahead - $newPtr + 1 ), $this->get_variable_as_string( $newPtr ) );
+						var_dump( "next token is ", $this->tokens[ $lookahead ] );
+						$newPtr = $lookahead + 1;
 						continue;
 					}
 				}
