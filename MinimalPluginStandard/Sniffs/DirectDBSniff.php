@@ -1094,7 +1094,6 @@ class DirectDBSniff extends Sniff {
 		static $line_no = null;
 		if ( $this->tokens[ $stackPtr ][ 'line' ] !== $line_no ) {
 			$line_no = $this->tokens[ $stackPtr ][ 'line' ];
-			echo "$line_no\n";
 		}
 
 		if ( $this->is_assignment( $stackPtr ) ) {
