@@ -72,12 +72,15 @@ $sql_query assigned unsafely at line 327:
  $sql_query .= implode(" UNION ALL ", $sql_query_sel)
 $sql_query_sel assigned unsafely at line 325:
  $sql_query_sel[] = "SELECT $new_post_id, '$meta_key', '$meta_value'"
+$new_post_id used without escaping.
 $meta_key assigned unsafely at line 323:
  $meta_key = sanitize_text_field($meta_info->meta_key)
-Note: sanitize_text_field() is not a SQL escaping function
+Note: sanitize_text_field() is not a SQL escaping function.
 $meta_value assigned unsafely at line 324:
  $meta_value = addslashes($meta_info->meta_value)
-Note: addslashes() is not a SQL escaping function
+Note: addslashes() is not a SQL escaping function.
+$meta_info->meta_key used without escaping.
+$meta_info->meta_value used without escaping.
 EOF;
 		$this->assertEquals( $expected, $foundErrors[ 328 ][9][0][ 'message' ] );
 

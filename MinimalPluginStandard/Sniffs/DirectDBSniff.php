@@ -356,7 +356,7 @@ class DirectDBSniff extends Sniff {
 							$extra_context[] = sprintf( "%s assigned %s at line %d:\n %s", $var, $how, $this->tokens[ $assignmentPtr ][ 'line' ], $code );
 							foreach( $this->find_functions_in_expression( $assignmentPtr ) as $func ) {
 								if ( in_array( $func, $this->notEscapingFunctions ) ) {
-									$extra_context[] = sprintf( "Note: %s() is not a SQL escaping function", $func );
+									$extra_context[] = sprintf( "Note: %s() is not a SQL escaping function.", $func );
 									break;
 								}
 							}
@@ -365,7 +365,7 @@ class DirectDBSniff extends Sniff {
 		
 						if ( $more_vars = $this->find_variables_in_expression( $assignmentPtr ) ) {
 							foreach ( $more_vars as $var_name ) {
-								if ( $var_name && $var_name !== $var ) {
+								if ( $var_name ) {
 									if ( !$this->_is_sanitized_var( $var_name, $this->get_context( $assignmentPtr ) ) ) {
 										$vars_to_explain[ $var_name ] = true;
 									}
@@ -376,6 +376,10 @@ class DirectDBSniff extends Sniff {
 						if ( !isset( $vars_to_explain[ $var ] ) ) {
 							break; // out of the assignments loop
 						}
+					}
+				} else {
+					if ( !$this->_is_sanitized_var( $var, $from ) ) {
+						$extra_context[] = sprintf( "%s used without escaping.", $var );
 					}
 				}
 
