@@ -208,8 +208,6 @@ class DirectDBSniff extends Sniff {
 
 		$var = $this->get_variable_as_string( $stackPtr );
 
-		var_dump( "mark $var as sanitized on line ". $this->tokens[ $stackPtr ][ 'line' ] );
-
 		$this->sanitized_variables[ $context ][ $var ] = true;
 
 		// Sanitizing only overrides a previously unsafe assignment if it's at a lower level (ie not withing a conditional)
@@ -242,9 +240,6 @@ class DirectDBSniff extends Sniff {
 		$var = $this->get_variable_as_string( $stackPtr );
 		// `$foo[] = $unsafe_val` means we have to assume the whole array is unsafe
 		$var = preg_replace( '/\[\]$/', '', $var );
-
-		var_dump( "mark $var as UNsanitized on line ". $this->tokens[ $stackPtr ][ 'line' ] );
-
 
 		unset( $this->sanitized_variables[ $context ][ $var ] );
 
@@ -281,19 +276,16 @@ class DirectDBSniff extends Sniff {
 
 		// If it's $wpdb->tablename then it's implicitly safe
 		if ( '$wpdb->' === substr( $var, 0, 7 ) || '$this->table' === substr( $var, 0, 12 ) ) {
-			var_dump( "implicit sanitized $var" );
 			return true;
 		}
 
 		// If it's ever been set to something unsanitized in this context then we have to consider it unsafe.
 		// See insecure_wpdb_query_17
 		if ( isset( $this->unsanitized_variables[ $context ][ $var ] ) ) {
-			var_dump( "$var is UNsanitized" );
 			return false;
 		}
 
 		if ( isset( $this->sanitized_variables[ $context ][ $var ] ) ) {
-			var_dump( "$var is sanitized!" );
 			return true;
 		}
 
@@ -301,16 +293,13 @@ class DirectDBSniff extends Sniff {
 		if ( preg_match( '/^([$]\w+)\W/', $var, $matches ) ) {
 			$var_array = $matches[1];
 			if ( isset( $this->unsanitized_variables[ $context ][ $var_array ] ) ) {
-				var_dump( "array $var_array is UNsanitized" );
 				return false;
 			}
 			if ( isset( $this->sanitized_variables[ $context ][ $var_array ] ) ) {
-				var_dump( "array $var_array is sanitized!" );
 				return true;
 			}
 		}
 
-		var_dump( "not sanitized: $var" );
 		return false;
 	}
 
@@ -353,7 +342,6 @@ class DirectDBSniff extends Sniff {
 		$from = $stackPtr;
 		while( $vars_to_explain && --$limit >= 0 ) {
 			foreach ( $vars_to_explain as $var => $dummy ) {
-				#var_dump( "explaining $var" );
 				if ( $assignments = $this->find_assignments( $from, $var ) ) {
 					foreach ( array_reverse( $assignments, true ) as $assignmentPtr => $code ) {
 						// Ignore assignments that happen later in the execution flow.
@@ -363,7 +351,6 @@ class DirectDBSniff extends Sniff {
 
 						$unsafe_ptr = $this->check_expression( $assignmentPtr );
 						if ( $unsafe_ptr ) {
-							var_dump( "unsafe", $this->get_unsafe_expression_as_string( $unsafe_ptr ), $code );
 							$how = 'unsafely';
 							$extra_context[] = sprintf( "%s assigned %s at line %d:\n %s", $var, $how, $this->tokens[ $assignmentPtr ][ 'line' ], $code );
 							foreach( $this->find_functions_in_expression( $assignmentPtr ) as $func ) {
@@ -376,16 +363,13 @@ class DirectDBSniff extends Sniff {
 						}
 		
 						if ( $more_vars = $this->find_variables_in_expression( $assignmentPtr ) ) {
-							#var_dump( "more vars", $more_vars );
 							foreach ( $more_vars as $var_name ) {
 								if ( $var_name && $var_name !== $var ) {
 									if ( !$this->_is_sanitized_var( $var_name, $this->get_context( $assignmentPtr ) ) ) {
-										var_dump( "new to explain: $var_name" );
 										$vars_to_explain[ $var_name ] = true;
 									}
 								}
 							}
-							#var_dump( "left to explain", $vars_to_explain );
 						}
 
 						if ( !isset( $vars_to_explain[ $var ] ) ) {
@@ -398,9 +382,6 @@ class DirectDBSniff extends Sniff {
 
 
 		}
-
-		var_dump( "unexplained", $vars_to_explain );
-
 
 		$this->unsafe_expression = $_unsafe_expression;
 		$this->unsafe_ptr = $_unsafe_ptr;
@@ -612,7 +593,6 @@ class DirectDBSniff extends Sniff {
 		$out = false;
 		$var = $this->get_variable_as_string( $stackPtr );
 		if ( $var && !is_null( $this->i ) ) {
-			#var_dump( "got end of $var", array_slice( $this->tokens, $stackPtr, $this->i - $stackPtr + 1 ) );
 			$out = $this->i;
 		}
 		$this->i = $_i;
@@ -821,7 +801,6 @@ class DirectDBSniff extends Sniff {
 				$newPtr = $this->next_non_empty( $ternaryPtr + 1 );
 				continue;
 			} elseif ( in_array( $this->tokens[ $newPtr ][ 'code' ], Tokens::$functionNameTokens ) ) {
-				var_dump( $this->tokens[ $newPtr ][ 'content' ] . '()' );
 				if ( isset( $this->escapingFunctions[ $this->tokens[ $newPtr ][ 'content' ] ] ) ) {
 					// Function call to an escaping function.
 					// Skip over the function's parameters and continue checking the remainder of the expression.
@@ -866,11 +845,8 @@ class DirectDBSniff extends Sniff {
 					$function_params = PassedParameters::getParameters( $this->phpcsFile, $newPtr );
 					$first_param = reset( $function_params );
 					if ( $inner = $this->check_expression( $first_param[ 'start' ], $first_param[ 'end' ] + 1 ) ) {
-						var_dump( "prepare failed with", $this->phpcsFile->getTokensAsString( $first_param['start'], $first_param['end'] - $first_param['end'] + 1 ));
-						var_dump( "expression is", $this->get_expression_as_string( $newPtr ) );
 						return $inner;
 					}
-					var_dump( "prepare succeeded with first param", $first_param );
 					// It's safe, so skip past the prepare().
 					$param = end( $function_params );
 					$newPtr = $this->next_non_empty( $param['end'] + 1 );
@@ -915,9 +891,7 @@ class DirectDBSniff extends Sniff {
 			} elseif ( \T_VARIABLE === $this->tokens[ $newPtr ][ 'code' ] ) {
 				// Allow for things like $this->wpdb->prepare()
 				if ( '$this' === $this->tokens[ $newPtr ][ 'content' ] || 'this' === $this->tokens[ $newPtr ][ 'content' ] ) {
-					#var_dump( $this->tokens[ $newPtr ], $this->tokens[ $newPtr + 1 ], $this->tokens[ $newPtr + 2 ] );
 					if ( 'wpdb' === $this->tokens[ $newPtr + 2 ][ 'content' ] && '->' === $this->tokens[ $newPtr + 3 ][ 'content' ] ) {
-						var_dump( "found " . $this->tokens[ $newPtr ][ 'content' ] . $this->tokens[ $newPtr + 1 ][ 'content' ] .  $this->tokens[ $newPtr + 2 ][ 'content' ] . $this->tokens[ $newPtr + 3 ][ 'content' ] . $this->tokens[ $newPtr + 4 ][ 'content' ] );
 						// Continue the loop from the wpdb->prepare() part
 						$newPtr += 4;
 						continue;
@@ -926,7 +900,6 @@ class DirectDBSniff extends Sniff {
 
 				// Also $wpdb->tablename
 				if ( $lookahead = $this->is_wpdb_property( $newPtr ) ) {
-					var_dump( "wpdb property", $this->phpcsFile->getTokensAsString( $newPtr, $lookahead - $newPtr + 1 ) );
 					$newPtr = $lookahead;
 					continue;
 				}
@@ -934,16 +907,11 @@ class DirectDBSniff extends Sniff {
 				// If the expression contains an unsanitized variable and we haven't already found an escaping function,
 				// then we can fail at this point.
 				if ( '$wpdb' !== $this->tokens[ $newPtr ][ 'content' ] && !$this->is_sanitized_var( $newPtr ) ) {
-					var_dump( "failing at unknown var " . $this->get_variable_as_string( $newPtr ) );
 					return $newPtr;
 				}
-				var_dump( "var must be ok " . $this->get_variable_as_string( $newPtr ) );
 				// Continue from the end of the variable
 				if ( $lookahead = $this->find_end_of_variable( $newPtr ) ) {
-					var_dump( "end pointer for $newPtr is $lookahead", $lookahead, $newPtr, $lookahead > $newPtr );
 					if ( $lookahead > $newPtr ) {
-						var_dump( "skipping over ". $this->phpcsFile->getTokensAsString( $newPtr, $lookahead - $newPtr + 1 ) );
-						var_dump( "next token is ", $this->tokens[ $lookahead ] );
 						$newPtr = $lookahead + 1;
 						continue;
 					}
@@ -1098,7 +1066,6 @@ class DirectDBSniff extends Sniff {
 		static $line_no = null;
 		if ( $this->tokens[ $stackPtr ][ 'line' ] !== $line_no ) {
 			$line_no = $this->tokens[ $stackPtr ][ 'line' ];
-			echo "$line_no\n";
 		}
 
 		if ( $this->is_assignment( $stackPtr ) ) {
@@ -1108,13 +1075,11 @@ class DirectDBSniff extends Sniff {
 
 			// If the expression being assigned is safe (ie escaped) then mark the variable as sanitized.
 			if ( $this->expression_is_safe( $nextToken + 1 ) ) {
-				var_dump( "safe assignment: ". $this->get_expression_as_string( $stackPtr ) );
 				// Don't mark as safe if it's a concat, since that doesn't sanitize the initial part.
 				if ( $this->tokens[ $nextToken ][ 'code' ] !== \T_CONCAT_EQUAL ) {
 					$this->mark_sanitized_var( $stackPtr, $nextToken + 1 );
 				}
 			} else {
-				var_dump( "UNsafe assignment: ". $this->get_expression_as_string( $stackPtr ), $this->unsafe_expression );
 				$this->mark_unsanitized_var( $stackPtr, $nextToken + 1 );
 			}
 
