@@ -534,6 +534,14 @@ class DirectDBSniff extends Sniff {
 		// It could be a function call or similar. That depends on what comes after it.
 
 		$nextToken = $this->next_non_empty( $stackPtr + 1 );
+		if ( \T_DOUBLE_COLON === $this->tokens[ $nextToken ]['code'] ) {
+			// It might be `self::MYCONST` or `Table::MYCONST`
+			$nextToken = $this->next_non_empty( $nextToken + 1 );
+			if ( \T_STRING !== $this->tokens[ $nextToken ][ 'code' ] ) {
+				// Must be `self::$myvar` or something else that we don't recognize
+				return false;
+			}
+		}
 		if ( in_array( $this->tokens[ $nextToken ][ 'code' ], $this->function_tokens ) ) {
 			// It's followed by a paren or similar, so it's not a constant
 			return false;
