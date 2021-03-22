@@ -78,6 +78,7 @@ class DirectDBSniff extends Sniff {
 		'mktime'         => true,
 		'get_post_types' => true,
 		'get_charset_collate' => true,
+		'get_blog_prefix' => true,
 		'count'          => true,
 		'strtotime'      => true,
 		'uniqid'         => true,
@@ -85,6 +86,7 @@ class DirectDBSniff extends Sniff {
 		'sha1'           => true,
 		'rand'           => true,
 		'mt_rand'        => true,
+		'max'            => true,
 	);
 
 	/**
@@ -289,7 +291,7 @@ class DirectDBSniff extends Sniff {
 		}
 
 		// BuddyPress
-		if ( preg_match( '/^[$]bp->\w+->table_name(?:_data)?$/', $var ) ) {
+		if ( preg_match( '/^[$]bp->\w+->table_name(?:\w+)?$/', $var ) ) {
 			return true;
 		}
 
@@ -339,7 +341,7 @@ class DirectDBSniff extends Sniff {
 		return $this->assignments[ $context ][ $var ];
 	}
 
-	protected function unwind_unsafe_assignments( $stackPtr, $limit = 10 ) {
+	protected function unwind_unsafe_assignments( $stackPtr, $limit = 6 ) {
 		$_unsafe_ptr = $this->unsafe_ptr;
 		$_unsafe_expression = $this->unsafe_expression;
 		$this->unsafe_ptr = null;
@@ -377,7 +379,7 @@ class DirectDBSniff extends Sniff {
 		
 							if ( $more_vars = $this->find_variables_in_expression( $unsafe_ptr ) ) {
 								foreach ( $more_vars as $var_name ) {
-									if ( $var_name && !in_array( $var_name, $this->warn_only_parameters ) ) {
+									if ( $var_name /*&& !in_array( $var_name, $this->warn_only_parameters )*/ ) {
 										if ( !$this->_is_sanitized_var( $var_name, $this->get_context( $assignmentPtr ) ) ) {
 											$vars_to_explain[ $var_name ] = true;
 										}
