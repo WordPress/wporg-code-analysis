@@ -327,3 +327,10 @@ function insecure_wpdb_query_25() {
 	$sql_query .= implode(" UNION ALL ", $sql_query_sel);
 	$wpdb->query($sql_query);
 }
+
+// Another unwind test
+function insecure_wpdb_query_26() {
+	$query = "SELECT * FROM $wpdb->postmeta WHERE meta_key = '$foo' AND meta_value = %s";
+	$sql = $wpdb->prepare( $query, $meta_value );
+	$wpdb->query( $sql );
+}

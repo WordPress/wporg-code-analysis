@@ -45,6 +45,7 @@ class DisallowExtractSniffTest extends TestCase {
 				310,
 				316,
 				328,
+				335,
 			], 
 			$error_lines );
 
@@ -83,6 +84,16 @@ $meta_info->meta_key used without escaping.
 $meta_info->meta_value used without escaping.
 EOF;
 		$this->assertEquals( $expected, $foundErrors[ 328 ][9][0][ 'message' ] );
+
+		$expected =<<<'EOF'
+Unescaped parameter $sql used in $wpdb->query($sql)
+$sql assigned unsafely at line 334:
+ $sql = $wpdb->prepare( $query, $meta_value )
+$query assigned unsafely at line 333:
+ $query = "SELECT * FROM $wpdb->postmeta WHERE meta_key = '$foo' AND meta_value = %s"
+$foo used without escaping.
+EOF;
+		$this->assertEquals( $expected, $foundErrors[ 335 ][9][0][ 'message' ] );
 
 	}
 

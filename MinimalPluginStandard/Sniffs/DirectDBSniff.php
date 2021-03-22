@@ -37,6 +37,7 @@ class DirectDBSniff extends Sniff {
 		'isset'                      => true,
 		'esc_sql'                    => true,
 		'wp_parse_id_list'           => true,
+		'bp_esc_like'                => true,
 	);
 
 	/**
@@ -132,6 +133,12 @@ class DirectDBSniff extends Sniff {
 		'$wheres',
 		'$join',
 		'$joins',
+		'$bp_prefix',
+		'$where_sql',
+		'$join_sql',
+		'$from_sql',
+		'$select_sql',
+		'$meta_query_sql',
 	);
 
 	/**
@@ -276,7 +283,12 @@ class DirectDBSniff extends Sniff {
 	protected function _is_sanitized_var( $var, $context ) {
 
 		// If it's $wpdb->tablename then it's implicitly safe
-		if ( '$wpdb->' === substr( $var, 0, 7 ) || '$this->table' === substr( $var, 0, 12 ) ) {
+		if ( '$wpdb->' === substr( $var, 0, 7 ) || '$this->table' === substr( $var, 0, 12 ) || '$wpdb' === $var ) {
+			return true;
+		}
+
+		// BuddyPress
+		if ( preg_match( '/^[$]bp->\w+->table_name(?:_data)?$/', $var ) ) {
 			return true;
 		}
 
@@ -361,13 +373,13 @@ class DirectDBSniff extends Sniff {
 								}
 							}
 							unset( $vars_to_explain[ $var ] );
-						}
 		
-						if ( $more_vars = $this->find_variables_in_expression( $assignmentPtr ) ) {
-							foreach ( $more_vars as $var_name ) {
-								if ( $var_name ) {
-									if ( !$this->_is_sanitized_var( $var_name, $this->get_context( $assignmentPtr ) ) ) {
-										$vars_to_explain[ $var_name ] = true;
+							if ( $more_vars = $this->find_variables_in_expression( $unsafe_ptr ) ) {
+								foreach ( $more_vars as $var_name ) {
+									if ( $var_name && !in_array( $var_name, $this->warn_only_parameters ) ) {
+										if ( !$this->_is_sanitized_var( $var_name, $this->get_context( $assignmentPtr ) ) ) {
+											$vars_to_explain[ $var_name ] = true;
+										}
 									}
 								}
 							}
@@ -734,17 +746,20 @@ class DirectDBSniff extends Sniff {
 			\T_HEREDOC => \T_HEREDOC,
 		);
 
+		if ( is_null( $endPtr ) ) {
+			$endPtr = $this->find_end_of_expression( $stackPtr );
+		}
+
 		$out = array();
 
 		$newPtr = $stackPtr;
-		while( $this->phpcsFile->findNext( $tokens_to_find, $newPtr, $endPtr, false, null, true ) ) {
+		do {
 			if ( in_array( $this->tokens[ $newPtr ][ 'code' ], [ \T_DOUBLE_QUOTED_STRING, \T_HEREDOC ] ) ) {
 				$out = array_merge( $out, $this->get_interpolated_variables( $newPtr ) );
 			} elseif ( \T_VARIABLE === $this->tokens[ $newPtr ][ 'code' ] ) {
 				$out[] = $this->get_variable_as_string( $newPtr );
 			}
-			++ $newPtr;
-		}
+		} while ( $newPtr = $this->phpcsFile->findNext( $tokens_to_find, $newPtr + 1, $endPtr, false, null, true ) );
 
 		return $out;
 	}
