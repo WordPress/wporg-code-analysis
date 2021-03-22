@@ -334,3 +334,14 @@ function insecure_wpdb_query_26() {
 	$sql = $wpdb->prepare( $query, $meta_value );
 	$wpdb->query( $sql );
 }
+
+function insecure_wpdb_query_27() {
+        global $wpdb;
+        $query = filter_input(INPUT_POST, 'query', FILTER_SANITIZE_STRING);
+
+        $results = $wpdb->get_results("
+SELECT DISTINCT meta_value, post_id
+FROM $wpdb->postmeta
+WHERE meta_key = '_sku' AND meta_value  like '%$query%' LIMIT $this->limit
+");
+}

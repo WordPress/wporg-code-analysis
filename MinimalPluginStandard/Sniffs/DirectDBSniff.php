@@ -49,6 +49,7 @@ class DirectDBSniff extends Sniff {
 		'sanitize_text_field',
 		'sanitize_title',
 		'sanitize_key',
+		'filter_input',
 	);
 
 	// None of these are SQL safe
@@ -353,6 +354,10 @@ class DirectDBSniff extends Sniff {
 		$vars_to_explain = [];
 		if ( $var = $this->get_variable_as_string( $stackPtr ) ) {
 			$vars_to_explain[ $var ] = true;
+		} elseif ( $vars = $this->get_interpolated_variables( $stackPtr ) ) {
+			foreach ( $vars as $var ) {
+				$vars_to_explain[ $var ] = true;
+			}
 		}
 		$extra_context = [];
 		$from = $stackPtr;
@@ -1089,6 +1094,7 @@ class DirectDBSniff extends Sniff {
 		static $line_no = null;
 		if ( $this->tokens[ $stackPtr ][ 'line' ] !== $line_no ) {
 			$line_no = $this->tokens[ $stackPtr ][ 'line' ];
+			echo "$line_no\n";
 		}
 
 		if ( $this->is_assignment( $stackPtr ) ) {
