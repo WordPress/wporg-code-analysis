@@ -44,6 +44,8 @@ class DisallowExtractSniffTest extends TestCase {
 				292,
 				310,
 				316,
+				328,
+				335,
 			], 
 			$error_lines );
 
@@ -64,6 +66,34 @@ class DisallowExtractSniffTest extends TestCase {
 				301
 			],
 			$warning_lines );
+
+		$expected =<<<'EOF'
+Unescaped parameter $sql_query used in $wpdb->query($sql_query)
+$sql_query assigned unsafely at line 327:
+ $sql_query .= implode(" UNION ALL ", $sql_query_sel)
+$sql_query_sel assigned unsafely at line 325:
+ $sql_query_sel[] = "SELECT $new_post_id, '$meta_key', '$meta_value'"
+$new_post_id used without escaping.
+$meta_key assigned unsafely at line 323:
+ $meta_key = sanitize_text_field($meta_info->meta_key)
+Note: sanitize_text_field() is not a SQL escaping function.
+$meta_value assigned unsafely at line 324:
+ $meta_value = addslashes($meta_info->meta_value)
+Note: addslashes() is not a SQL escaping function.
+$meta_info->meta_key used without escaping.
+$meta_info->meta_value used without escaping.
+EOF;
+		$this->assertEquals( $expected, $foundErrors[ 328 ][9][0][ 'message' ] );
+
+		$expected =<<<'EOF'
+Unescaped parameter $sql used in $wpdb->query($sql)
+$sql assigned unsafely at line 334:
+ $sql = $wpdb->prepare( $query, $meta_value )
+$query assigned unsafely at line 333:
+ $query = "SELECT * FROM $wpdb->postmeta WHERE meta_key = '$foo' AND meta_value = %s"
+$foo used without escaping.
+EOF;
+		$this->assertEquals( $expected, $foundErrors[ 335 ][9][0][ 'message' ] );
 
 	}
 

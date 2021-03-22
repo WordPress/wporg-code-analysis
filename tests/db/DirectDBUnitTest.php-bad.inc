@@ -315,3 +315,22 @@ function insecure_wpdb_query_24() {
 
 	return $wpdb->query( "SELECT * FROM $wpdb->table WHERE foo='$foo'" );
 }
+
+// For testing unwind and explanation. This is easily detected, but more difficult to explain why.
+function insecure_wpdb_query_25() {
+	$sql_query = "INSERT INTO $wpdb->postmeta (post_id, meta_key, meta_value) ";
+	foreach ($post_meta_infos as $meta_info) {
+		$meta_key = sanitize_text_field($meta_info->meta_key);
+		$meta_value = addslashes($meta_info->meta_value);
+		$sql_query_sel[] = "SELECT $new_post_id, '$meta_key', '$meta_value'";
+	}
+	$sql_query .= implode(" UNION ALL ", $sql_query_sel);
+	$wpdb->query($sql_query);
+}
+
+// Another unwind test
+function insecure_wpdb_query_26() {
+	$query = "SELECT * FROM $wpdb->postmeta WHERE meta_key = '$foo' AND meta_value = %s";
+	$sql = $wpdb->prepare( $query, $meta_value );
+	$wpdb->query( $sql );
+}
