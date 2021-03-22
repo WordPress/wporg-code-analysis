@@ -527,7 +527,12 @@ class DirectDBSniff extends Sniff {
 	 */
 	protected function is_defined_constant( $stackPtr ) {
 		// It must be a string
-		if ( \T_STRING !== $this->tokens[ $stackPtr ][ 'code' ] ) {
+		$ok_tokens = [
+			\T_SELF,
+			\T_PARENT,
+			\T_STRING,
+		];
+		if ( !in_array( $this->tokens[ $stackPtr ][ 'code' ], $ok_tokens ) ) {
 			return false;
 		}
 
