@@ -47,6 +47,7 @@ class DirectDBSniff extends Sniff {
 		'addcslashes',
 		'sanitize_text_field',
 		'sanitize_title',
+		'sanitize_key',
 	);
 
 	// None of these are SQL safe
