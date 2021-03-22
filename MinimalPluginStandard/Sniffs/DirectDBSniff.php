@@ -125,6 +125,7 @@ class DirectDBSniff extends Sniff {
 	protected $warn_only_parameters = array(
 		'$table',
 		'$table_name',
+		'$table_prefix',
 		'$column_name',
 		'$this', // typically something like $this->tablename
 		'$order_by',
@@ -390,7 +391,7 @@ class DirectDBSniff extends Sniff {
 						}
 					}
 				} else {
-					if ( !$this->_is_sanitized_var( $var, $from ) ) {
+					if ( !$this->_is_sanitized_var( $var, $from ) && !in_array( $var_name, $this->warn_only_parameters ) ) {
 						$extra_context[] = sprintf( "%s used without escaping.", $var );
 					}
 				}
