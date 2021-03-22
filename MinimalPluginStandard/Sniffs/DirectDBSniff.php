@@ -867,6 +867,7 @@ class DirectDBSniff extends Sniff {
 					$first_param = reset( $function_params );
 					if ( $inner = $this->check_expression( $first_param[ 'start' ], $first_param[ 'end' ] + 1 ) ) {
 						var_dump( "prepare failed with", $this->phpcsFile->getTokensAsString( $first_param['start'], $first_param['end'] - $first_param['end'] + 1 ));
+						var_dump( "expression is", $this->get_expression_as_string( $newPtr ) );
 						return $inner;
 					}
 					var_dump( "prepare succeeded with first param", $first_param );
@@ -939,9 +940,9 @@ class DirectDBSniff extends Sniff {
 				var_dump( "var must be ok " . $this->get_variable_as_string( $newPtr ) );
 				// Continue from the end of the variable
 				if ( $lookahead = $this->find_end_of_variable( $newPtr ) ) {
-					var_dump( "end pointer for $newPtr is $lookahead");
-					if ( $looakhead > $newPtr ) {
-						var_dump( "skipping over ". $this->phpcsFile->getTokensAsString( $newPtr, $lookahead - $newPtr + 1 ), $this->get_variable_as_string( $newPtr ) );
+					var_dump( "end pointer for $newPtr is $lookahead", $lookahead, $newPtr, $lookahead > $newPtr );
+					if ( $lookahead > $newPtr ) {
+						var_dump( "skipping over ". $this->phpcsFile->getTokensAsString( $newPtr, $lookahead - $newPtr + 1 ) );
 						var_dump( "next token is ", $this->tokens[ $lookahead ] );
 						$newPtr = $lookahead + 1;
 						continue;
@@ -1113,7 +1114,7 @@ class DirectDBSniff extends Sniff {
 					$this->mark_sanitized_var( $stackPtr, $nextToken + 1 );
 				}
 			} else {
-				var_dump( "UNsafe assignment: ". $this->get_expression_as_string( $stackPtr ) );
+				var_dump( "UNsafe assignment: ". $this->get_expression_as_string( $stackPtr ), $this->unsafe_expression );
 				$this->mark_unsanitized_var( $stackPtr, $nextToken + 1 );
 			}
 
