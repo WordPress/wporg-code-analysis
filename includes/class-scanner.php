@@ -150,10 +150,31 @@ class Scanner {
 	}
 
 	public static function scan_imported_plugin( $plugin, $stable_tag, $old_stable_tag, $changed_svn_tags, $svn_revision ) {
-		$to_scan = array_unique( array_merge(
-			array( $stable_tag ), // always scan the current stable release
-			$changed_svn_tags
-		) );
+
+		$to_scan = [];
+		foreach ( (array) $changed_svn_tags as $tag ) {
+			if (
+				// Always scan trunk if it was touched
+				'trunk' === $tag ||
+				// Only scan tags that are > current stable, avoids scanning old tags when deleted.
+				(
+					'trunk' != $stable_tag &&
+					version_compare( $tag, $stable_tag, '>=' )
+				)
+			) {
+				$to_scan[] = $tag;
+			}
+		}
+
+		// If only old tags were affected, we don't need to scan anything.
+		if ( ! $to_scan ) {
+			return;
+		}
+
+		// always scan the current stable release
+		$to_scan[] = $stable_tag;
+
+		$to_scan = array_unique( $to_scan );
 
 		$already_notified     = get_post_meta( $plugin->ID, '_scan_notified', true ) ?: [];
 		$hashes_seen_this_run = [];
