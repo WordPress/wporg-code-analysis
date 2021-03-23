@@ -50,6 +50,7 @@ class DirectDBSniff extends Sniff {
 		'sanitize_title',
 		'sanitize_key',
 		'filter_input',
+		'esc_attr',
 	);
 
 	// None of these are SQL safe
@@ -384,7 +385,7 @@ class DirectDBSniff extends Sniff {
 		
 							if ( $more_vars = $this->find_variables_in_expression( $unsafe_ptr ) ) {
 								foreach ( $more_vars as $var_name ) {
-									if ( $var_name /*&& !in_array( $var_name, $this->warn_only_parameters )*/ ) {
+									if ( $var_name ) {
 										if ( !$this->_is_sanitized_var( $var_name, $this->get_context( $assignmentPtr ) ) ) {
 											$vars_to_explain[ $var_name ] = true;
 										}
@@ -398,7 +399,7 @@ class DirectDBSniff extends Sniff {
 						}
 					}
 				} else {
-					if ( !$this->_is_sanitized_var( $var, $from ) && !in_array( $var_name, $this->warn_only_parameters ) ) {
+					if ( !$this->_is_sanitized_var( $var, $from ) && !$this->is_warning_parameter( $var ) ) {
 						$extra_context[] = sprintf( "%s used without escaping.", $var );
 					}
 				}
