@@ -151,7 +151,7 @@ foreach ( $slugs as $slug ) {
 		case 'json':
 			$result = $phpcs->run_json_report( $path, $args, 'array' );
 			if ( is_array( $result ) ) {
-				print_r( $result );
+				var_dump( $result );
 			} else {
 				echo $result;
 			}
