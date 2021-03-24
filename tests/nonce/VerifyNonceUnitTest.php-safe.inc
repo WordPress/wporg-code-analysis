@@ -52,3 +52,20 @@ function safe_example_6() {
 	$is_valid = ( isset( $_POST[ 'my_nonce' ] ) && wp_verify_nonce( $_POST[ 'my_nonce' ], 'something' ) ) ? true : false;
 	return $is_valid;
 }
+
+function safe_example_7() {
+	if (  wp_verify_nonce( $_REQUEST['_wpnonce'], 'wpdocs-my-nonce-1' ) || wp_verify_nonce( $_REQUEST['_wpnonce'], 'wpdocs-my-nonce-2' ) ) { // safe!
+		//do you action
+	} else {
+		die( __( 'Security check', 'textdomain' ) ); 
+	}
+}
+
+function safe_example_8() {
+	if (  !wp_verify_nonce( $_REQUEST['_wpnonce'], 'wpdocs-my-nonce-1' ) && !wp_verify_nonce( $_REQUEST['_wpnonce'], 'wpdocs-my-nonce-2' ) ) { // safe!
+		die( __( 'Security check', 'textdomain' ) ); 
+	} else {
+		// do secure action
+	}
+}
+
