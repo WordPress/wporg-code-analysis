@@ -49,6 +49,8 @@ class DirectDBSniff extends Sniff {
 		'sanitize_text_field',
 		'sanitize_title',
 		'sanitize_key',
+		'filter_input',
+		'esc_attr',
 	);
 
 	// None of these are SQL safe
@@ -353,6 +355,10 @@ class DirectDBSniff extends Sniff {
 		$vars_to_explain = [];
 		if ( $var = $this->get_variable_as_string( $stackPtr ) ) {
 			$vars_to_explain[ $var ] = true;
+		} elseif ( $vars = $this->get_interpolated_variables( $stackPtr ) ) {
+			foreach ( $vars as $var ) {
+				$vars_to_explain[ $var ] = true;
+			}
 		}
 		$extra_context = [];
 		$from = $stackPtr;
@@ -379,7 +385,7 @@ class DirectDBSniff extends Sniff {
 		
 							if ( $more_vars = $this->find_variables_in_expression( $unsafe_ptr ) ) {
 								foreach ( $more_vars as $var_name ) {
-									if ( $var_name /*&& !in_array( $var_name, $this->warn_only_parameters )*/ ) {
+									if ( $var_name ) {
 										if ( !$this->_is_sanitized_var( $var_name, $this->get_context( $assignmentPtr ) ) ) {
 											$vars_to_explain[ $var_name ] = true;
 										}
@@ -393,7 +399,7 @@ class DirectDBSniff extends Sniff {
 						}
 					}
 				} else {
-					if ( !$this->_is_sanitized_var( $var, $from ) && !in_array( $var_name, $this->warn_only_parameters ) ) {
+					if ( !$this->_is_sanitized_var( $var, $from ) && !$this->is_warning_parameter( $var ) ) {
 						$extra_context[] = sprintf( "%s used without escaping.", $var );
 					}
 				}
@@ -522,13 +528,26 @@ class DirectDBSniff extends Sniff {
 	 */
 	protected function is_defined_constant( $stackPtr ) {
 		// It must be a string
-		if ( \T_STRING !== $this->tokens[ $stackPtr ][ 'code' ] ) {
+		$ok_tokens = [
+			\T_SELF,
+			\T_PARENT,
+			\T_STRING,
+		];
+		if ( !in_array( $this->tokens[ $stackPtr ][ 'code' ], $ok_tokens ) ) {
 			return false;
 		}
 
 		// It could be a function call or similar. That depends on what comes after it.
 
 		$nextToken = $this->next_non_empty( $stackPtr + 1 );
+		if ( \T_DOUBLE_COLON === $this->tokens[ $nextToken ]['code'] ) {
+			// It might be `self::MYCONST` or `Table::MYCONST`
+			$nextToken = $this->next_non_empty( $nextToken + 1 );
+			if ( \T_STRING !== $this->tokens[ $nextToken ][ 'code' ] ) {
+				// Must be `self::$myvar` or something else that we don't recognize
+				return false;
+			}
+		}
 		if ( in_array( $this->tokens[ $nextToken ][ 'code' ], $this->function_tokens ) ) {
 			// It's followed by a paren or similar, so it's not a constant
 			return false;
@@ -604,7 +623,7 @@ class DirectDBSniff extends Sniff {
 			$next = $this->next_non_empty( $next + 1 );
 		}
 
-		return $next;
+		return $next - 1;
 	}
 
 	protected function find_end_of_variable( $stackPtr ) {

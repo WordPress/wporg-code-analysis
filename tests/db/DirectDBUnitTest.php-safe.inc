@@ -431,3 +431,9 @@ function false_positive_20($exclude = array()) {
 		$safe_sql = $this->wpdb->prepare($sql, $this->now);
 	return $this->wpdb->query($safe_sql);
 }
+
+function false_positive_21() {
+    $table = $wpdb->prefix . Database::MY_TABLE;
+	$sql   = "SELECT id, conditions FROM $table";
+	$rows  = $wpdb->get_results($sql);
+}

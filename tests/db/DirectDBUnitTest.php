@@ -46,6 +46,7 @@ class DisallowExtractSniffTest extends TestCase {
 				316,
 				328,
 				335,
+				342,
 			], 
 			$error_lines );
 
@@ -95,6 +96,17 @@ $foo used without escaping.
 EOF;
 		$this->assertEquals( $expected, $foundErrors[ 335 ][9][0][ 'message' ] );
 
+		$expected =<<<'EOF'
+Unescaped parameter $query used in $wpdb->get_results("
+SELECT DISTINCT meta_value, post_id
+FROM $wpdb->postmeta
+WHERE meta_key = '_sku' AND meta_value  like '%$query%' LIMIT $this->limit
+")
+$query assigned unsafely at line 340:
+ $query = filter_input(INPUT_POST, 'query', FILTER_SANITIZE_STRING)
+Note: filter_input() is not a SQL escaping function.
+EOF;
+		$this->assertEquals( $expected, $foundErrors[ 342 ][27][0][ 'message' ] );
 	}
 
 	public function test_safe_code() {
