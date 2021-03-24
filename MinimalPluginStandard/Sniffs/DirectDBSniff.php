@@ -623,7 +623,7 @@ class DirectDBSniff extends Sniff {
 			$next = $this->next_non_empty( $next + 1 );
 		}
 
-		return $next;
+		return $next - 1;
 	}
 
 	protected function find_end_of_variable( $stackPtr ) {

@@ -105,7 +105,6 @@ WHERE meta_key = '_sku' AND meta_value  like '%$query%' LIMIT $this->limit
 $query assigned unsafely at line 340:
  $query = filter_input(INPUT_POST, 'query', FILTER_SANITIZE_STRING)
 Note: filter_input() is not a SQL escaping function.
-$this->limit used without escaping.
 EOF;
 		$this->assertEquals( $expected, $foundErrors[ 342 ][27][0][ 'message' ] );
 	}
