@@ -69,3 +69,10 @@ function safe_example_8() {
 	}
 }
 
+function safe_example_9() {
+	if ( wp_verify_nonce( $nonce, 'my-nonce' ) && $something_else ) {
+		// do secure action
+	} else {
+		die( __( 'Security check', 'textdomain' ) ); 
+	}
+}
