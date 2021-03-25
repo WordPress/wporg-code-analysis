@@ -41,11 +41,3 @@ function insecure_nonce_7() {
 		}
 	}
 }
-
-function insecure_nonce_8() {
-	if ( $something_else && wp_verify_nonce( $nonce, 'my-nonce' ) ) {
-		// do secure action
-	} else {
-		die( __( 'Security check', 'textdomain' ) ); 
-	}
-}
