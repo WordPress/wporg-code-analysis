@@ -175,6 +175,23 @@ class VerifyNonceSniff extends Sniff {
 		return false;
 	}
 
+	function find_functions_in_expression( $stackPtr, $endPtr = null ) {
+		$out = array();
+
+		$newPtr = $stackPtr;
+		while( $newPtr = $this->phpcsFile->findNext( [ \T_STRING ], $newPtr, $endPtr, false, null, true ) ) {
+			$lookahead = $this->next_non_empty( $newPtr + 1 );
+			if ( $lookahead && ( is_null( $endPtr ) || $lookahead <= $endPtr ) ) {
+				if ( \T_OPEN_PARENTHESIS === $this->tokens[ $lookahead ][ 'code' ] ) {
+					$out[] = $this->tokens[ $newPtr ][ 'content' ];
+				}
+			}
+			$newPtr = $lookahead + 1;
+		}
+
+		return $out;
+	}
+
 	/**
 	 * Returns an array of tokens this test wants to listen for.
 	 *
@@ -205,6 +222,21 @@ class VerifyNonceSniff extends Sniff {
 
 					// if ( $something && ! wp_verify_nonce( ... ) )
 					if ( $this->expression_contains_and( $expression_start, $expression_end ) && $this->scope_contains_error_terminator( $scope_start, $scope_end ) ) {
+						$andPtr = $this->expression_contains_and( $expression_start, $expression_end );
+						if ( $andPtr < $stackPtr ) {
+							// if ( ..something.. && ! wp_verify_nonce() ... )
+							$operand_functions = array_count_values( $this->find_functions_in_expression( $expression_start, $andPtr ) );
+							// if ( ... wp_verify_nonce() && ! wp_verify_nonce() ... )
+							if ( isset( $operand_functions[ 'wp_verify_nonce' ] ) ) {
+								// This is ok, and we will have already checked the previous wp_verify_nonce(), so skip.
+								return;
+							}
+
+						} else {
+							// if ( ... !wp_verify_nonce() && ..something.. )
+							// This is ok since the nonce call comes before the &&
+							return;
+						}
 						$this->phpcsFile->addError( 'Unsafe use of wp_verify_nonce() in expression %s.',
 							$stackPtr,
 							'UnsafeVerifyNonceNegatedAnd',
@@ -224,6 +256,23 @@ class VerifyNonceSniff extends Sniff {
 
 						// if ( $something || wp_verify_nonce( ... ) )
 						if ( $this->expression_contains_or( $expression_start, $expression_end ) && $this->scope_contains_error_terminator( $scope_start, $scope_end ) ) {
+
+							$orPtr = $this->expression_contains_or( $expression_start, $expression_end );
+							if ( $orPtr < $stackPtr ) {
+								// if ( ..something.. || wp_verify_nonce() ... )
+								$operand_functions = array_count_values( $this->find_functions_in_expression( $expression_start, $orPtr ) );
+								// If the previous "something" was another wp_verify_nonce() call then we're fine, ignore
+								if ( isset( $operand_functions[ 'wp_verify_nonce' ] ) ) {
+									return;
+								}
+							} else {
+								// if ( wp_verify_nonce || ..something.. )
+								$operand_functions = array_count_values( $this->find_functions_in_expression( $orPtr, $expression_end ) );
+								// If the next "something" is another wp_verify_nonce() call then we're fine, ignore
+								if ( isset( $operand_functions[ 'wp_verify_nonce' ] ) ) {
+									return;
+								}
+							}
 							$this->phpcsFile->addError( 'Possibly unsafe use of wp_verify_nonce() in expression %s.',
 								$stackPtr,
 								'UnsafeVerifyNonceElse',
