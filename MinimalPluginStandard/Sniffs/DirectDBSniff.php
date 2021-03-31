@@ -183,6 +183,8 @@ class DirectDBSniff extends Sniff {
 	protected $i = null;
 	protected $end = null;
 	protected $methodPtr = null;
+	protected $unsafe_ptr = null;
+	protected $unsafe_expression = null;
 
 	/**
 	 * Get the name of the function containing the code at a given point.
@@ -341,7 +343,9 @@ class DirectDBSniff extends Sniff {
 			$var = $var_name;
 		}
 
-		return $this->assignments[ $context ][ $var ];
+		if ( isset( $this->assignments[ $context ][ $var ] ) ) {
+			return $this->assignments[ $context ][ $var ];
+		}
 	}
 
 	protected function unwind_unsafe_assignments( $stackPtr, $limit = 6 ) {
