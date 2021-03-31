@@ -81,6 +81,7 @@ class DirectDBSniff extends Sniff {
 		'get_post_types' => true,
 		'get_charset_collate' => true,
 		'get_blog_prefix' => true,
+		'get_post_stati' => true,
 		'count'          => true,
 		'strtotime'      => true,
 		'uniqid'         => true,
