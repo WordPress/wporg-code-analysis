@@ -28,7 +28,7 @@
 	<rule ref="WordPress.Security.ValidatedSanitizedInput">
 		<exclude name="WordPress.Security.ValidatedSanitizedInput.InputNotValidated"/>
 		<exclude name="WordPress.Security.ValidatedSanitizedInput.MissingUnslash"/>
-		<type>error</type>
+		<type>warning</type>
 	</rule>
 
 	<!-- Nonces -->
@@ -42,6 +42,8 @@
 				<element key="__" value="__" />
 				<element key="_e" value="_e" />
 				<element key="_x" value="_x" />
+				<element key="_n" value="_n" />
+				<element key="_nx" value="_nx" />
 				<element key="wp_create_nonce" value="wp_create_nonce" />
 				<element key="plugin_dir_url" value="plugin_dir_url" />
 				<element key="plugins_url" value="plugins_url" />
@@ -50,6 +52,7 @@
 				<element key="sanitize_textarea_field" value="sanitize_textarea_field" />
 				<element key="get_locale" value="get_locale" />
 				<element key="get_bloginfo" value="get_bloginfo" /> <!-- only safe if 'display' filter is used -->
+				<element key="get_the_category_list" value="get_the_category_list" />
 			</property>
 		</properties>
 		<type>error</type>
