@@ -3,7 +3,7 @@
   <description>Minimal coding standards for WordPress themes.</description>
 
   <!-- Everything from the plugin standard, to start with -->
-  <rule ref="../MinimalPluginStandard" />
+  <rule ref="../MinimalPluginStandard/ruleset.xml" />
 
   <!-- Stricter checks than for plugins: -->
 
@@ -52,9 +52,6 @@
 				<element key="get_bloginfo" value="get_bloginfo" /> <!-- only safe if 'display' filter is used -->
 			</property>
 		</properties>
-		<type>error</type>
-	</rule>
-	<rule ref="WordPress.Security.EscapeOutput.UnsafePrintingFunction">
 		<type>error</type>
 	</rule>
 	<!-- This one is for the developer, not us -->
