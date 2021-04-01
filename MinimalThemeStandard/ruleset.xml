@@ -1,0 +1,113 @@
+<?xml version="1.0"?>
+<ruleset name="MinimalThemeStandard">
+  <description>Minimal coding standards for WordPress themes.</description>
+
+  <!-- Everything from the plugin standard, to start with -->
+  <rule ref="../MinimalPluginStandard" />
+
+  <!-- Stricter checks than for plugins: -->
+
+	<!-- No hard coding of scripts and styles. Everything should be enqueued. -->
+	<rule ref="WordPress.WP.EnqueuedResources"/>
+
+	<!-- Prevent path disclosure when using add_theme_page(). -->
+	<rule ref="WordPress.Security.PluginMenuSlug"/>
+
+	<!-- While most themes shouldn't query the database directly, if they do, it should be done correctly. -->
+	<!-- Don't use the PHP database functions and classes, use the WP abstraction layer instead. -->
+	<rule ref="WordPress.DB.RestrictedClasses"/>
+	<rule ref="WordPress.DB.RestrictedFunctions"/>
+
+	<!-- All SQL queries should be prepared as close to the time of querying the database as possible. -->
+	<rule ref="WordPress.DB.PreparedSQL"/>
+
+	<!-- Verify that placeholders in prepared queries are used correctly. -->
+	<rule ref="WordPress.DB.PreparedSQLPlaceholders"/>
+
+	<!-- Validate and/or sanitize untrusted data before entering into the database. -->
+	<rule ref="WordPress.Security.ValidatedSanitizedInput">
+		<exclude name="WordPress.Security.ValidatedSanitizedInput.InputNotValidated"/>
+		<exclude name="WordPress.Security.ValidatedSanitizedInput.MissingUnslash"/>
+		<type>error</type>
+	</rule>
+
+	<!-- Nonces -->
+	<!-- <rule ref="WordPress.Security.NonceVerification"/> -->
+
+	<!-- All untrusted data should be escaped before output. -->
+	<rule ref="WordPress.Security.EscapeOutput">
+		<properties>
+			<!-- Some common functions that might technically require output escaping, but rarely cause anything but false positives -->
+			<property name="customAutoEscapedFunctions" type="array">
+				<element key="__" value="__" />
+				<element key="_e" value="_e" />
+				<element key="_x" value="_x" />
+				<element key="wp_create_nonce" value="wp_create_nonce" />
+				<element key="plugin_dir_url" value="plugin_dir_url" />
+				<element key="plugins_url" value="plugins_url" />
+				<element key="admin_url" value="admin_url" />
+				<element key="sanitize_text_field" value="sanitize_text_field" />
+				<element key="sanitize_textarea_field" value="sanitize_textarea_field" />
+				<element key="get_locale" value="get_locale" />
+				<element key="get_bloginfo" value="get_bloginfo" /> <!-- only safe if 'display' filter is used -->
+			</property>
+		</properties>
+		<type>error</type>
+	</rule>
+	<rule ref="WordPress.Security.EscapeOutput.UnsafePrintingFunction">
+		<type>error</type>
+	</rule>
+	<!-- This one is for the developer, not us -->
+	<rule ref="WordPress.Security.EscapeOutput.DeprecatedWhitelistCommentFound">
+		<severity>0</severity>
+	</rule>
+
+
+	<!-- Prohibit the use of the backtick operator. -->
+	<rule ref="Generic.PHP.BacktickOperator"/>
+
+	<!-- Prohibit overwriting of WordPress global variables. DISABLED FOR NOW. -->
+	<!-- <rule ref="WordPress.WP.GlobalVariablesOverride"/> -->
+
+	<!-- Prohibit the use of the eval() PHP language construct. -->
+	<!-- <rule ref="Squiz.PHP.Eval.Discouraged">
+		<type>error</type>
+		<message>eval() is a security risk so not allowed.</message>
+	</rule> -->
+
+	<!-- Prohibit the use of the `goto` PHP language construct. -->
+	<!-- <rule ref="Generic.PHP.DiscourageGoto.Found">
+		<type>error</type>
+		<message>The "goto" language construct should not be used.</message>
+	</rule> -->
+
+	<!-- Verify that everything in the global namespace is prefixed. -->
+	<rule ref="WordPress.NamingConventions.PrefixAllGlobals"/>
+
+	<!-- Check for code WP does better -->
+	<!-- <rule ref="WordPress.WP.AlternativeFunctions">
+		<exclude name="WordPress.WP.AlternativeFunctions.json_encode_json_encode"/>
+	</rule> -->
+
+	<!-- Check for use of deprecated WordPress classes, functions and function parameters. -->
+	<rule ref="WordPress.WP.DeprecatedClasses"/>
+	<rule ref="WordPress.WP.DeprecatedFunctions">
+		<type>warning</type>
+	</rule>
+	<rule ref="WordPress.WP.DeprecatedParameters">
+		<type>warning</type>
+	</rule>
+
+	<!-- Check for deprecated WordPress constants. -->
+	<rule ref="WordPress.WP.DiscouragedConstants">
+		<type>warning</type>
+	</rule>
+
+	<!-- Check for usage of deprecated parameter values in WP functions and provide alternative based on the parameter passed. -->
+	<rule ref="WordPress.WP.DeprecatedParameterValues"/>
+
+	<!-- Stop messing without timezone. -->
+	<!-- <rule ref="WordPress.DateTime.RestrictedFunctions"/> -->
+
+
+</ruleset>

@@ -148,7 +148,7 @@ if ( empty( $opts['slug'] ) ) {
 }
 
 $phpcs = new PHPCS();
-$phpcs->set_standard( dirname( __DIR__ ) . '/MinimalPluginStandard' );
+$phpcs->set_standard( dirname( __DIR__ ) . '/MinimalThemeStandard' );
 
 foreach ( $slugs as $slug ) {
 
