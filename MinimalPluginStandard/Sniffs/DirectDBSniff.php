@@ -1177,7 +1177,8 @@ class DirectDBSniff extends Sniff {
 		// If we're in a call to an unsafe db method like $wpdb->query then check all the parameters for safety
 		if ( isset( $this->unsafe_methods[ $method ] ) ) {
 			// Only the first parameter needs escaping
-			$methodParam = reset( PassedParameters::getParameters( $this->phpcsFile, $methodPtr ) );
+			$parameters = PassedParameters::getParameters( $this->phpcsFile, $methodPtr );
+			$methodParam = reset( $parameters );
 			// If the expression wasn't escaped safely, then alert.
 			if ( $unsafe_ptr = $this->check_expression( $methodParam[ 'start' ], $methodParam[ 'end' ] + 1 ) ) {
 				$extra_context = $this->unwind_unsafe_assignments( $unsafe_ptr );
