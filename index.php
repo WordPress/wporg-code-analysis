@@ -35,7 +35,7 @@ function register_admin_metabox( $post_type, $post ) {
     if ( 'plugin' !== $post_type ) {
         return;
 	}
-	
+
 	// Only load the metabox if the plugin directory plugin is active
 	if ( !class_exists( '\WordPressDotOrg\Plugin_Directory\Plugin_Directory' ) ) {
 		return;

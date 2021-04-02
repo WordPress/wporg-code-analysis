@@ -54,7 +54,7 @@ class PHPCS {
 		if ( is_callable( 'get_temp_dir' ) ) {
 			$this->cache_file = get_temp_dir() . 'wporg-code-analysis/phpcs-cache';
 		} else {
-			$this->cache_file = '/tmp/wporg-code-analysis/phpcs-cache';			
+			$this->cache_file = '/tmp/wporg-code-analysis/phpcs-cache';
 		}
 	}
 

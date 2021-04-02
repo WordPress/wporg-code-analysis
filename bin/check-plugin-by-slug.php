@@ -52,7 +52,7 @@ function get_top_slugs( $plugins_to_retrieve, $starting_page = 1 ) {
 	$out = [];
 
 	foreach ( $data->plugins as $plugin ) {
-		$out[ $plugin->slug ] = [ 
+		$out[ $plugin->slug ] = [
 			'slug' => $plugin->slug,
 			'installs' => $plugin->active_installs,
 			'updated' => $plugin->last_updated,
