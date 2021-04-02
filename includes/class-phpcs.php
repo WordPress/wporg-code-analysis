@@ -185,7 +185,7 @@ class PHPCS {
 			)
 		);
 
-		return $this->run( $path, $args );
+		return $this->run( $path, $args ) ?? 'No errors or warnings found.';
 	}
 
 	/**
@@ -204,7 +204,7 @@ class PHPCS {
 			)
 		);
 
-		return $this->run( $path, $args );
+		return $this->run( $path, $args ) ?? 'No errors or warnings found.';
 	}
 
 	/**
