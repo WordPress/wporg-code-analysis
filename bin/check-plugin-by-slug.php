@@ -21,10 +21,10 @@ $opts = getopt( '', array( 'slug:', 'tag:', 'report:', 'page:', 'number:', 'erro
 if ( empty( $opts['report'] ) ) {
 	$opts['report'] = 'summary';
 }
-if ( intval( $opts['page'] ) <= 1 ) {
+if ( intval( $opts['page'] ?? 0 ) < 1 ) {
 	$opts['page'] = 1;
 }
-if ( intval( $opts['number'] ) <= 1 ) {
+if ( intval( $opts['number'] ?? 0 ) < 1 ) {
 	$opts['number'] = 25;
 }
 if ( empty( $opts['tag'] ) || empty( $opts['slug'] ) ) {
