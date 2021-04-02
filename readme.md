@@ -33,9 +33,21 @@ To scan a specific tag, rather than trunk:
 
 `php bin/check-plugin-by-slug.php --slug=akismet --errors --tag=4.1.5`
 
-To scan plugin source code in a local folder:
+To scan plugin source code in a local folder. Note that this only runs the `MinimalPluginStandard` sniff.
 
 `bin/scan-dir.sh path/to/code`
+
+You can also request results in different formats:
+
+`php bin/check-plugin-by-slug.php --slug=akismet --report=full`
+`php bin/check-plugin-by-slug.php --slug=akismet --report=json`
+`php bin/check-plugin-by-slug.php --slug=akismet --report=summary` (default)
+
+You can check the top `n` plugins by omitting the `slug` parameter and providing `number`:
+
+`php bin/check-plugin-by-slug.php --number=3`
+`php bin/check-plugin-by-slug.php --number=3 --page=2`
+
 
 # Questions
 
