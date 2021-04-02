@@ -324,7 +324,8 @@ class DirectDBSniff extends Sniff {
 	/**
 	 * Return a list of assignment statements for the variable at $stackPtr, within the same scope.
 	 *
-	 * @param $var_name The variable name. Optional; can be used if $stackPtr doesn't refer to the exact variable.
+	 * @param int    $stackPtr The current position within the stack.
+	 * @param string $var_name The variable name. Optional; can be used if $stackPtr doesn't refer to the exact variable.
 	 */
 	protected function find_assignments( $stackPtr, $var_name = null ) {
 		if ( is_null( $var_name ) && \T_VARIABLE !== $this->tokens[ $stackPtr ][ 'code' ] ) {
@@ -340,7 +341,7 @@ class DirectDBSniff extends Sniff {
 			$var = $var_name;
 		}
 
-		return $this->assignments[ $context ][ $var ];
+		return $this->assignments[ $context ][ $var ] ?? false;
 	}
 
 	protected function unwind_unsafe_assignments( $stackPtr, $limit = 6 ) {
