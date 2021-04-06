@@ -326,8 +326,9 @@ class DirectDBSniff extends Sniff {
 
 	/**
 	 * Return a list of assignment statements for the variable at $stackPtr, within the same scope.
-	 * 
-	 * @param $var_name The variable name. Optional; can be used if $stackPtr doesn't refer to the exact variable.
+	 *
+	 * @param int    $stackPtr The current position within the stack.
+	 * @param string $var_name The variable name. Optional; can be used if $stackPtr doesn't refer to the exact variable.
 	 */
 	protected function find_assignments( $stackPtr, $var_name = null ) {
 		if ( is_null( $var_name ) && \T_VARIABLE !== $this->tokens[ $stackPtr ][ 'code' ] ) {
@@ -343,9 +344,7 @@ class DirectDBSniff extends Sniff {
 			$var = $var_name;
 		}
 
-		if ( isset( $this->assignments[ $context ][ $var ] ) ) {
-			return $this->assignments[ $context ][ $var ];
-		}
+		return $this->assignments[ $context ][ $var ] ?? false;
 	}
 
 	protected function unwind_unsafe_assignments( $stackPtr, $limit = 6 ) {
@@ -387,7 +386,7 @@ class DirectDBSniff extends Sniff {
 								}
 							}
 							unset( $vars_to_explain[ $var ] );
-		
+
 							if ( $more_vars = $this->find_variables_in_expression( $unsafe_ptr ) ) {
 								foreach ( $more_vars as $var_name ) {
 									if ( $var_name ) {
@@ -501,16 +500,16 @@ class DirectDBSniff extends Sniff {
 
 			-- $limit;
 		}
-		
+
 		$this->i = $i - 1;
 		return $out;
 	}
 
 	/**
 	 * Find interpolated variable names in a "string" or heredoc.
-	 * 
+	 *
 	 * @param $stackPtr Stack pointer to a double quoted string or heredoc.
-	 * 
+	 *
 	 * @return array|bool Array of variable names, or false if $stackPtr was not a double quoted string or heredoc.
 	 */
 	protected function get_interpolated_variables( $stackPtr ) {
@@ -598,7 +597,7 @@ class DirectDBSniff extends Sniff {
 
 	/**
 	 * Find the end of the current expression, being aware of bracket context etc.
-	 * 
+	 *
 	 * @return int A pointer to the last token in the expression.
 	 */
 	protected function find_end_of_expression( $stackPtr ) {
@@ -645,9 +644,9 @@ class DirectDBSniff extends Sniff {
 
 	/**
 	 * Is $stackPtr within the conditional part of a ternary expression?
-	 * 
+	 *
 	 * @param	$allow_empty True to allow short ternary `?:` with empty middle expression; False to require the middle expression.
-	 * 
+	 *
 	 * @return false|int A pointer to the ? operator, or false if it is not a ternary.
 	 */
 	protected function is_ternary_condition( $stackPtr, $allow_empty = false ) {
@@ -670,13 +669,13 @@ class DirectDBSniff extends Sniff {
 	protected function get_table_from_query( $query ) {
 		// Remove characters that can legally trail the table name.
 		$query = rtrim( $query, ';/-#' );
-	 
+
 		// Allow (select...) union [...] style queries. Use the first query's table name.
 		$query = ltrim( $query, "\r\n\t (" );
-	 
+
 		// Strip everything between parentheses except nested selects.
 		$query = preg_replace( '/\((?!\s*select)[^(]*?\)/is', '()', $query );
-	 
+
 		// Quickly match most common queries.
 		if ( preg_match(
 			'/^\s*(?:'
@@ -691,12 +690,12 @@ class DirectDBSniff extends Sniff {
 		) ) {
 			return str_replace( '`', '', $maybe[1] );
 		}
-	 
+
 		// SHOW TABLE STATUS and SHOW TABLES WHERE Name = 'wp_posts'
 		if ( preg_match( '/^\s*SHOW\s+(?:TABLE\s+STATUS|(?:FULL\s+)?TABLES).+WHERE\s+Name\s*=\s*("|\')((?:[0-9a-zA-Z$_.-]|[\xC2-\xDF][\x80-\xBF])+)\\1/is', $query, $maybe ) ) {
 			return $maybe[2];
 		}
-	 
+
 		/*
 		 * SHOW TABLE STATUS LIKE and SHOW TABLES LIKE 'wp\_123\_%'
 		 * This quoted LIKE operand seldom holds a full table name.
@@ -707,7 +706,7 @@ class DirectDBSniff extends Sniff {
 		if ( preg_match( '/^\s*SHOW\s+(?:TABLE\s+STATUS|(?:FULL\s+)?TABLES)\s+(?:WHERE\s+Name\s+)?LIKE\s*("|\')((?:[\\\\0-9a-zA-Z$_.-]|[\xC2-\xDF][\x80-\xBF])+)%?\\1/is', $query, $maybe ) ) {
 			return str_replace( '\\_', '_', $maybe[2] );
 		}
-	 
+
 		// Big pattern for the rest of the table-related queries.
 		if ( preg_match(
 			'/^\s*(?:'
@@ -730,7 +729,7 @@ class DirectDBSniff extends Sniff {
 		) ) {
 			return str_replace( '`', '', $maybe[1] );
 		}
-	 
+
 		return false;
 	}
 
@@ -902,7 +901,7 @@ class DirectDBSniff extends Sniff {
 					// It's $wpdb->tablename
 					$newPtr = $this->is_wpdb_property( $newPtr ) + 1;
 					continue;
-	
+
 				} elseif ( isset( $this->safe_constants[ $this->tokens[ $newPtr ][ 'content' ] ] ) ) {
 					// It's a constant like ARRAY_A, it's safe.
 					$newPtr = $this->next_non_empty( $newPtr + 1 );
@@ -1117,7 +1116,7 @@ class DirectDBSniff extends Sniff {
 
 		if ( $this->is_assignment( $stackPtr ) ) {
 
-			// Work out what we're assigning to the variable at $stackPtr    		
+			// Work out what we're assigning to the variable at $stackPtr
 			$nextToken = $this->phpcsFile->findNext( Tokens::$assignmentTokens, $stackPtr +1 , null, false, null, true );
 
 			// If the expression being assigned is safe (ie escaped) then mark the variable as sanitized.
@@ -1182,8 +1181,8 @@ class DirectDBSniff extends Sniff {
 		// If we're in a call to an unsafe db method like $wpdb->query then check all the parameters for safety
 		if ( isset( $this->unsafe_methods[ $method ] ) ) {
 			// Only the first parameter needs escaping
-			$params = PassedParameters::getParameters( $this->phpcsFile, $methodPtr );
-			$methodParam = reset( $params );
+			$parameters = PassedParameters::getParameters( $this->phpcsFile, $methodPtr );
+			$methodParam = reset( $parameters );
 			// If the expression wasn't escaped safely, then alert.
 			if ( $unsafe_ptr = $this->check_expression( $methodParam[ 'start' ], $methodParam[ 'end' ] + 1 ) ) {
 				$extra_context = $this->unwind_unsafe_assignments( $unsafe_ptr );
