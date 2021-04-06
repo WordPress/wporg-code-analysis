@@ -85,7 +85,7 @@ class Scan_Metabox {
 
 		$out = new \WP_Ajax_Response();
 
-		$out->add( [ 
+		$out->add( [
 			'what' => 'scan-results',
 			'data' => self::get_scan_output_cached( $post_id ),
 		 ] );
@@ -118,6 +118,6 @@ class Scan_Metabox {
 		return $out;
 	}
 
-	
+
 }
 
