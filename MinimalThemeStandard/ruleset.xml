@@ -5,6 +5,12 @@
   <!-- Everything from the plugin standard, to start with -->
   <rule ref="../MinimalPluginStandard/ruleset.xml" />
 
+  <!-- Also the WPTRT rules -->
+  <rule ref="WPThemeReview">
+	<!-- Have to exclude this part because of a fatal autoload snafu -->
+	<exclude name="PHPCompatibilityWP" />
+  </rule>
+
   <!-- Stricter checks than for plugins: -->
 
 	<!-- No hard coding of scripts and styles. Everything should be enqueued. -->
