@@ -1,0 +1,11 @@
+watch:
+  directories:
+    - ./includes/
+    - ./MinimumPluginStandard/
+    - ./MinimumThemeStandard/
+    - ./tests/
+  fileMask: '/\.php|inc$/'
+
+notifications:
+  passingTests: false
+  failingTests: false

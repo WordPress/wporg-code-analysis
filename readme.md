@@ -48,6 +48,14 @@ You can check the top `n` plugins by omitting the `slug` parameter and providing
 `php bin/check-plugin-by-slug.php --number=3`
 `php bin/check-plugin-by-slug.php --number=3 --page=2`
 
+# Tests
+
+To run the unit tests:
+
+1. Run `composer install`, to install the dependencies.
+1. Run `composer run test` to run the suite once, or `composer run test:watch` to run it continuously.
+
+
 
 # Questions
 
