@@ -81,6 +81,7 @@ class DirectDBSniff extends Sniff {
 		'get_post_types' => true,
 		'get_charset_collate' => true,
 		'get_blog_prefix' => true,
+		'get_post_stati' => true,
 		'count'          => true,
 		'strtotime'      => true,
 		'uniqid'         => true,
@@ -182,6 +183,8 @@ class DirectDBSniff extends Sniff {
 	protected $i = null;
 	protected $end = null;
 	protected $methodPtr = null;
+	protected $unsafe_ptr = null;
+	protected $unsafe_expression = null;
 
 	/**
 	 * Get the name of the function containing the code at a given point.

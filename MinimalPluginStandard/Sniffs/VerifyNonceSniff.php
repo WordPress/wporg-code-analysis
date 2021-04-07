@@ -33,11 +33,13 @@ class VerifyNonceSniff extends Sniff {
 	 * Is $stackPtr part of the conditional expression in an `if` statement?
 	 */
 	protected function is_conditional_expression( $stackPtr ) {
-		if ( $this->tokens[ $stackPtr ][ 'nested_parenthesis' ] ) {
+		if ( isset( $this->tokens[ $stackPtr ][ 'nested_parenthesis' ] ) ) {
 			foreach ( array_reverse( $this->tokens[ $stackPtr ][ 'nested_parenthesis' ], true ) as $start => $end ) {
-				$ownerPtr = $this->tokens[ $start ][ 'parenthesis_owner' ];
-				if ( in_array( $this->tokens[ $ownerPtr ][ 'code' ], [ \T_IF, \T_ELSEIF ] ) ) {
-					return $ownerPtr;
+				if ( isset( $this->tokens[ $start ][ 'parenthesis_owner' ] ) ) {
+					$ownerPtr = $this->tokens[ $start ][ 'parenthesis_owner' ];
+					if ( in_array( $this->tokens[ $ownerPtr ][ 'code' ], [ \T_IF, \T_ELSEIF ] ) ) {
+						return $ownerPtr;
+					}
 				}
 			}
 		}
