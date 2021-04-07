@@ -158,6 +158,23 @@
 	<!-- Prohibit the use of the backtick operator. -->
 	<rule ref="Generic.PHP.BacktickOperator"/>
 
+	<rule ref="Generic.PHP.ForbiddenFunctions">
+		<!-- See https://codex.wordpress.org/Category:Private_Functions -->
+		<properties>
+			<property name="forbiddenFunctions" type="array" extend="true">
+				<element key="_cleanup_header_comment" value="null"/>
+				<element key="_get_plugin_data_markup_translate" value="null"/>
+				<element key="_transition_post_status" value="null"/>
+				<element key="_wp_post_revision_fields" value="null"/>
+				<element key="do_shortcode_tag" value="null"/>
+				<element key="get_post_type_labels" value="null"/>
+				<element key="wp_get_sidebars_widgets" value="null"/>
+				<element key="wp_get_widget_defaults" value="null"/>
+				<element key="wp_unregister_GLOBALS" value="null"/>
+			</property>
+		</properties>
+	</rule>
+
 	<!-- Prohibit overwriting of WordPress global variables. DISABLED FOR NOW. -->
 	<!-- <rule ref="WordPress.WP.GlobalVariablesOverride"/> -->
 
