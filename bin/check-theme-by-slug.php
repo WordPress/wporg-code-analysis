@@ -52,7 +52,7 @@ function get_top_slugs( $plugins_to_retrieve, $starting_page = 1 ) {
 	$out = [];
 
 	foreach ( $data->themes as $theme ) {
-		$out[ $theme->slug ] = [ 
+		$out[ $theme->slug ] = [
 			'slug' => $theme->slug,
 			'installs' => $theme->active_installs,
 			'updated' => $theme->last_updated,

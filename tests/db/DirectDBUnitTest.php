@@ -3,7 +3,7 @@ use PHPUnit\Framework\TestCase;
 use PHP_CodeSniffer\Files\LocalFile;
 use PHP_CodeSniffer\Ruleset;
 use PHP_CodeSniffer\Config;
- 
+
 class DisallowExtractSniffTest extends TestCase {
 	public function test_unsafe_code() {
 		$fixtureFile = __FILE__ . '-bad.inc';
@@ -47,7 +47,7 @@ class DisallowExtractSniffTest extends TestCase {
 				328,
 				335,
 				342,
-			], 
+			],
 			$error_lines );
 
 		$warning_lines = array_keys( $phpcsFile->getWarnings() );
