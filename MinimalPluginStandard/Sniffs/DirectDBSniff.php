@@ -3,12 +3,9 @@
 namespace WordPressDotOrg\Code_Analysis\sniffs;
 
 use WordPressDotOrg\Code_Analysis\AbstractSniffHelper;
-use WordPressCS\WordPress\Sniff;
 use PHP_CodeSniffer\Util\Tokens;
 use PHP_CodeSniffer\Util\Variables;
 use PHPCSUtils\Utils\PassedParameters;
-
-#require_once( dirname( __DIR__ ) . '/AbstractSniffHelper.php' ); // autoload failure?
 
 /**
  * Flag Database direct queries.
