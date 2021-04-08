@@ -157,18 +157,6 @@ class DirectDBSniff extends AbstractSniffHelper {
 	);
 
 	/**
-	 * Tokens that indicate the start of a function call or other non-constant string
-	 */
-	protected $function_tokens = array(
-		\T_OBJECT_OPERATOR     => \T_OBJECT_OPERATOR,
-		\T_DOUBLE_COLON        => \T_DOUBLE_COLON,
-		\T_OPEN_CURLY_BRACKET  => \T_OPEN_CURLY_BRACKET,
-		\T_OPEN_SQUARE_BRACKET => \T_OPEN_SQUARE_BRACKET,
-		\T_OPEN_PARENTHESIS    => \T_OPEN_PARENTHESIS,
-		\T_OBJECT              => \T_OBJECT,
-	);
-
-	/**
 	 * Keep track of sanitized and unsanitized variables
 	 */
 	protected $sanitized_variables = [];

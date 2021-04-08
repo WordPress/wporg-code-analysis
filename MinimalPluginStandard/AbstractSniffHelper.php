@@ -26,10 +26,8 @@ abstract class AbstractSniffHelper extends Sniff {
 	);
 
 	/**
-	 * Keep track of sanitized and unsanitized variables
+	 * Keep track of variable assignments.
 	 */
-	protected $sanitized_variables = [];
-	protected $unsanitized_variables = [];
 	protected $assignments = [];
 
 	/**
@@ -37,9 +35,6 @@ abstract class AbstractSniffHelper extends Sniff {
 	 */
 	protected $i = null;
 	protected $end = null;
-	protected $methodPtr = null;
-	protected $unsafe_ptr = null;
-	protected $unsafe_expression = null;
 
 	/**
 	 * Get the name of the function containing the code at a given point.
