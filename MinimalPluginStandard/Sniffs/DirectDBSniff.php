@@ -2,12 +2,13 @@
 
 namespace WordPressDotOrg\Code_Analysis\sniffs;
 
+use WordPressDotOrg\Code_Analysis\AbstractSniffHelper;
 use WordPressCS\WordPress\Sniff;
 use PHP_CodeSniffer\Util\Tokens;
 use PHP_CodeSniffer\Util\Variables;
 use PHPCSUtils\Utils\PassedParameters;
 
-require_once( dirname( dirname( __DIR__ ) ) . '/vendor/autoload.php' );
+require_once( dirname( __DIR__ ) . '/AbstractSniffHelper.php' ); // autoload failure?
 
 /**
  * Flag Database direct queries.
@@ -22,7 +23,7 @@ require_once( dirname( dirname( __DIR__ ) ) . '/vendor/autoload.php' );
  * @since   0.13.0 Class name changed: this class is now namespaced.
  * @since   1.0.0  This sniff has been moved from the `VIP` category to the `DB` category.
  */
-class DirectDBSniff extends Sniff {
+class DirectDBSniff extends AbstractSniffHelper {
 
 	/**
 	 * Override the parent class escaping functions to only allow SQL-safe escapes
@@ -187,29 +188,6 @@ class DirectDBSniff extends Sniff {
 	protected $unsafe_expression = null;
 
 	/**
-	 * Get the name of the function containing the code at a given point.
-	 */
-	public function get_function_name( $stackPtr ) {
-		$condition = $this->phpcsFile->getCondition( $stackPtr, \T_FUNCTION );
-		if ( false !== $condition ) {
-			return $this->phpcsFile->getDeclarationName( $condition );
-		}
-	}
-
-	/**
-	 * Get the scope context of the code at a given point.
-	 */
-	public function get_context( $stackPtr ) {
-		if ( $context = $this->phpcsFile->getCondition( $stackPtr, \T_CLOSURE ) ) {
-			return $context;
-		} elseif ( $context = $this->phpcsFile->getCondition( $stackPtr, \T_FUNCTION ) ) {
-			return $context;
-		} else {
-			return 'global';
-		}
-	}
-
-	/**
 	 * Mark the variable at $stackPtr as being safely sanitized for use in a SQL context.
 	 * $stackPtr must point to a T_VARIABLE. Handles arrays and (maybe) object properties.
 	 */
@@ -324,29 +302,6 @@ class DirectDBSniff extends Sniff {
 		return false;
 	}
 
-	/**
-	 * Return a list of assignment statements for the variable at $stackPtr, within the same scope.
-	 *
-	 * @param int    $stackPtr The current position within the stack.
-	 * @param string $var_name The variable name. Optional; can be used if $stackPtr doesn't refer to the exact variable.
-	 */
-	protected function find_assignments( $stackPtr, $var_name = null ) {
-		if ( is_null( $var_name ) && \T_VARIABLE !== $this->tokens[ $stackPtr ][ 'code' ] ) {
-			return false;
-		}
-
-		// Find the closure or function scope of the variable.
-		$context = $this->get_context( $stackPtr );
-
-		if ( is_null( $var_name ) ) {
-			$var = $this->get_variable_as_string( $stackPtr );
-		} else {
-			$var = $var_name;
-		}
-
-		return $this->assignments[ $context ][ $var ] ?? false;
-	}
-
 	protected function unwind_unsafe_assignments( $stackPtr, $limit = 6 ) {
 		$_unsafe_ptr = $this->unsafe_ptr;
 		$_unsafe_expression = $this->unsafe_expression;
@@ -419,251 +374,7 @@ class DirectDBSniff extends Sniff {
 		return array_unique( $extra_context );
 	}
 
-	/**
-	 * Helper function to return the next non-empty token starting at $stackPtr inclusive.
-	 */
-	protected function next_non_empty( $stackPtr, $local_only = true ) {
-		return $this->phpcsFile->findNext( Tokens::$emptyTokens, $stackPtr , null, true, null, $local_only );
-	}
 
-	/**
-	 * Find the token following the end of the current function call pointed to by $stackPtr.
-	 */
-	protected function end_of_function_call( $stackPtr ) {
-		if ( !in_array( $this->tokens[ $stackPtr ][ 'code' ], Tokens::$functionNameTokens ) ) {
-			return false;
-		}
-
-		$function_params = PassedParameters::getParameters( $this->phpcsFile, $stackPtr );
-		if ( $param = end( $function_params ) ) {
-			return $this->next_non_empty( $param['end'] + 1 );
-		}
-
-		return false;
-	}
-
-	protected function get_expression_as_string( $stackPtr ) {
-		$end = $this->phpcsFile->findEndOfStatement( $stackPtr );
-		return $this->phpcsFile->getTokensAsString( $stackPtr, $end - $stackPtr + 1 );
-	}
-
-	protected function get_variable_as_string( $stackPtr ) {
-
-		if ( \T_VARIABLE !== $this->tokens[ $stackPtr ][ 'code' ] ) {
-			return false;
-		}
-
-		$i = $stackPtr + 1;
-		$limit = 200;
-		$out = $this->tokens[ $stackPtr ][ 'content' ];
-
-		while ( $limit > 0 ) {
-			// Find the next non-empty token
-			$nextToken = $this->phpcsFile->findNext( Tokens::$emptyTokens, $i , null, true, null, true );
-
-			if ( \T_OPEN_SQUARE_BRACKET === $this->tokens[ $nextToken ][ 'code' ] ) {
-				// If it's an array, take everything between the brackets as part of the variable name
-				for ( $i = $nextToken; $i <= $this->tokens[ $nextToken ]['bracket_closer']; $i++ ) {
-					if ( !in_array( $this->tokens[ $i ][ 'code' ], Tokens::$emptyTokens ) ) {
-						$out .= $this->tokens[ $i ][ 'content' ];
-					}
-				}
-			} elseif ( $this->tokens[ $nextToken ][ 'code' ] === \T_OBJECT_OPERATOR
-				||  $this->tokens[ $nextToken ][ 'code' ] === \T_DOUBLE_COLON ) {
-				// If it's :: or -> then check if the following thing is a string..
-				$objectThing = $this->phpcsFile->findNext( Tokens::$emptyTokens, $nextToken + 1 , null, true, null, true );
-
-				// It could be a variable name or function name
-				if ( $this->tokens[ $objectThing ][ 'code' ] === \T_STRING ) {
-					$lookAhead = $this->phpcsFile->findNext( Tokens::$emptyTokens, $objectThing + 1 , null, true, null, true );
-					if ( $this->tokens[ $lookAhead ][ 'code' ] === \T_OPEN_PARENTHESIS ) {
-						// It's a function name, so ignore it
-						break;
-					}
-					$out .= '->' . $this->tokens[ $objectThing ][ 'content' ];
-					$i = $objectThing + 1;
-				} elseif ( $this->tokens[ $objectThing ][ 'code' ] === \T_LNUMBER ) {
-					// It's a numeric array index
-					$out .= '[' . $this->tokens[ $objectThing ][ 'content' ] . ']';
-					$i = $objectThing + 1;
-
-				} else {
-					++ $i;
-				}
-			} elseif ( \T_CLOSE_SQUARE_BRACKET === $this->tokens[ $nextToken ][ 'code' ] ) {
-				// It's a ] so see what's next
-				++ $i;
-			} else {
-				// Anything else is not part of a variable so stop here
-				break;
-			}
-
-			-- $limit;
-		}
-
-		$this->i = $i - 1;
-		return $out;
-	}
-
-	/**
-	 * Find interpolated variable names in a "string" or heredoc.
-	 *
-	 * @param $stackPtr Stack pointer to a double quoted string or heredoc.
-	 *
-	 * @return array|bool Array of variable names, or false if $stackPtr was not a double quoted string or heredoc.
-	 */
-	protected function get_interpolated_variables( $stackPtr ) {
-		// It must be an interpolated string.
-		if ( in_array( $this->tokens[ $stackPtr ][ 'code' ], [ \T_DOUBLE_QUOTED_STRING, \T_HEREDOC ] ) ) {
-			$out = array();
-			if ( preg_match_all( self::REGEX_COMPLEX_VARS, $this->tokens[ $stackPtr ][ 'content' ], $matches) ) {
-				foreach ( $matches[0] as $var ) {
-					// Normalize variations like {$foo} and ${foo}
-					$out[] = '$' . trim( $var, '${}' );
-				}
-			}
-			return $out;
-		}
-
-		return false;
-	}
-	/**
-	 * Is the T_STRING at $stackPtr a constant as set by define()?
-	 */
-	protected function is_defined_constant( $stackPtr ) {
-		// It must be a string
-		$ok_tokens = [
-			\T_SELF,
-			\T_PARENT,
-			\T_STRING,
-		];
-		if ( !in_array( $this->tokens[ $stackPtr ][ 'code' ], $ok_tokens ) ) {
-			return false;
-		}
-
-		// It could be a function call or similar. That depends on what comes after it.
-
-		$nextToken = $this->next_non_empty( $stackPtr + 1 );
-		if ( \T_DOUBLE_COLON === $this->tokens[ $nextToken ]['code'] ) {
-			// It might be `self::MYCONST` or `Table::MYCONST`
-			$nextToken = $this->next_non_empty( $nextToken + 1 );
-			if ( \T_STRING !== $this->tokens[ $nextToken ][ 'code' ] ) {
-				// Must be `self::$myvar` or something else that we don't recognize
-				return false;
-			}
-		}
-		if ( in_array( $this->tokens[ $nextToken ][ 'code' ], $this->function_tokens ) ) {
-			// It's followed by a paren or similar, so it's not a constant
-			return false;
-		}
-
-		return true;
-	}
-
-	/**
-	 * Is the \T_VARIABLE at $stackPtr a property of wpdb like $wpdb->tablename?
-	 */
-	protected function is_wpdb_property( $stackPtr ) {
-		// It must be a variable
-		if ( !in_array( $this->tokens[ $stackPtr ][ 'code' ], [ \T_VARIABLE, \T_STRING ] ) ) {
-			return false;
-		}
-
-		// $wpdb
-		if ( !in_array( $this->tokens[ $stackPtr ][ 'content' ], [ '$wpdb', 'wpdb' ] ) ) {
-			return false;
-		}
-
-		// ->
-		$nextToken = $this->next_non_empty( $stackPtr + 1 );
-		if ( \T_OBJECT_OPERATOR !== $this->tokens[ $nextToken ][ 'code' ] ) {
-			return false;
-		}
-
-		// tablename
-		$nextToken = $this->next_non_empty( $nextToken + 1 );
-		if ( \T_STRING !== $this->tokens[ $nextToken ][ 'code' ] ) {
-			return false;
-		}
-
-		// not followed by (
-		$nextToken = $this->next_non_empty( $nextToken + 1 );
-		if ( \T_OPEN_PARENTHESIS === $this->tokens[ $nextToken ][ 'code' ] ) {
-			return false;
-		}
-
-		return $nextToken;
-	}
-
-	/**
-	 * Find the end of the current expression, being aware of bracket context etc.
-	 *
-	 * @return int A pointer to the last token in the expression.
-	 */
-	protected function find_end_of_expression( $stackPtr ) {
-
-		if ( isset( $this->tokens[ $stackPtr ][ 'parenthesis_closer' ] ) ) {
-			return $this->tokens[ $stackPtr ][ 'parenthesis_closer' ];
-		}
-
-		$stops = array (
-			\T_SEMICOLON,
-			\T_COMMA,
-		);
-		$prev = $stackPtr;
-		$next = $this->next_non_empty( $stackPtr );
-		while ( $next ) {
-			if ( in_array( $this->tokens[ $next ][ 'code' ], $stops ) ) {
-				return $prev;
-			}
-			// If we found nested parens, jump to the end
-			if ( \T_OPEN_PARENTHESIS === $this->tokens[ $next ][ 'code' ] && isset( $this->tokens[ $next ][ 'parenthesis_closer' ] ) ) {
-				$prev = $this->tokens[ $next ][ 'parenthesis_closer' ];
-				$next = $prev + 1;
-				continue;
-			}
-
-			$prev = $next;
-			$next = $this->next_non_empty( $next + 1 );
-		}
-
-		return $next - 1;
-	}
-
-	protected function find_end_of_variable( $stackPtr ) {
-		$_i = $this->i;
-		$this->i = null;
-		$out = false;
-		$var = $this->get_variable_as_string( $stackPtr );
-		if ( $var && !is_null( $this->i ) ) {
-			$out = $this->i;
-		}
-		$this->i = $_i;
-		return $out;
-	}
-
-	/**
-	 * Is $stackPtr within the conditional part of a ternary expression?
-	 *
-	 * @param	$allow_empty True to allow short ternary `?:` with empty middle expression; False to require the middle expression.
-	 *
-	 * @return false|int A pointer to the ? operator, or false if it is not a ternary.
-	 */
-	protected function is_ternary_condition( $stackPtr, $allow_empty = false ) {
-
-		$end_of_expression = $this->find_end_of_expression( $stackPtr );
-		$next = $this->next_non_empty( $end_of_expression + 1 );
-
-		$ternaryPtr = $this->phpcsFile->findNext( [ \T_INLINE_THEN => \T_INLINE_THEN ], $stackPtr, $end_of_expression, false, null, true );
-		if ( $ternaryPtr && !$allow_empty ) {
-			// If it's followed immediately by `:` then the middle expression is empty.
-			$lookahead = $this->next_non_empty( $ternaryPtr + 1 );
-			if ( \T_INLINE_ELSE === $this->tokens[ $lookahead ][ 'code' ] ) {
-				return false;
-			}
-		}
-		return $ternaryPtr;
-	}
 
 	// Based on the function from wp-includes/wp-db.php
 	protected function get_table_from_query( $query ) {
@@ -763,48 +474,6 @@ class DirectDBSniff extends Sniff {
 		}
 
 		return $this->get_expression_as_string( $stackPtr );
-	}
-
-	function find_variables_in_expression( $stackPtr, $endPtr = null ) {
-		$tokens_to_find = array(
-			\T_VARIABLE => \T_VARIABLE,
-			\T_DOUBLE_QUOTED_STRING => \T_DOUBLE_QUOTED_STRING,
-			\T_HEREDOC => \T_HEREDOC,
-		);
-
-		if ( is_null( $endPtr ) ) {
-			$endPtr = $this->find_end_of_expression( $stackPtr );
-		}
-
-		$out = array();
-
-		$newPtr = $stackPtr;
-		do {
-			if ( in_array( $this->tokens[ $newPtr ][ 'code' ], [ \T_DOUBLE_QUOTED_STRING, \T_HEREDOC ] ) ) {
-				$out = array_merge( $out, $this->get_interpolated_variables( $newPtr ) );
-			} elseif ( \T_VARIABLE === $this->tokens[ $newPtr ][ 'code' ] ) {
-				$out[] = $this->get_variable_as_string( $newPtr );
-			}
-		} while ( $newPtr = $this->phpcsFile->findNext( $tokens_to_find, $newPtr + 1, $endPtr, false, null, true ) );
-
-		return $out;
-	}
-
-	function find_functions_in_expression( $stackPtr, $endPtr = null ) {
-		$out = array();
-
-		$newPtr = $stackPtr;
-		while( $newPtr = $this->phpcsFile->findNext( [ \T_STRING ], $newPtr, $endPtr, false, null, true ) ) {
-			$lookahead = $this->next_non_empty( $newPtr + 1 );
-			if ( $lookahead && ( is_null( $endPtr ) || $lookahead <= $endPtr ) ) {
-				if ( \T_OPEN_PARENTHESIS === $this->tokens[ $lookahead ][ 'code' ] ) {
-					$out[] = $this->tokens[ $newPtr ][ 'content' ];
-				}
-			}
-			$newPtr = $lookahead + 1;
-		}
-
-		return $out;
 	}
 
 
@@ -981,66 +650,7 @@ class DirectDBSniff extends Sniff {
 		return false;
 	}
 
-	/**
-	 * Check if this variable is being assigned a value.
-	 * Copied from WordPressCS\WordPress\Sniff with improvements
-	 *
-	 * E.g., $var = 'foo';
-	 *
-	 * Also handles array assignments to arbitrary depth:
-	 *
-	 * $array['key'][ $foo ][ something() ] = $bar;
-	 *
-	 * @since 0.5.0
-	 *
-	 * @param int $stackPtr The index of the token in the stack. This must point to
-	 *                      either a T_VARIABLE or T_CLOSE_SQUARE_BRACKET token.
-	 *
-	 * @return bool Whether the token is a variable being assigned a value.
-	 */
-	protected function is_assignment( $stackPtr ) {
 
-		static $valid = array(
-			\T_VARIABLE             => true,
-			\T_CLOSE_SQUARE_BRACKET => true,
-			\T_STRING               => true,
-		);
-
-		// Must be a variable, constant or closing square bracket (see below).
-		if ( ! isset( $valid[ $this->tokens[ $stackPtr ]['code'] ] ) ) {
-			return false;
-		}
-
-		$next_non_empty = $this->phpcsFile->findNext(
-			Tokens::$emptyTokens,
-			( $stackPtr + 1 ),
-			null,
-			true,
-			null,
-			true
-		);
-
-		// No token found.
-		if ( false === $next_non_empty ) {
-			return false;
-		}
-
-		// If the next token is an assignment, that's all we need to know.
-		if ( isset( Tokens::$assignmentTokens[ $this->tokens[ $next_non_empty ]['code'] ] ) ) {
-			return true;
-		}
-
-		// Check if this is an array assignment, e.g., `$var['key'] = 'val';` .
-		if ( \T_OPEN_SQUARE_BRACKET === $this->tokens[ $next_non_empty ]['code']
-			&& isset( $this->tokens[ $next_non_empty ]['bracket_closer'] )
-		) {
-			return $this->is_assignment( $this->tokens[ $next_non_empty ]['bracket_closer'] );
-		} elseif ( \T_OBJECT_OPERATOR === $this->tokens[ $next_non_empty ]['code'] ) {
-			return $this->is_assignment( $next_non_empty + 1 );
-		}
-
-		return false;
-	}
 
 	public function is_warning_parameter( $parameter_name ) {
 		foreach ( $this->warn_only_parameters as $warn_param ) {
@@ -1056,33 +666,6 @@ class DirectDBSniff extends Sniff {
 			if ( 0 === strpos( ltrim( $sql, '\'"' ), $warn_query ) ) {
 				return true;
 			}
-		}
-
-		return false;
-	}
-
-	public function is_suppressed_line( $stackPtr, $sniffs = [ 'WordPress.DB.PreparedSQL.NotPrepared', 'WordPress.DB.PreparedSQL.InterpolatedNotPrepared', 'WordPress.DB.DirectDatabaseQuery.DirectQuery', 'DB call', 'unprepared SQL', 'PreparedSQLPlaceholders replacement count'] ) {
-		if ( empty( $this->tokens[ $stackPtr ][ 'line' ] ) ) {
-			return false;
-		}
-
-		// We'll check all lines related to this function call, because placement can differ depending on exactly where we trigger in a multi-line query
-		$end = $this->end_of_function_call( $stackPtr );
-		if ( $end < $stackPtr ) {
-			$end = $stackPtr;
-		}
-
-		for ( $ptr = $stackPtr; $ptr <= $end; $ptr ++ ) {
-			foreach ( $sniffs as $sniff_name ) {
-				$line_no = $this->tokens[ $ptr ][ 'line' ];
-				if ( !empty( $this->phpcsFile->tokenizer->ignoredLines[ $line_no ] ) ) {
-					return true;
-				}
-				if ( $this->has_whitelist_comment( $sniff_name, $ptr ) ) {
-					return true;
-				}
-			}
-
 		}
 
 		return false;
@@ -1188,7 +771,7 @@ class DirectDBSniff extends Sniff {
 				$extra_context = $this->unwind_unsafe_assignments( $unsafe_ptr );
 				$unsafe_expression = $this->get_unsafe_expression_as_string( $unsafe_ptr );
 
-				if ( $this->is_warning_parameter( $unsafe_expression ) || $this->is_warning_sql( $methodParam[ 'clean' ] ) || $this->is_suppressed_line( $methodPtr ) ) {
+				if ( $this->is_warning_parameter( $unsafe_expression ) || $this->is_warning_sql( $methodParam[ 'clean' ] ) || $this->is_suppressed_line( $methodPtr, [ 'WordPress.DB.PreparedSQL.NotPrepared', 'WordPress.DB.PreparedSQL.InterpolatedNotPrepared', 'WordPress.DB.DirectDatabaseQuery.DirectQuery', 'DB call', 'unprepared SQL', 'PreparedSQLPlaceholders replacement count'] ) ) {
 					$this->phpcsFile->addWarning( 'Unescaped parameter %s used in $wpdb->%s(%s)%s',
 						$methodPtr,
 						'UnescapedDBParameter',

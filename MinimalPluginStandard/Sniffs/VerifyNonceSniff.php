@@ -7,8 +7,6 @@ use PHP_CodeSniffer\Util\Tokens;
 use PHP_CodeSniffer\Util\Variables;
 use PHPCSUtils\Utils\PassedParameters;
 
-require_once( dirname( dirname( __DIR__ ) ) . '/vendor/autoload.php' );
-
 /**
  * Check for buggy/insecure use of wp_verify_nonce()
  */
@@ -78,7 +76,7 @@ class VerifyNonceSniff extends Sniff {
 
 
 	/**
-	 * Does the given if statement have an 'else' or 'elseif' 
+	 * Does the given if statement have an 'else' or 'elseif'
 	 */
 	protected function has_else( $stackPtr ) {
 		if ( $this->tokens[ $stackPtr ][ 'scope_closer' ] ) {
@@ -148,7 +146,7 @@ class VerifyNonceSniff extends Sniff {
 		$tokens = [
 			\T_BOOLEAN_AND => \T_BOOLEAN_AND,
 			\T_LOGICAL_AND => \T_LOGICAL_AND,
-			
+
 		];
 		return $this->phpcsFile->findNext( $tokens, $start, $end, false, null, false );
 	}
@@ -160,7 +158,7 @@ class VerifyNonceSniff extends Sniff {
 		$tokens = [
 			\T_BOOLEAN_OR => \T_BOOLEAN_OR,
 			\T_LOGICAL_OR => \T_LOGICAL_OR,
-			
+
 		];
 		return $this->phpcsFile->findNext( $tokens, $start, $end, false, null, false );
 	}
@@ -283,12 +281,12 @@ class VerifyNonceSniff extends Sniff {
 								false
 							);
 						}
-	
+
 					}
 				}
 
 			} else {
-				
+
 				if ( !$this->is_return_statement( $stackPtr ) && !$this->is_assignment_statement( $stackPtr ) ) {
 					// wp_verify_nonce() used as an unconditional statement - most likely mistaken for check_admin_referer()
 					$this->phpcsFile->addError( 'Unconditional call to wp_verify_nonce(). Consider using check_admin_referer() instead.',
@@ -305,5 +303,5 @@ class VerifyNonceSniff extends Sniff {
 
 		}
 	}
-	
+
 }
