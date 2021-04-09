@@ -361,6 +361,7 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 				} elseif ( isset( $this->neutralFunctions[ $this->tokens[ $newPtr ][ 'content' ] ] ) ) {
 					// It's a function like implode(), which is safe if all of the parameters are also safe.
 					$function_params = PassedParameters::getParameters( $this->phpcsFile, $newPtr );
+					$param = null;
 					foreach ( $function_params as $param ) {
 						$innerPtr = $this->check_expression( $param[ 'start' ], $param[ 'end' ] + 1 );
 						if ( $innerPtr ) {
@@ -368,8 +369,10 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 						}
 					};
 					// If we got this far, everything in the call is safe, so skip to the next statement.
-					$newPtr = $this->next_non_empty( $param['end'] + 1 );
-					continue;
+					if ( $param ) {
+						$newPtr = $this->next_non_empty( $param['end'] + 1 );
+						continue;
+					}
 				} elseif ( 'array_map' === $this->tokens[ $newPtr ][ 'content' ] ) {
 					// Special handling for array_map() calls that map an escaping function
 					// See also similar array_walk handler in process_token().
