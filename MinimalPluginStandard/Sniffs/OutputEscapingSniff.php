@@ -71,6 +71,7 @@ class OutputEscapingSniff extends AbstractEscapingCheckSniff {
 		'comments_number'     => true,
 		'get_the_category_list' => true, // separator parameter is unescaped
 		'get_header_image_tag' => true, // args are unescaped
+		'get_the_tag_list'     => true, // args are unescaped
 	);
 
 	/**
@@ -86,6 +87,7 @@ class OutputEscapingSniff extends AbstractEscapingCheckSniff {
 		'get_post_stati' => true,
 		'get_avatar'     => true,
 		'get_search_query' => true,
+		'get_bloginfo'   => true, // depends on params
 		'count'          => true,
 		'strtotime'      => true,
 		'uniqid'         => true,
@@ -103,6 +105,8 @@ class OutputEscapingSniff extends AbstractEscapingCheckSniff {
 		'get_the_posts_pagination' => true,
 		'get_the_author_posts_link' => true,
 		'get_the_password_form' => true,
+		'get_the_tag_list' => true,
+		'get_the_post_thumbnail' => true,
 
 	);
 
