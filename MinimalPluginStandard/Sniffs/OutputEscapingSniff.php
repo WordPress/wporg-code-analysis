@@ -13,24 +13,39 @@ use PHPCSUtils\Utils\PassedParameters;
 class OutputEscapingSniff extends AbstractEscapingCheckSniff {
 
 	/**
-	 * Override the parent class escaping functions to only allow SQL-safe escapes
+	 * Override the parent class escaping functions to only allow HTML-safe escapes
 	 */
 	protected $escapingFunctions = array(
-		'esc_html'                     => true,
+		'esc_html'                   => true,
+		'esc_html__'                 => true,
+		'esc_html_x'                 => true,
+		'esc_html_e'                 => true,
 		'esc_attr'                   => true,
+		'esc_attr__'                 => true,
+		'esc_attr_x'                 => true,
+		'esc_attr_e'                 => true,
+		'esc_url'                    => true,
+		'esc_textarea'               => true,
 		'sanitize_text_field'        => true,
 		'intval'                     => true,
+		'absint'                     => true,
 		'json_encode'                => true,
 		'wp_json_encode'             => true,
+		'htmlspecialchars'           => true,
+		'wp_kses'                    => true,
+		'wp_kses_post'               => true,
+		'wp_kses_data'               => true,
+		'tag_escape'                 => true,
 	);
 
 	/**
-	 * Functions that are often mistaken for SQL escaping functions, but are not SQL safe.
+	 * Functions that are often mistaken for escaping functions.
 	 */
 	protected $notEscapingFunctions = array(
 		'addslashes',
 		'addcslashes',
 		'filter_input',
+		'wp_strip_all_tags',
 	);
 
 	protected $sanitizingFunctions = array();
@@ -44,10 +59,18 @@ class OutputEscapingSniff extends AbstractEscapingCheckSniff {
 		'join'                => true,
 		'array_keys'          => true,
 		'array_values'        => true,
-		'sanitize_text_field' => true, // Note that this does not escape for SQL.
 		'array_fill'          => true,
 		'sprintf'             => true, // Sometimes used to get around formatting table and column names in queries
 		'array_filter'        => true,
+		'__'                  => true,
+		'_x'                  => true,
+		'date_i18n'           => true,
+		'get_the_date'        => true, // Could be unsafe if the format parameter is untrusted
+		'get_comment_time'    => true,
+		'get_comment_date'    => true,
+		'comments_number'     => true,
+		'get_the_category_list' => true, // separator parameter is unescaped
+		'get_header_image_tag' => true, // args are unescaped
 	);
 
 	/**
@@ -61,6 +84,8 @@ class OutputEscapingSniff extends AbstractEscapingCheckSniff {
 		'get_charset_collate' => true,
 		'get_blog_prefix' => true,
 		'get_post_stati' => true,
+		'get_avatar'     => true,
+		'get_search_query' => true,
 		'count'          => true,
 		'strtotime'      => true,
 		'uniqid'         => true,
@@ -69,6 +94,16 @@ class OutputEscapingSniff extends AbstractEscapingCheckSniff {
 		'rand'           => true,
 		'mt_rand'        => true,
 		'max'            => true,
+		'wp_get_attachment_image' => true,
+		'post_class'     => true,
+		'wp_trim_words'  => true, // calls wp_strip_all_tags()
+		'paginate_links' => true,
+		'selected'       => true,
+		'checked'        => true,
+		'get_the_posts_pagination' => true,
+		'get_the_author_posts_link' => true,
+		'get_the_password_form' => true,
+
 	);
 
 	/**
@@ -107,7 +142,9 @@ class OutputEscapingSniff extends AbstractEscapingCheckSniff {
 	protected $unsafe_expression = null;
 
 
-	protected $warn_only_parameters = [];
+	protected $warn_only_parameters = [
+		'$this', // Typically object properties will be initialised safely. Escaping is better but using a warning here helps the signal:noise ratio.
+	];
 
 
 
@@ -339,7 +376,7 @@ class OutputEscapingSniff extends AbstractEscapingCheckSniff {
 					if ( $this->is_warning_parameter( $unsafe_expression ) || $this->is_suppressed_line( $stackPtr, [ 'WordPress.DB.PreparedSQL.NotPrepared', 'WordPress.DB.PreparedSQL.InterpolatedNotPrepared', 'WordPress.DB.DirectDatabaseQuery.DirectQuery', 'DB call', 'unprepared SQL', 'PreparedSQLPlaceholders replacement count'] ) ) {
 						$this->phpcsFile->addWarning( 'Unescaped parameter %s used in %s%s',
 							$stackPtr,
-							'UnescapedDBParameter',
+							'UnescapedOutputParameter',
 							[ $unsafe_expression, $this->tokens[ $stackPtr ][ 'content' ], rtrim( "\n" . join( "\n", $extra_context ) ) ],
 							0,
 							false
@@ -347,7 +384,7 @@ class OutputEscapingSniff extends AbstractEscapingCheckSniff {
 					} else {
 						$this->phpcsFile->addError( 'Unescaped parameter %s used in %s%s',
 							$stackPtr,
-							'UnescapedDBParameter',
+							'UnescapedOutputParameter',
 							[ $unsafe_expression, $this->tokens[ $stackPtr ][ 'content' ], rtrim( "\n" . join( "\n", $extra_context ) ) ],
 							0,
 							false
