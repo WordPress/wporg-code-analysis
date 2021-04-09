@@ -17,7 +17,7 @@ if ( 'cli' != php_sapi_name() ) {
 	die();
 }
 
-$opts = getopt( '', array( 'slug:', 'tag:', 'report:', 'page:', 'number:', 'errors' ) );
+$opts = getopt( '', array( 'slug:', 'tag:', 'report:', 'page:', 'number:', 'errors', 'browse:' ) );
 if ( empty( $opts['report'] ) ) {
 	$opts['report'] = 'summary';
 }
@@ -32,10 +32,10 @@ if ( empty( $opts['tag'] ) || empty( $opts['slug'] ) ) {
 }
 
 // Fetch the slugs of the top plugins in the directory
-function get_top_slugs( $plugins_to_retrieve, $starting_page = 1 ) {
+function get_top_slugs( $plugins_to_retrieve, $starting_page = 1, $browse = 'popular' ) {
 	$payload = array(
 		'action' => 'query_plugins',
-		'request' => serialize( (object) array( 'browse' => 'popular', 'per_page' => $plugins_to_retrieve, 'page' => $starting_page, 'fields' => [ 'active_installs' => true ] ) ) );
+		'request' => serialize( (object) array( 'browse' => $browse, 'per_page' => $plugins_to_retrieve, 'page' => $starting_page, 'fields' => [ 'active_installs' => true ] ) ) );
 
 	$ch = curl_init();
 	curl_setopt($ch, CURLOPT_URL,"https://api.wordpress.org/plugins/info/1.0/");
@@ -114,7 +114,7 @@ define( 'WPINC', 'yeahnah' );
 require dirname( __DIR__ ) . '/includes/class-phpcs.php';
 
 if ( empty( $opts['slug'] ) ) {
-	$plugins = get_top_slugs( intval( $opts['number'] ), intval( $opts['page'] ) );
+	$plugins = get_top_slugs( intval( $opts['number'] ), intval( $opts['page'] ), $opts['browse'] ?? 'popular' );
 	$slugs = array_map( 'reset', $plugins ); // ugh
 } else {
 	$slugs = [ $opts['slug'] ];
@@ -146,7 +146,7 @@ foreach ( $slugs as $slug ) {
 
 	switch ( $opts['report'] ) {
 		case 'full':
-			echo $phpcs->run_full_report( $path, $args );
+			echo $phpcs->run_full_report( $path, $args ) . "\n";
 			break;
 		case 'json':
 			$result = $phpcs->run_json_report( $path, $args, 'array' );
