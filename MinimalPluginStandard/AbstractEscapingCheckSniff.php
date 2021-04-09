@@ -312,7 +312,6 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 	 */
 	public function expression_is_safe( $stackPtr, $endPtr = null ) {
 		// TODO: could produce warnings or give more context
-
 		$this->unsafe_expression = null;
 		$this->unsafe_ptr = null;
 
@@ -393,11 +392,6 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 					$param = end( $function_params );
 					$newPtr = $this->next_non_empty( $param['end'] + 1 );
 					continue;
-				} elseif ( $this->is_wpdb_property( $newPtr ) ) {
-					// It's $wpdb->tablename
-					$newPtr = $this->is_wpdb_property( $newPtr ) + 1;
-					continue;
-
 				} elseif ( isset( $this->safe_constants[ $this->tokens[ $newPtr ][ 'content' ] ] ) ) {
 					// It's a constant like ARRAY_A, it's safe.
 					$newPtr = $this->next_non_empty( $newPtr + 1 );
@@ -438,12 +432,6 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 						$newPtr += 4;
 						continue;
 					}
-				}
-
-				// Also $wpdb->tablename
-				if ( $lookahead = $this->is_wpdb_property( $newPtr ) ) {
-					$newPtr = $lookahead;
-					continue;
 				}
 
 				// If the expression contains an unsanitized variable and we haven't already found an escaping function,
