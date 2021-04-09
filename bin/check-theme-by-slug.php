@@ -17,7 +17,7 @@ if ( 'cli' != php_sapi_name() ) {
 	die();
 }
 
-$opts = getopt( '', array( 'slug:', 'tag:', 'report:', 'page:', 'number:', 'errors' ) );
+$opts = getopt( '', array( 'slug:', 'tag:', 'report:', 'page:', 'number:', 'errors', 'browse:' ) );
 if ( empty( $opts['report'] ) ) {
 	$opts['report'] = 'summary';
 }
@@ -32,10 +32,10 @@ if ( empty( $opts['tag'] ) || empty( $opts['slug'] ) ) {
 }
 
 // Fetch the slugs of the top plugins in the directory
-function get_top_slugs( $plugins_to_retrieve, $starting_page = 1 ) {
+function get_top_slugs( $plugins_to_retrieve, $starting_page = 1, $browse = 'popular' ) {
 	$payload = array(
 		'action' => 'query_themes',
-		'request' => serialize( (object) array( 'browse' => 'popular', 'per_page' => $plugins_to_retrieve, 'page' => $starting_page, 'fields' => [ 'downloadlink' => true, 'active_installs' => true, 'last_updated' => true ] ) ) );
+		'request' => serialize( (object) array( 'browse' => $browse, 'per_page' => $plugins_to_retrieve, 'page' => $starting_page, 'fields' => [ 'downloadlink' => true, 'active_installs' => true, 'last_updated' => true ] ) ) );
 
 	$ch = curl_init();
 	curl_setopt($ch, CURLOPT_URL,"https://api.wordpress.org/themes/info/1.0/");
@@ -141,7 +141,7 @@ define( 'WPINC', 'yeahnah' );
 require dirname( __DIR__ ) . '/includes/class-phpcs.php';
 
 if ( empty( $opts['slug'] ) ) {
-	$themes = get_top_slugs( intval( $opts['number'] ), intval( $opts['page'] ) );
+	$themes = get_top_slugs( intval( $opts['number'] ), intval( $opts['page'] ), $opts['browse'] ?? 'popular' );
 	$slugs = array_map( 'reset', $themes ); // ugh
 } else {
 	$slugs = [ $opts['slug'] ];
