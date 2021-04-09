@@ -64,6 +64,7 @@ class OutputEscapingSniff extends AbstractEscapingCheckSniff {
 		'array_filter'        => true,
 		'__'                  => true,
 		'_x'                  => true,
+		'date'                => true,
 		'date_i18n'           => true,
 		'get_the_date'        => true, // Could be unsafe if the format parameter is untrusted
 		'get_comment_time'    => true,
@@ -88,6 +89,7 @@ class OutputEscapingSniff extends AbstractEscapingCheckSniff {
 		'get_avatar'     => true,
 		'get_search_query' => true,
 		'get_bloginfo'   => true, // depends on params
+		'get_the_ID'     => true,
 		'count'          => true,
 		'strtotime'      => true,
 		'uniqid'         => true,
@@ -107,6 +109,7 @@ class OutputEscapingSniff extends AbstractEscapingCheckSniff {
 		'get_the_password_form' => true,
 		'get_the_tag_list' => true,
 		'get_the_post_thumbnail' => true,
+		'get_custom_logo' => true,
 
 	);
 
