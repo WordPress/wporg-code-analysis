@@ -2,7 +2,7 @@
 
 namespace WordPressDotOrg\Code_Analysis\sniffs;
 
-use WordPressDotOrg\Code_Analysis\AbstractSniffHelper;
+use WordPressDotOrg\Code_Analysis\AbstractEscapingCheckSniff;
 use PHP_CodeSniffer\Util\Tokens;
 use PHP_CodeSniffer\Util\Variables;
 use PHPCSUtils\Utils\PassedParameters;
@@ -20,7 +20,7 @@ use PHPCSUtils\Utils\PassedParameters;
  * @since   0.13.0 Class name changed: this class is now namespaced.
  * @since   1.0.0  This sniff has been moved from the `VIP` category to the `DB` category.
  */
-class DirectDBSniff extends AbstractSniffHelper {
+class DirectDBSniff extends AbstractEscapingCheckSniff {
 
 	/**
 	 * Override the parent class escaping functions to only allow SQL-safe escapes
