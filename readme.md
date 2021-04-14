@@ -2,7 +2,8 @@
 
 An experiment.
 
-# Installation
+
+## Installation
 
 1. Clone this repo in a local folder.
 
@@ -17,7 +18,7 @@ cd wporg-code-analysis
 composer install
 ```
 
-# Usage
+## Usage
 
 For normal use you do not need to install this as a WordPress plugin, nor does it require a WordPress install in order to work.
 
@@ -37,18 +38,21 @@ To scan plugin source code in a local folder. Note that this only runs the `Mini
 
 `bin/scan-dir.sh path/to/code`
 
-You can also request results in different formats:
+To see results in different formats:
 
 `php bin/check-plugin-by-slug.php --slug=akismet --report=full`
+
 `php bin/check-plugin-by-slug.php --slug=akismet --report=json`
+
 `php bin/check-plugin-by-slug.php --slug=akismet --report=summary` (default)
 
-You can check the top `n` plugins by omitting the `slug` parameter and providing `number`:
+To check the most popular `n` plugins, omit the `slug` parameter and provide `number`:
 
 `php bin/check-plugin-by-slug.php --number=3`
+
 `php bin/check-plugin-by-slug.php --number=3 --page=2`
 
-# Tests
+## Tests
 
 To run the unit tests:
 
@@ -56,10 +60,9 @@ To run the unit tests:
 1. Run `composer run test` to run the suite once, or `composer run test:watch` to run it continuously.
 
 
+## Questions
 
-# Questions
-
-## Do I need a WordPress site or local test environment?
+### Do I need a WordPress site or local test environment?
 
 No. The codesniffer rules are bundled into a WordPress plugin for one particular use case, but they work stand-alone as well. For example, after installation, this will work:
 
@@ -71,7 +74,7 @@ Install wporg-code-analysis as above. Then, with your plugin's source code check
 
 `bin/scan-dir.sh /path/to/my-plugin-source`
 
-## How does this differ from WPCS and other PHP or WordPress coding standards?
+### How does this differ from WPCS and other PHP or WordPress coding standards?
 
 In two main ways.
 
@@ -102,4 +105,3 @@ function insecure_do_not_use( $ids, $status ) {
 ```
 
 See the unit tests for other examples of [safe](https://github.com/WordPress/wporg-code-analysis/blob/trunk/tests/db/DirectDBUnitTest.php-safe.inc) and [unsafe](https://github.com/WordPress/wporg-code-analysis/blob/trunk/tests/db/DirectDBUnitTest.php-bad.inc) database code that the tool can correctly differentiate.
-
