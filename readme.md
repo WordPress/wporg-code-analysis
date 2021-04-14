@@ -20,9 +20,14 @@ composer install
 
 ## Usage
 
+You can check code that's hosted in the WordPress.org/plugins repository, and code on your computer.
+
 For normal use you do not need to install this as a WordPress plugin, nor does it require a WordPress install in order to work.
 
-To scan a plugin from the directory given its slug:
+
+### Scan code from the WordPress.org/plugins repository
+
+Pass the plugin's slug to the `check-plugin-by-slug.php` script:
 
 `php bin/check-plugin-by-slug.php --slug=akismet --errors`
 
@@ -52,6 +57,30 @@ To check the most popular `n` plugins, omit the `slug` parameter and provide `nu
 
 `php bin/check-plugin-by-slug.php --number=3 --page=2`
 
+To check the newest `n` plugins:
+
+`php bin/check-plugin-by-slug.php --report=full --errors --browse=new --number=3`
+
+
+### Scan local code
+
+To check code that you have on your computer:
+
+`bin/scan-dir.sh /path/to/my-plugin-source`
+
+By default, the script passes the `-n` and `-s` flags to PHPCS, so that warnings are hidden and sniff codes are shown. If you prefer, though, you can override that and pass your own [PHPCS arguments](https://github.com/squizlabs/PHP_CodeSniffer/wiki/Usage#getting-help-from-the-command-line). Pass them _before_ the directory:
+
+```sh
+# -a runs PHPCS interactively. By default PHPCS shows errors and warnings, but not sniff codes.
+./bin/scan-dir.sh -a /path/to/my-plugin-source
+```
+
+```sh
+# -n shows only errors, -s shows sniff codes, -a runs PHPCS interactively
+./bin/scan-dir.sh -nsa /path/to/my-plugin-source
+```
+
+
 ## Tests
 
 To run the unit tests:
@@ -67,12 +96,6 @@ To run the unit tests:
 No. The codesniffer rules are bundled into a WordPress plugin for one particular use case, but they work stand-alone as well. For example, after installation, this will work:
 
 `phpcs --standard=./MinimalPluginStandard /path/to/my-plugin-source`
-
-## How do I use this to check code in my own svn or git repo?
-
-Install wporg-code-analysis as above. Then, with your plugin's source code checked out in a local working dir `/path/to/my-plugin-source`:
-
-`bin/scan-dir.sh /path/to/my-plugin-source`
 
 ### How does this differ from WPCS and other PHP or WordPress coding standards?
 
