@@ -4,7 +4,7 @@ use PHP_CodeSniffer\Files\LocalFile;
 use PHP_CodeSniffer\Ruleset;
 use PHP_CodeSniffer\Config;
 
-class DisallowExtractSniffTest extends TestCase {
+class DirectDBUnitTest extends TestCase {
 	public function test_unsafe_code() {
 		$fixtureFile = __FILE__ . '-bad.inc';
 		$sniffFiles = [ dirname( dirname( __DIR__ ) ) . '/MinimalPluginStandard/Sniffs/DirectDBSniff.php' ];
