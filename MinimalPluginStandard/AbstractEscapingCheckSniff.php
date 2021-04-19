@@ -81,6 +81,8 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 	protected $unsafe_ptr = null;
 	protected $unsafe_expression = null;
 
+	protected $rule_name = __CLASS__;
+
 	/**
 	 * Mark the variable at $stackPtr as being safely sanitized for use in a SQL context.
 	 * $stackPtr must point to a T_VARIABLE. Handles arrays and (maybe) object properties.
@@ -475,15 +477,18 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 	/**
 	 * Is $stackPtr a function call or other statement that requires escaped data?
 	 * Override this in child classes as needed.
+	 *
+	 * @return int Returns a pointer to the method call that requires escaping, if relevant.
 	 */
 	public function needs_escaping( $stackPtr ) {
-		if ( isset( $this->unsafe_methods[ $this->tokens[ $stackPtr ][ 'content' ] ] ) ) {
-			return true;
+
+		if ( $this->is_wpdb_method_call( $stackPtr, $this->unsafe_methods ) ) {
+			return $this->methodPtr;
 		}
 
 		// FIXME: move array to property?
 		if ( in_array( $this->tokens[ $stackPtr ][ 'code' ], [ \T_ECHO, \T_PRINT, \T_EXIT ] ) ) {
-			return true;
+			return $stackPtr;
 		}
 
 		return false;
@@ -553,30 +558,30 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 		}
 
 		// If we're in a call to an unsafe db method like $wpdb->query then check all the parameters for safety
-		if ( $this->needs_escaping( $stackPtr ) ) {
+		if ( $checkPtr = $this->needs_escaping( $stackPtr ) ) {
 			// Function call?
-			if ( \T_STRING === $this->tokens[ $stackPtr ][ 'code' ] ) {
+			if ( \T_STRING === $this->tokens[ $checkPtr ][ 'code' ] ) {
 				// Only the first parameter needs escaping (FIXME?)
-				$parameters = PassedParameters::getParameters( $this->phpcsFile, $stackPtr );
-				$method = $this->tokens[ $stackPtr ][ 'content' ];
+				$parameters = PassedParameters::getParameters( $this->phpcsFile, $checkPtr );
+				$method = $this->tokens[ $checkPtr ][ 'content' ];
 				$methodParam = reset( $parameters );
 				// If the expression wasn't escaped safely, then alert.
 				if ( $unsafe_ptr = $this->check_expression( $methodParam[ 'start' ], $methodParam[ 'end' ] + 1 ) ) {
 					$extra_context = $this->unwind_unsafe_assignments( $unsafe_ptr );
 					$unsafe_expression = $this->get_unsafe_expression_as_string( $unsafe_ptr );
 
-					if ( $this->is_warning_parameter( $unsafe_expression ) || $this->is_suppressed_line( $stackPtr, [ 'WordPress.DB.PreparedSQL.NotPrepared', 'WordPress.DB.PreparedSQL.InterpolatedNotPrepared', 'WordPress.DB.DirectDatabaseQuery.DirectQuery', 'DB call', 'unprepared SQL', 'PreparedSQLPlaceholders replacement count'] ) ) {
+					if ( $this->is_warning_parameter( $unsafe_expression ) || $this->is_suppressed_line( $checkPtr, [ 'WordPress.DB.PreparedSQL.NotPrepared', 'WordPress.DB.PreparedSQL.InterpolatedNotPrepared', 'WordPress.DB.DirectDatabaseQuery.DirectQuery', 'DB call', 'unprepared SQL', 'PreparedSQLPlaceholders replacement count'] ) ) {
 						$this->phpcsFile->addWarning( 'Unescaped parameter %s used in $wpdb->%s(%s)%s',
-							$stackPtr,
-							'UnescapedDBParameter',
+							$checkPtr,
+							$this->rule_name,
 							[ $unsafe_expression, $method, $methodParam[ 'clean' ], rtrim( "\n" . join( "\n", $extra_context ) ) ],
 							0,
 							false
 						);
 					} else {
 						$this->phpcsFile->addError( 'Unescaped parameter %s used in $wpdb->%s(%s)%s',
-							$stackPtr,
-							'UnescapedDBParameter',
+							$checkPtr,
+							$this->rule_name,
 							[ $unsafe_expression, $method, $methodParam[ 'clean' ], rtrim( "\n" . join( "\n", $extra_context ) ) ],
 							0,
 							false
@@ -586,23 +591,23 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 				}
 			} else {
 				// echo etc; check everything to end of statement
-				if ( $unsafe_ptr = $this->check_expression( $stackPtr + 1 ) ) {
+				if ( $unsafe_ptr = $this->check_expression( $checkPtr + 1 ) ) {
 					$extra_context = $this->unwind_unsafe_assignments( $unsafe_ptr );
 					$unsafe_expression = $this->get_unsafe_expression_as_string( $unsafe_ptr );
 
-					if ( $this->is_warning_parameter( $unsafe_expression ) || $this->is_suppressed_line( $stackPtr, [ 'WordPress.DB.PreparedSQL.NotPrepared', 'WordPress.DB.PreparedSQL.InterpolatedNotPrepared', 'WordPress.DB.DirectDatabaseQuery.DirectQuery', 'DB call', 'unprepared SQL', 'PreparedSQLPlaceholders replacement count'] ) ) {
+					if ( $this->is_warning_parameter( $unsafe_expression ) || $this->is_suppressed_line( $checkPtr, [ 'WordPress.DB.PreparedSQL.NotPrepared', 'WordPress.DB.PreparedSQL.InterpolatedNotPrepared', 'WordPress.DB.DirectDatabaseQuery.DirectQuery', 'DB call', 'unprepared SQL', 'PreparedSQLPlaceholders replacement count'] ) ) {
 						$this->phpcsFile->addWarning( 'Unescaped parameter %s used in %s%s',
-							$stackPtr,
-							'UnescapedOutputParameter',
-							[ $unsafe_expression, $this->tokens[ $stackPtr ][ 'content' ], rtrim( "\n" . join( "\n", $extra_context ) ) ],
+							$checkPtr,
+							$this->rule_name,
+							[ $unsafe_expression, $this->tokens[ $checkPtr ][ 'content' ], rtrim( "\n" . join( "\n", $extra_context ) ) ],
 							0,
 							false
 						);
 					} else {
 						$this->phpcsFile->addError( 'Unescaped parameter %s used in %s%s',
-							$stackPtr,
-							'UnescapedOutputParameter',
-							[ $unsafe_expression, $this->tokens[ $stackPtr ][ 'content' ], rtrim( "\n" . join( "\n", $extra_context ) ) ],
+							$checkPtr,
+							$this->rule_name,
+							[ $unsafe_expression, $this->tokens[ $checkPtr ][ 'content' ], rtrim( "\n" . join( "\n", $extra_context ) ) ],
 							0,
 							false
 						);
