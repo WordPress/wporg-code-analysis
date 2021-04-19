@@ -473,6 +473,23 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 	}
 
 	/**
+	 * Is $stackPtr a function call or other statement that requires escaped data?
+	 * Override this in child classes as needed.
+	 */
+	public function needs_escaping( $stackPtr ) {
+		if ( isset( $this->unsafe_methods[ $this->tokens[ $stackPtr ][ 'content' ] ] ) ) {
+			return true;
+		}
+
+		// FIXME: move array to property?
+		if ( in_array( $this->tokens[ $stackPtr ][ 'code' ], [ \T_ECHO, \T_PRINT, \T_EXIT ] ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Processes this test, when one of its tokens is encountered.
 	 *
 	 * @param int $stackPtr The position of the current token in the stack.
@@ -541,15 +558,16 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 			if ( \T_STRING === $this->tokens[ $stackPtr ][ 'code' ] ) {
 				// Only the first parameter needs escaping (FIXME?)
 				$parameters = PassedParameters::getParameters( $this->phpcsFile, $stackPtr );
+				$method = $this->tokens[ $stackPtr ][ 'content' ];
 				$methodParam = reset( $parameters );
 				// If the expression wasn't escaped safely, then alert.
 				if ( $unsafe_ptr = $this->check_expression( $methodParam[ 'start' ], $methodParam[ 'end' ] + 1 ) ) {
 					$extra_context = $this->unwind_unsafe_assignments( $unsafe_ptr );
 					$unsafe_expression = $this->get_unsafe_expression_as_string( $unsafe_ptr );
 
-					if ( $this->is_warning_parameter( $unsafe_expression ) || $this->is_suppressed_line( $methodPtr, [ 'WordPress.DB.PreparedSQL.NotPrepared', 'WordPress.DB.PreparedSQL.InterpolatedNotPrepared', 'WordPress.DB.DirectDatabaseQuery.DirectQuery', 'DB call', 'unprepared SQL', 'PreparedSQLPlaceholders replacement count'] ) ) {
+					if ( $this->is_warning_parameter( $unsafe_expression ) || $this->is_suppressed_line( $stackPtr, [ 'WordPress.DB.PreparedSQL.NotPrepared', 'WordPress.DB.PreparedSQL.InterpolatedNotPrepared', 'WordPress.DB.DirectDatabaseQuery.DirectQuery', 'DB call', 'unprepared SQL', 'PreparedSQLPlaceholders replacement count'] ) ) {
 						$this->phpcsFile->addWarning( 'Unescaped parameter %s used in $wpdb->%s(%s)%s',
-							$methodPtr,
+							$stackPtr,
 							'UnescapedDBParameter',
 							[ $unsafe_expression, $method, $methodParam[ 'clean' ], rtrim( "\n" . join( "\n", $extra_context ) ) ],
 							0,
@@ -557,7 +575,7 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 						);
 					} else {
 						$this->phpcsFile->addError( 'Unescaped parameter %s used in $wpdb->%s(%s)%s',
-							$methodPtr,
+							$stackPtr,
 							'UnescapedDBParameter',
 							[ $unsafe_expression, $method, $methodParam[ 'clean' ], rtrim( "\n" . join( "\n", $extra_context ) ) ],
 							0,

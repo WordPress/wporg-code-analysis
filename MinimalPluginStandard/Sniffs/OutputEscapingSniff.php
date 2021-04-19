@@ -250,22 +250,6 @@ class OutputEscapingSniff extends AbstractEscapingCheckSniff {
 		return false;
 	}
 
-	/**
-	 * Is $stackPtr a function call or other statement that requires escaped data?
-	 * Override this in child classes as needed.
-	 */
-	public function needs_escaping( $stackPtr ) {
-		if ( isset( $this->unsafe_methods[ $this->tokens[ $stackPtr ][ 'content' ] ] ) ) {
-			return true;
-		}
-
-		// FIXME: move array to property?
-		if ( in_array( $this->tokens[ $stackPtr ][ 'code' ], [ \T_ECHO, \T_PRINT, \T_EXIT ] ) ) {
-			return true;
-		}
-
-		return false;
-	}
 
 	/**
 	 * Returns an array of tokens this test wants to listen for.
