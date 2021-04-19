@@ -236,7 +236,7 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 							$extra_context[] = sprintf( "%s assigned %s at line %d:\n %s", $var, $how, $this->tokens[ $assignmentPtr ][ 'line' ], $code );
 							foreach( $this->find_functions_in_expression( $assignmentPtr ) as $func ) {
 								if ( in_array( $func, $this->notEscapingFunctions ) ) {
-									$extra_context[] = sprintf( "Note: %s() is not a SQL escaping function.", $func );
+									$extra_context[] = sprintf( "Note: %s() is not a safe escaping function.", $func );
 									break;
 								}
 							}
