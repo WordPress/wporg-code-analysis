@@ -22,6 +22,8 @@ use PHPCSUtils\Utils\PassedParameters;
  */
 class DirectDBSniff extends AbstractEscapingCheckSniff {
 
+	protected $rule_name = 'UnescapedDBParameter';
+
 	/**
 	 * Override the parent class escaping functions to only allow SQL-safe escapes
 	 */

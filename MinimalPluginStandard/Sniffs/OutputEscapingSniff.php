@@ -12,6 +12,8 @@ use PHPCSUtils\Utils\PassedParameters;
  */
 class OutputEscapingSniff extends AbstractEscapingCheckSniff {
 
+	protected $rule_name = 'UnescapedOutputParameter';
+
 	/**
 	 * Override the parent class escaping functions to only allow HTML-safe escapes
 	 */
