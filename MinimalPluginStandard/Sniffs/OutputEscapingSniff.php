@@ -110,6 +110,9 @@ class OutputEscapingSniff extends AbstractEscapingCheckSniff {
 		'get_the_tag_list' => true,
 		'get_the_post_thumbnail' => true,
 		'get_custom_logo' => true,
+		'plugin_dir_url'  => true, // probably safe?
+		'admin_url'       => true, // also probably safe?
+		'get_admin_url'   => true, // probably?
 
 	);
 
