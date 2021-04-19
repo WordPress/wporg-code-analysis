@@ -46,6 +46,7 @@ class OutputEscapingSniff extends AbstractEscapingCheckSniff {
 		'addcslashes',
 		'filter_input',
 		'wp_strip_all_tags',
+		'esc_url_raw',
 	);
 
 	protected $sanitizingFunctions = array();
