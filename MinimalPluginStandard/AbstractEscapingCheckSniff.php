@@ -297,6 +297,10 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 				}
 			}
 		} elseif ( $where = $this->check_expression( $stackPtr ) ) {
+			// If the problem is at a variable, and that variable is not sanitized, then return just the variable name.
+			if ( \T_VARIABLE === $this->tokens[ $stackPtr ][ 'code' ] && ! $this->is_sanitized_var( $stackPtr ) ) {
+				return $this->get_variable_as_string( $stackPtr );
+			}
 			return $this->get_expression_as_string( $where );
 		}
 

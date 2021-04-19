@@ -303,7 +303,7 @@ abstract class AbstractSniffHelper extends Sniff {
 	 */
 	protected function get_expression_as_string( $stackPtr, $endPtr = null ) {
 		if ( null === $endPtr ) {
-			$endPtr = $this->phpcsFile->findEndOfStatement( $stackPtr );
+			$endPtr = $this->find_end_of_expression( $stackPtr );
 		}
 		return $this->phpcsFile->getTokensAsString( $stackPtr, $endPtr - $stackPtr + 1 );
 	}
