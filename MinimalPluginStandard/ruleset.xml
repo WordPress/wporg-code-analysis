@@ -25,10 +25,6 @@
 
 	<!-- Rules from WordPress-Extra -->
 
-	<!-- alex: needs refining to reduce false positives
-	  <rule ref="WordPress.Security.EscapeOutput"/>
-	  -->
-
 	<!-- Encourage use of wp_safe_redirect() to avoid open redirect vulnerabilities.
 		 https://github.com/WordPress/WordPress-Coding-Standards/pull/1264 -->
 	<rule ref="WordPress.Security.SafeRedirect"/>
