@@ -155,30 +155,6 @@ class OutputEscapingSniff extends AbstractEscapingCheckSniff {
 	protected $unsafe_expression = null;
 
 
-	protected $warn_only_parameters = [
-		'$this', // Typically object properties will be initialised safely. Escaping is better but using a warning here helps the signal:noise ratio.
-	];
-
-
-
-	public function is_warning_parameter( $parameter_name ) {
-		foreach ( $this->warn_only_parameters as $warn_param ) {
-			if ( preg_match( '/^' . preg_quote( $warn_param ) . '(?:\b|$)/', $parameter_name ) ) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	public function is_warning_sql( $sql ) {
-		foreach ( $this->warn_only_queries as $warn_query ) {
-			if ( 0 === strpos( ltrim( $sql, '\'"' ), $warn_query ) ) {
-				return true;
-			}
-		}
-
-		return false;
-	}
 
 
 	/**

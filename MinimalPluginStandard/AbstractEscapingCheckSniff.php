@@ -69,6 +69,13 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 	);
 
 	/**
+	 * Variable names that should only produce a warning when used unescaped.
+	 */
+	protected $warn_only_parameters = [
+		'$this', // Typically object properties will be initialised safely. Escaping is better but using a warning here helps the signal:noise ratio.
+	];
+
+	/**
 	 * Keep track of sanitized and unsanitized variables.
 	 */
 	protected $sanitized_variables = [];
@@ -493,6 +500,35 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 
 		return false;
 	}
+
+	/**
+	 * Is a variable name one that should only produce a warning when it is used unescaped?
+	 */
+	public function is_warning_parameter( $parameter_name ) {
+		foreach ( $this->warn_only_parameters as $warn_param ) {
+			if ( preg_match( '/^' . preg_quote( $warn_param ) . '(?:\b|$)/', $parameter_name ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Is a SQL query of a type that should only produce a warning when it contains unescaped parameters?
+	 *
+	 * For example, CREATE TABLE queries usually include unescaped table and column names.
+	 */
+	public function is_warning_sql( $sql ) {
+		foreach ( $this->warn_only_queries as $warn_query ) {
+			if ( 0 === strpos( ltrim( $sql, '\'"' ), $warn_query ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+
 
 	/**
 	 * Processes this test, when one of its tokens is encountered.
