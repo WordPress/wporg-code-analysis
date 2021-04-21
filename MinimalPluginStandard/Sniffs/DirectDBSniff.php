@@ -249,25 +249,6 @@ class DirectDBSniff extends AbstractEscapingCheckSniff {
 
 
 
-	public function is_warning_parameter( $parameter_name ) {
-		foreach ( $this->warn_only_parameters as $warn_param ) {
-			if ( preg_match( '/^' . preg_quote( $warn_param ) . '(?:\b|$)/', $parameter_name ) ) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	public function is_warning_sql( $sql ) {
-		foreach ( $this->warn_only_queries as $warn_query ) {
-			if ( 0 === strpos( ltrim( $sql, '\'"' ), $warn_query ) ) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
 	/**
 	 * Returns an array of tokens this test wants to listen for.
 	 *
