@@ -9,7 +9,7 @@ use PHP_CodeSniffer\Config;
  *
  * @group theme
  */
-class GeneralThemeTest extends TestCase {
+class GeneralThemeUnitTest extends TestCase {
 	public function test_unsafe_code() {
 		$fixtureFile = __FILE__ . '-bad.inc';
 		$config = new Config( [ '--standard=' . dirname( dirname( __DIR__ ) ) . '/MinimalThemeStandard/ruleset.xml' ] );
