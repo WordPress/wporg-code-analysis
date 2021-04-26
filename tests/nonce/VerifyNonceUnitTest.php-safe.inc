@@ -83,3 +83,12 @@ function safe_example_10() {
 	else
 		die;
 }
+
+// This is safe because the `wp_verify_nonce()` call is only short-circuited when the function is returning early.
+function safe_example_11() {
+	if ( ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) || ! wp_verify_nonce( $nonce, 'csf_taxonomy_nonce' ) ) { // safe!
+		return;
+	}
+
+	// do secure action
+}
