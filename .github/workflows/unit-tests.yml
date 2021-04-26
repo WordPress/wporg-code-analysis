@@ -1,0 +1,23 @@
+name: Unit Tests
+
+on:
+  push:
+    branches: [trunk]
+  pull_request:
+
+jobs:
+  check:
+    name: Run Unit Tests
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: composer install
+      run: |
+        composer install
+
+    - name: Run PHPUnit
+      run: |
+        composer run test
