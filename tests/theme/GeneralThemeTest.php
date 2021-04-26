@@ -3,8 +3,12 @@ use PHPUnit\Framework\TestCase;
 use PHP_CodeSniffer\Files\LocalFile;
 use PHP_CodeSniffer\Ruleset;
 use PHP_CodeSniffer\Config;
- 
-// This uses the entire MinimalThemeStandard ruleset, including external rules, to make sure we have coverage for things that otherwise would require a custom sniff.
+
+/**
+ * This uses the entire MinimalThemeStandard ruleset, including external rules, to make sure we have coverage for things that otherwise would require a custom sniff.
+ *
+ * @group theme
+ */
 class GeneralThemeTest extends TestCase {
 	public function test_unsafe_code() {
 		$fixtureFile = __FILE__ . '-bad.inc';
@@ -20,7 +24,7 @@ class GeneralThemeTest extends TestCase {
 			[
 				3,
 				5,
-			], 
+			],
 			$error_lines );
 
 
