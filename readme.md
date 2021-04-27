@@ -8,7 +8,7 @@ An experiment.
 1. Clone this repo in a local folder.
 
 ```sh
-git clone git clone https://github.com/WordPress/wporg-code-analysis
+git clone https://github.com/WordPress/wporg-code-analysis
 ```
 
 2. Run Composer to install dependencies.
