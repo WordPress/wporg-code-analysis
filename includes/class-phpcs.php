@@ -22,6 +22,11 @@ class PHPCS {
 	protected $phpcs;
 
 	/**
+	 * @var string The path to the php process, including any custom php.ini settings.
+	 */
+	protected $php = '/usr/bin/env php -dmemory_limit=1G';
+
+	/**
 	 * @var string The name or path of the coding standard to use with phpcs.
 	 */
 	protected $standard = 'WordPress';
@@ -55,6 +60,11 @@ class PHPCS {
 			$this->cache_file = get_temp_dir() . 'wporg-code-analysis/phpcs-cache';
 		} else {
 			$this->cache_file = '/tmp/wporg-code-analysis/phpcs-cache';
+		}
+
+		// Give the CLI process the same max_execution_time as the calling script.
+		if ( ini_get( 'max_execution_time' ) ) {
+			$this->php .= ' -dmax_execution_time=' . ini_get( 'max_execution_time' );
 		}
 	}
 
@@ -164,7 +174,7 @@ class PHPCS {
 		}
 		$arg_string = implode( ' ', $arg_array );
 
-		$command = "{$this->phpcs} $arg_string $path";
+		$command = "{$this->php} {$this->phpcs} $arg_string $path";
 
 		return shell_exec( $command );
 	}
