@@ -277,26 +277,73 @@ abstract class AbstractSniffHelper extends Sniff {
 
 	/**
 	 * Does the given expression contain multiple 'and' clauses like `$foo && bar()` or `foo() and $bar`?
+	 *
+	 * @param int $start The first pointer of the expression to check.
+	 * @param int $end The last pointer of the expression to check
+	 * @param bool $inside_brackets Whether or not to check inside nested parentheses inside the expression.
+	 * For example, `$foo || ( $bar && $bing)`:
+	 *   With $inside_brackets = true, expression_contains_and() will return true.
+	 *   With $inside_brackets = false, expression_contains_and() will return false.
 	 */
-	protected function expression_contains_and( $start, $end ) {
+	protected function expression_contains_and( $start, $end, $inside_brackets = false ) {
 		$tokens = [
 			\T_BOOLEAN_AND => \T_BOOLEAN_AND,
 			\T_LOGICAL_AND => \T_LOGICAL_AND,
-
 		];
-		return $this->phpcsFile->findNext( $tokens, $start, $end, false, null, false );
+
+		if ( $inside_brackets ) {
+			return $this->phpcsFile->findNext( $tokens, $start, $end, false, null, false );
+		}
+
+		$brackets = [
+			\T_OPEN_PARENTHESIS => \T_OPEN_PARENTHESIS,
+		];
+
+		$nextPtr = $start;
+		do {
+			$nextPtr = $this->phpcsFile->findNext( $tokens + $brackets, $nextPtr + 1, $end, false, null, false );
+			if ( \T_OPEN_PARENTHESIS === $this->tokens[ $nextPtr ][ 'code' ] ) {
+				$nextPtr = $this->tokens[ $nextPtr ][ 'parenthesis_closer' ];
+			} elseif ( $nextPtr ) {
+				return $nextPtr;
+			}
+		} while ( $nextPtr && $nextPtr <= $end );
 	}
 
 	/**
 	 * Does the given expression contain multiple 'or' clauses like `$foo || bar()` or `foo() or $bar`?
+	 *
+	 * @param int $start The first pointer of the expression to check.
+	 * @param int $end The last pointer of the expression to check
+	 * @param bool $inside_brackets Whether or not to check inside nested parentheses inside the expression.
+	 * For example, `$foo && ( $bar || $bing)`:
+	 *   With $inside_brackets = true, expression_contains_or() will return true.
+	 *   With $inside_brackets = false, expression_contains_or() will return false.
 	 */
-	protected function expression_contains_or( $start, $end ) {
+	protected function expression_contains_or( $start, $end, $inside_brackets = false ) {
 		$tokens = [
 			\T_BOOLEAN_OR => \T_BOOLEAN_OR,
 			\T_LOGICAL_OR => \T_LOGICAL_OR,
-
 		];
-		return $this->phpcsFile->findNext( $tokens, $start, $end, false, null, false );
+
+		if ( $inside_brackets ) {
+			return $this->phpcsFile->findNext( $tokens, $start, $end, false, null, false );
+		}
+
+		$brackets = [
+			\T_OPEN_PARENTHESIS => \T_OPEN_PARENTHESIS,
+		];
+
+		$nextPtr = $start;
+		do {
+			$nextPtr = $this->phpcsFile->findNext( $tokens + $brackets, $nextPtr + 1, $end, false, null, false );
+			if ( \T_OPEN_PARENTHESIS === $this->tokens[ $nextPtr ][ 'code' ] ) {
+				$nextPtr = $this->tokens[ $nextPtr ][ 'parenthesis_closer' ];
+			} elseif ( $nextPtr ) {
+				return $nextPtr;
+			}
+		} while ( $nextPtr && $nextPtr <= $end );
+
 	}
 
 	/**
