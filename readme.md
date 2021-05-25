@@ -39,10 +39,6 @@ To scan a specific tag, rather than trunk:
 
 `php bin/check-plugin-by-slug.php --slug=akismet --errors --tag=4.1.5`
 
-To scan plugin source code in a local folder. Note that this only runs the `MinimalPluginStandard` sniff.
-
-`bin/scan-dir.sh path/to/code`
-
 To see results in different formats:
 
 `php bin/check-plugin-by-slug.php --slug=akismet --report=full`
@@ -64,9 +60,9 @@ To check the newest `n` plugins:
 
 ### Scan local code
 
-To check code that you have on your computer:
+To scan plugin source code in a local folder. Note that this only runs the `MinimalPluginStandard` sniff.
 
-`bin/scan-dir.sh /path/to/my-plugin-source`
+`bin/scan-dir.sh path/to/code`
 
 By default, the script passes the `-n` and `-s` flags to PHPCS, so that warnings are hidden and sniff codes are shown. If you prefer, though, you can override that and pass your own [PHPCS arguments](https://github.com/squizlabs/PHP_CodeSniffer/wiki/Usage#getting-help-from-the-command-line). Pass them _before_ the directory:
 
