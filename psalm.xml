@@ -1,0 +1,108 @@
+<?xml version="1.0"?>
+
+<!--
+todo
+
+### high
+
+why aren't taint sources in "bad" files being caught?
+	some are, but not all
+		bgmp - it can't detect across file boundaries? open feature request
+			related https://github.com/vimeo/psalm/issues/5715 ?
+
+	add minimal test to xss unit test, see if psalm detects
+		start w/ just 1 file, no funcs, work up to when it fails, create issue ?
+
+	need to write a plugin to make it detectable?
+		if so, maybe not worth it, b/c that's worse than writing phpcs sniffs? maybe it's better?
+
+	"You're also free to define your own taint types when defining custom taint sources – they're just strings."
+		https://psalm.dev/docs/security_analysis/custom_taint_sources/
+		https://psalm.dev/docs/security_analysis/custom_taint_sinks/
+
+if get working, setup a psalm version of unit tests
+
+add test that get_post_meta etc are taint sources - pr to human made if not
+
+add readme info about running psalm? or just have bin/ scripts run it
+user will need to `composer install` at least though
+probably add to bin scripts
+	"Psalm exits with status 0 when it successfully completed and found no issues, 1 when there was a problem running Psalm and 2 when it completed successfully but found some issues. Any exit status apart from those indicate some internal problem."
+	see also "running psalm faster" at https://psalm.dev/docs/running_psalm/command_line_usage/
+		enable theads, disable diff?
+
+### med/low
+
+maybe break into a base file and then separate for plugin and theme
+see https://psalm.dev/docs/running_psalm/configuration/
+
+psalm can generate auto-fixed code to include in the report?
+e.g., "changing the code to the following _may_ fix the probelm, but you'll need to understand it and verify that it does \n\n [fixed code]"
+`psalm -\-alter -\-issues=MissingReturnType -\-dry-run` (but remove the `\` chars)
+https://psalm.dev/docs/manipulating_code/fixing/
+https://psalm.dev/docs/manipulating_code/refactoring/
+
+disable useDocblockTypes ? useDocblockPropertyTypes?
+
+enable hoistConstants ?
+
+enable skipChecksOnUnresolvableIncludes?
+
+
+-->
+
+<!--
+see https://psalm.dev/docs/running_psalm/error_levels/
+8 is still way too strict and false positives. really only want security
+
+set phpVersion w/ `php-version` cli arg if the plugin readme declares it. otherwise assume min WP version
+maybe use cli arg either way, so can dynamically get WP ver
+maybe doesn't matter if only doing taint analysis?
+
+"When taint analysis is enabled, no other analysis is performed." - this is probably what we want, but there may be a few other things too
+it so, we'd have to run it once w/ taint analysis and again w/out it
+
+
+
+-->
+<psalm
+	errorLevel="8"
+	phpVersion="5.6"
+	resolveFromConfigFile="false"
+	runTaintAnalysis="true"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="https://getpsalm.org/schema/config"
+	xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
+>
+	<projectFiles>
+		<!-- need this do be passed in dynamically? maybe w/ cli arg?
+		probably just /vendor/bin/psalm <folder>
+		-->
+<!--		<directory name="/private/tmp/plugin-basic-google-maps-placemarksqDa7oc" />-->
+<!--		<directory name="/private/tmp/plugin-camptixwX6EJC" />-->
+<!--		<directory name="/private/tmp/plugin-easy-digital-downloadsMr1yWN" />-->
+
+		<directory name="/Users/iandunn/vhosts/tools/wporg-code-analysis/tests/wpcs-tests-security" />
+
+		<file name="/Users/iandunn/vhosts/tools/wporg-code-analysis/tests/db/DirectDBUnitTest.php-bad.inc" />
+		<file name="/Users/iandunn/vhosts/tools/wporg-code-analysis/tests/nonce/VerifyNonceUnitTest.php-bad.inc" />
+		<file name="/Users/iandunn/vhosts/tools/wporg-code-analysis/tests/output/OutputEscapingUnitTest.php-bad.inc" />
+<!--		<file name="/Users/iandunn/vhosts/tools/wporg-code-analysis/tests/output/OutputEscapingUnitTest.php-bad2.inc" />-->
+
+		<!--		<file name="/Users/iandunn/vhosts/tools/wporg-code-analysis/tests/theme/GeneralThemeUnitTest.php-bad.inc" />-->
+
+		<!-- prob wanna ignore phpunit. make dynamic
+		<ignoreFiles>
+			<directory name="foo/tests" />
+		</ignoreFiles>
+
+		maybe ignore vendor dir? prob not b/c it having a vuln is no different
+		could maybe set a more leignient error level though?
+		-->
+	</projectFiles>
+
+	<plugins>
+		<pluginClass class="PsalmWordPress\Plugin" />
+	</plugins>
+
+</psalm>
