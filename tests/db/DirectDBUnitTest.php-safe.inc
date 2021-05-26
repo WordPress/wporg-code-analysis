@@ -1,9 +1,8 @@
 <?php
 
-// This is not a real plugin. Do not try to run this code.
-// This merely contains intentionally INSECURE and UNSAFE examples of php code for testing.
-
-return false; // Seriously, this should never be run.
+// This is not a real plugin.
+// This merely contains secure examples of php code for testing.
+return;
 
 function secure_wpdb_query_1( $foo ) {
 

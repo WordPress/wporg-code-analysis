@@ -1,5 +1,9 @@
 <?php
 
+// This is not a real plugin.
+// This merely contains secure examples of php code for testing.
+return;
+
 function safe_output_example_1( $foo ) {
 	echo esc_html( $foo );
 }

@@ -1,5 +1,9 @@
 <?php
 
+// This is not a real plugin.
+// This merely contains secure examples of php code for testing.
+return;
+
 // Example from docs
 function safe_example_1() {
 	if ( isset( $_REQUEST['_wpnonce'] ) && wp_verify_nonce( $_REQUEST['_wpnonce'], 'wpdocs-my-nonce' ) ) { // safe!
