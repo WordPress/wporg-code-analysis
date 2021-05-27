@@ -13,6 +13,7 @@ class Foo {
 
 	public function printMessages() {
 		echo $this->message; // not detected
+		// maybe similar to https://github.com/vimeo/psalm/issues/5715 ?
 		//////////
 
 		if ( did_action( 'admin_notices' ) !== 1 ) {
