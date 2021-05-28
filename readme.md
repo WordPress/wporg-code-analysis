@@ -58,6 +58,20 @@ To check the newest `n` plugins:
 `php bin/check-plugin-by-slug.php --report=full --errors --browse=new --number=3`
 
 
+### sonarqube
+
+1. follow https://docs.sonarqube.org/latest/setup/get-started-2-minutes/ w/ docker image
+1. add project, generate token, paste into composer.json script section
+1. composer install
+1. open http://localhost:9000/
+1. `composer run sonar-scanner` to test wporg-code-analysis "bad" files
+1. `composer run sonar-scanner -- -Dsonar.projectKey=foo -Dsonar.sources=/path/to/foo -Dsonar.projectBaseDir=/path/to/foo` to test a plugin
+
+integrate ^ into bin/ scripts instead of running manually
+
+
+
+
 ### Scan local code
 
 To scan plugin source code in a local folder. Note that this only runs the `MinimalPluginStandard` sniff.

@@ -5,7 +5,7 @@
 
 // TODO: turn this into unit tests
 
-return false; // Seriously, this should never be run.
+// sonar needs this enabled return false; // Seriously, this should never be run.
 
 function insecure_wpdb_query_1( $foo ) {
 	global $wpdb;

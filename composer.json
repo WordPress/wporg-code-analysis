@@ -10,6 +10,24 @@
 		"_comment": "Work around `test:watch` timeout, see https://github.com/spatie/phpunit-watcher/issues/63#issuecomment-545633709",
 		"process-timeout": 0
 	},
+	"repositories" : [
+		{
+			"_comment": "Note that `composer update` won't do anything for this package unless you change the version in both places.",
+			"type"    : "package",
+			"package" : {
+				"name"     : "sonarsource/sonar-scanner",
+				"version"  : "4.6.2.2472",
+				"dist"     : {
+					"url"  : "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.6.2.2472-macosx.zip",
+					"type" : "zip"
+				},
+				"bin": [
+			        "bin/sonar-scanner",
+				    "bin/sonar-scanner-debug"
+			    ]
+			}
+		}
+	],
 	"require": {
 		"squizlabs/php_codesniffer": "^3",
 		"dealerdirect/phpcodesniffer-composer-installer": "^0.7",
@@ -17,7 +35,8 @@
 		"sirbrillig/phpcs-variable-analysis": "^2",
 		"wp-coding-standards/wpcs": "^2",
 		"phpcsstandards/phpcsutils": "^1.x-dev",
-		"wptrt/wpthemereview": "*"
+		"wptrt/wpthemereview": "*",
+		"sonarsource/sonar-scanner": "4.6.2.2472"
 	},
 	"require-dev": {
 		"phpunit/phpunit": "^7",
@@ -27,7 +46,9 @@
 		"test": [
 			"phpunit tests"
 		],
-		"test:watch": "phpunit-watcher watch < /dev/tty"
+		"test:watch": "phpunit-watcher watch < /dev/tty",
+		"_comment_TODO": "tmp while WIP, don't hardcode these long term",
+		"sonar-scanner": "sonar-scanner -Dsonar.host.url=http://localhost:9000 -Dsonar.login=c99a718b943cdf43d8d7168dac0ded02042c3e60"
 	},
 	"autoload": {
 		"classmap": [
