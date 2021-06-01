@@ -241,11 +241,13 @@ class PHPCS {
 			$assoc = 'array' === $output;
 			$result = json_decode( $result, $assoc );
 			// Does this belong here?
-			array_walk_recursive( $result, function( &$value, $key ) {
-				if ( is_string( $value ) ) {
-					$value = stripcslashes( $value );
-				}
-			});
+			if ( $result ) {
+				array_walk_recursive( $result, function( &$value, $key ) {
+					if ( is_string( $value ) ) {
+						$value = stripcslashes( $value );
+					}
+				} );
+			}
 		}
 
 		return $result;
