@@ -5,7 +5,7 @@ function safe_example_1() {
 	if ( isset( $_REQUEST['_wpnonce'] ) && wp_verify_nonce( $_REQUEST['_wpnonce'], 'wpdocs-my-nonce' ) ) { // safe!
 		//do you action
 	} else {
-		die( __( 'Security check', 'textdomain' ) ); 
+		die( __( 'Security check', 'textdomain' ) );
 	}
 }
 
@@ -13,7 +13,7 @@ function safe_example_1() {
 function safe_example_2() {
 	$nonce = $_REQUEST['_wpnonce'];
 	if ( ! wp_verify_nonce( $nonce, 'my-nonce' ) ) {
-		die( __( 'Security check', 'textdomain' ) ); 
+		die( __( 'Security check', 'textdomain' ) );
 	} else {
 		// Do stuff here.
 	}
@@ -57,13 +57,13 @@ function safe_example_7() {
 	if (  wp_verify_nonce( $_REQUEST['_wpnonce'], 'wpdocs-my-nonce-1' ) || wp_verify_nonce( $_REQUEST['_wpnonce'], 'wpdocs-my-nonce-2' ) ) { // safe!
 		//do you action
 	} else {
-		die( __( 'Security check', 'textdomain' ) ); 
+		die( __( 'Security check', 'textdomain' ) );
 	}
 }
 
 function safe_example_8() {
 	if (  !wp_verify_nonce( $_REQUEST['_wpnonce'], 'wpdocs-my-nonce-1' ) && !wp_verify_nonce( $_REQUEST['_wpnonce'], 'wpdocs-my-nonce-2' ) ) { // safe!
-		die( __( 'Security check', 'textdomain' ) ); 
+		die( __( 'Security check', 'textdomain' ) );
 	} else {
 		// do secure action
 	}
@@ -73,6 +73,13 @@ function safe_example_9() {
 	if ( wp_verify_nonce( $nonce, 'my-nonce' ) && $something_else ) {
 		// do secure action
 	} else {
-		die( __( 'Security check', 'textdomain' ) ); 
+		die( __( 'Security check', 'textdomain' ) );
 	}
+}
+
+function safe_example_10() {
+	if ( wp_verify_nonce( $nonce, 'my-nonce' ) )
+		do_something();
+	else
+		die;
 }

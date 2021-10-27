@@ -41,3 +41,10 @@ function insecure_nonce_7() {
 		}
 	}
 }
+
+function insecure_nonce_8() {
+	if ( $something || wp_verify_nonce( $_REQUEST['my-nonce'], 'post-nonce' ) )
+		do_something();
+	else
+		wp_nonce_ays();
+}

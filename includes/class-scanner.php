@@ -185,6 +185,9 @@ class Scanner {
 
 		foreach ( $to_scan as $tag ) {
 			$result = self::get_scan_results_for_plugin( $plugin, $tag );
+			if ( ! $result ) {
+				continue;
+			}
 			$hash   = $result['hash'];
 
 			// Check to see if the plugin authors have been notified about this result yet.

@@ -102,9 +102,15 @@ abstract class AbstractSniffHelper extends Sniff {
 			return false;
 		}
 		if ( isset( $this->tokens[ $stackPtr ][ 'scope_opener' ] ) ) {
+			// if ( $foo ) { bar(); }
 			return [ $this->tokens[ $stackPtr ][ 'scope_opener' ], $this->tokens[ $stackPtr ][ 'scope_closer' ] ];
-		} else {
+		} elseif ( isset( $this->tokens[ $stackPtr ][ 'parenthesis_closer' ] ) ) {
 			// if ( $foo ) bar();
+			$start = $this->next_non_empty( $this->tokens[ $stackPtr ][ 'parenthesis_closer' ] + 1 );
+			$end = $this->phpcsFile->findEndOfStatement( $start );
+			return [ $start, $end ];
+		} else {
+			// else foo();
 			$start = $this->next_non_empty( $stackPtr + 1 );
 			$end = $this->phpcsFile->findEndOfStatement( $start );
 			return [ $start, $end ];
@@ -116,8 +122,16 @@ abstract class AbstractSniffHelper extends Sniff {
 	 * Does the given if statement have an 'else' or 'elseif'
 	 */
 	protected function has_else( $stackPtr ) {
-		if ( $this->tokens[ $stackPtr ][ 'scope_closer' ] ) {
+		if ( isset( $this->tokens[ $stackPtr ][ 'scope_closer' ] ) ) {
+			// it has a parenthesis block if () { foo(); }
 			$nextPtr = $this->next_non_empty( $this->tokens[ $stackPtr ][ 'scope_closer' ] + 1 );
+			if ( $nextPtr && in_array( $this->tokens[ $nextPtr ][ 'code' ], [ \T_ELSE, \T_ELSEIF ] ) ) {
+				return $nextPtr;
+			}
+		} else {
+			// no parenthesis block if () foo();
+			$endPtr = $this->phpcsFile->findEndOfStatement( $stackPtr );
+			$nextPtr = $this->next_non_empty( $endPtr + 1 );
 			if ( $nextPtr && in_array( $this->tokens[ $nextPtr ][ 'code' ], [ \T_ELSE, \T_ELSEIF ] ) ) {
 				return $nextPtr;
 			}
