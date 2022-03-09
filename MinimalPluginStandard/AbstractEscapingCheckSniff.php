@@ -76,6 +76,14 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 	];
 
 	/**
+	 * Variable names that will always produce an error when used unescaped.
+	 * NOTE: If set, ALL OTHER INPUT will default to a warning.
+	 */
+	protected $error_always_parameters = [
+		// Use with care!
+	];
+
+	/**
 	 * Keep track of sanitized and unsanitized variables.
 	 */
 	protected $sanitized_variables = [];
@@ -513,6 +521,17 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 			if ( preg_match( '/^' . preg_quote( $warn_param ) . '(?:\b|$)/', $parameter_name ) ) {
 				return true;
 			}
+		}
+		// If $error_always_parameters is set, then all other variable names will produce warnings only.
+		if ( !empty( $this->error_always_parameters ) ) {
+			foreach ( $this->error_always_parameters as $error_param ) {
+				// Note the unanchored regex here. That's on purpose as a bit of a hack, so that strings like this are considered warnings:
+				// `foo( $safe_var )`
+				if ( preg_match( '/' . preg_quote( $error_param ) . '(?:\b|$)/m', $parameter_name ) ) {
+					return false;
+				}
+			}
+			return true;
 		}
 		return false;
 	}
