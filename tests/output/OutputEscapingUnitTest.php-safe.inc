@@ -21,3 +21,11 @@ function safe_output_example_4( $foo ) {
 function safe_output_example_5( $foo ) {
 	echo trim( esc_url( $foo ) );
 }
+
+?>
+
+<p>safe output example 6</p>
+<h2><?php echo(esc_html(foo())) ?></h2>
+
+<?php
+$foo = bar();
