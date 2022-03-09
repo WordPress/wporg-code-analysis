@@ -29,3 +29,12 @@ function safe_output_example_5( $foo ) {
 
 <?php
 $foo = bar();
+
+function safe_output_example_7( $data ) {
+    $field_description = WC_Admin_Settings::get_field_description($data);
+    $description = $field_description['description'];
+    $tooltip_html = $field_description['tooltip_html'];
+
+	// Safe because WC_Admin_Settings::get_field_description() uses kses.
+	echo $tooltip_html;
+}

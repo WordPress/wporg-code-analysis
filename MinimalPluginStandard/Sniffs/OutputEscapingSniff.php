@@ -118,7 +118,7 @@ class OutputEscapingSniff extends AbstractEscapingCheckSniff {
 		'plugin_dir_url'  => true, // probably safe?
 		'admin_url'       => true, // also probably safe?
 		'get_admin_url'   => true, // probably?
-
+		'get_field_description' => true, // WP_Admin_Settings::get_field_description()
 	);
 
 	/**
