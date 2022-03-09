@@ -27,6 +27,7 @@ class OutputEscapingSniff extends AbstractEscapingCheckSniff {
 		'esc_attr_x'                 => true,
 		'esc_attr_e'                 => true,
 		'esc_url'                    => true,
+		'esc_js'                     => true,
 		'esc_textarea'               => true,
 		'sanitize_text_field'        => true,
 		'intval'                     => true,
@@ -76,6 +77,7 @@ class OutputEscapingSniff extends AbstractEscapingCheckSniff {
 		'get_the_category_list' => true, // separator parameter is unescaped
 		'get_header_image_tag' => true, // args are unescaped
 		'get_the_tag_list'     => true, // args are unescaped
+		'trim'                => true,
 	);
 
 	/**
