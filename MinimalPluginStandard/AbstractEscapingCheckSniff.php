@@ -343,9 +343,10 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 	public function check_expression( $stackPtr, $endPtr = null ) {
 		$newPtr = $stackPtr;
 		$tokens_to_find = array(
-			\T_VARIABLE => \T_VARIABLE,
-			\T_INT_CAST => \T_INT_CAST,
+			\T_VARIABLE  => \T_VARIABLE,
+			\T_INT_CAST  => \T_INT_CAST,
 			\T_BOOL_CAST => \T_BOOL_CAST,
+			\T_CLOSE_TAG => \T_CLOSE_TAG,
 		)
 			+ Tokens::$functionNameTokens
 			+ Tokens::$textStringTokens;
@@ -466,6 +467,9 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 				// We're safely casting to an int or bool
 				$newPtr = $this->next_non_empty( $this->phpcsFile->findEndOfStatement( $newPtr ) );
 				continue;
+			} elseif ( \T_CLOSE_TAG === $this->tokens[ $newPtr ][ 'code' ] ) {
+				// We hit an end-of-php code without a semicolon before it, like `foo() ? >`
+				return false;
 			} elseif ( \T_CONSTANT_ENCAPSED_STRING === $this->tokens[ $newPtr ][ 'code' ] ) {
 				// A constant string is ok, but we want to check what's after it
 			}
