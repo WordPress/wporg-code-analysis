@@ -119,6 +119,35 @@ class OutputEscapingSniff extends AbstractEscapingCheckSniff {
 		'admin_url'       => true, // also probably safe?
 		'get_admin_url'   => true, // probably?
 		'get_field_description' => true, // WP_Admin_Settings::get_field_description()
+		'get_submit_button' => true, // returns html with escaped attributes
+		'wp_star_rating'  => true, // some misc functions from template.php that are safe enough
+		'get_settings_errors' => true,
+		'_draft_or_post_title' => true,
+		'_admin_search_query' => true,
+		'get_media_states' => true,
+		'get_post_states' => true,
+		'wp_readonly'     => true, // some misc functions from general-template.php that are safe enough
+		'get_post_timestamp' => true, // some of these return html and are thus intended to be output without escaping
+		'wp_get_code_editor_settings' => true,
+		'get_the_post_type_description' => true,
+		'has_custom_logo' => true,
+		'get_custom_logo' => true,
+		'get_language_attributes' => true,
+		'get_the_archive_title' => true,
+		'checked'         => true,
+		'selected'        => true,
+		'disabled'        => true,
+		'get_the_time'    => true,
+		'get_post_time'   => true,
+		'get_the_modified_time' => true,
+		'get_the_modified_date' => true,
+		'get_the_date'    => true,
+		'get_archives_link' => true,
+		'get_calendar'    => true,
+		'wp_nav_menu'     => true, // nav-menu-template.php
+		'get_post_format' => true,
+		'wp_get_attachment_image' => true,
+		'mysql2date'      => true,
 	);
 
 	/**
