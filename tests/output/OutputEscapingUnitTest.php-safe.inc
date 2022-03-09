@@ -13,3 +13,11 @@ function safe_output_example_3() {
 	#$this->indent = esc_html( $foo );
 	echo $this->indent . htmlspecialchars("<?php " . $this->the_field_method . "( '" . $this->name ."'". $this->location_rendered_param . " ); ?>")."\n";
 }
+
+function safe_output_example_4( $foo ) {
+	echo esc_js( $foo );
+}
+
+function safe_output_example_5( $foo ) {
+	echo trim( esc_url( $foo ) );
+}
