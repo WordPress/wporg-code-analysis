@@ -23,14 +23,18 @@ class OutputEscapingUnitTest extends TestCase {
 
 		$this->assertEquals(
 			[
-				4,
-				8,
+				12,
+				16,
+				21,
 			],
 			$error_lines );
 
 		$warning_lines = array_keys( $phpcsFile->getWarnings() );
 		$this->assertEquals(
 			[
+				4,
+				8,
+				26,
 			],
 			$warning_lines );
 

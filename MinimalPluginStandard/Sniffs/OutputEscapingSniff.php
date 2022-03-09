@@ -150,6 +150,15 @@ class OutputEscapingSniff extends AbstractEscapingCheckSniff {
 		'mysql2date'      => true,
 	);
 
+	// Explicit user input will always generate an error when displayed unescaped.
+	// All other variables will generate warnings.
+	protected $error_always_parameters = [
+		'$_GET',
+		'$_POST',
+		'$_REQUEST',
+		'$_COOKIE',
+	];
+
 	/**
 	 * $wpdb methods with escaping built-in
 	 *
