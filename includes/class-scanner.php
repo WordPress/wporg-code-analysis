@@ -301,8 +301,7 @@ class Scanner {
 			return;
 		}
 
-		// Get the order of magnitude of the number of installs
-		$active_installs = pow( 10, floor( log10( get_post_meta( $plugin->ID, 'active_installs', true ) ) ) );
+		$active_installs = get_post_meta( $plugin->ID, 'active_installs', true );
 
 		$body = sprintf( "Detected errors in *%s*\n", $plugin->post_title );
 		if ( $active_installs >= 10000 ) {
