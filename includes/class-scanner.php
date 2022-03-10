@@ -207,6 +207,7 @@ class Scanner {
 			// Only notify when there's errors.
 			if ( $result['totals']['errors'] > 0 ) {
 				self::notify_plugin_authors( $plugin, $result, $tag );
+				self::notify_slack_channel( $plugin, $result, $tag );
 			}
 		}
 
@@ -271,14 +272,46 @@ class Scanner {
 		);
 
 		// $email->send();
-		// Temporarily don't email it to the author, just log it on WordPress.org instead.
-		if ( defined( 'PLUGIN_REVIEW_ALERT_SLACK_CHANNEL' ) && function_exists( 'slack_dm' ) ) {
-			$slack_body = $email->body();
-			// Convert the code blocks to slack code blocks.
-			$slack_body = preg_replace( '!((\n\d+[^\n]*)+)!sm', "\n```\$1\n```", $slack_body );
+	}
 
+	public static function notify_slack_channel( $plugin, $results, $tag ) {
+
+		$totals = sprintf(
+			"Found %d errors in %d files.\n\n",
+			$results[ 'totals' ][ 'errors' ],
+			count( $results[ 'files' ] )
+		);
+
+		$summary = [];
+		foreach ( $results[ 'files' ] as $pathname => $file ) {
+			list( $slug, $filename ) = explode( '/', $pathname, 2 );
+			foreach ( $file[ 'messages' ] as $message ) {
+				// Skip warnings for now
+				if ( 'WARNING' === $message['type'] ) {
+					continue;
+				}
+
+				// Count the instances of each error per filename
+				$summary[ $source ][ $filename ][ $line ] = true;
+			}
+		}
+
+		if ( empty( $summary ) ) {
+			return;
+		}
+
+		$body = "Detected errors in $slug\n";
+		$body .= "https://wordpress.org/plugins/wp-admin/post.php?post={$plugin->ID}&action=edit\n";
+		$body .= $totals . "\n\n";
+		$body .= sprintf( "%-64s %-8s %-8s\n", 'Type', 'Errors', 'Files' );
+		$body .= sprintf( "%-64s %-8s %-8s\n", '----', '------', '-----' );
+		foreach ( $summary as $source => $file_errors ) {
+			$body .= sprintf( "%-64s %8d %8d\n", count( $file_errors, COUNT_RECURSIVE ), count ( $file_errors ) );
+		}
+
+		if ( defined( 'PLUGIN_REVIEW_ALERT_SLACK_CHANNEL' ) && function_exists( 'slack_dm' ) ) {
 			\slack_dm(
-				'*' . $email->subject() . "*\n" . $slack_body,
+				$body,
 				PLUGIN_REVIEW_ALERT_SLACK_CHANNEL,
 				true
 			);
