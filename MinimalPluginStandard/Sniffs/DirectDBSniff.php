@@ -38,6 +38,7 @@ class DirectDBSniff extends AbstractEscapingCheckSniff {
 		'esc_sql'                    => true,
 		'wp_parse_id_list'           => true,
 		'bp_esc_like'                => true,
+		'sanitize_sql_orderby'       => true,
 	);
 
 	/**
