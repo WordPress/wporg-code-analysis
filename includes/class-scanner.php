@@ -279,7 +279,7 @@ class Scanner {
 		$totals = sprintf(
 			"Found %d errors in [%s](https://plugins.svn.wordpress.org/browser/%s/%s).\n\n",
 			$results[ 'totals' ][ 'errors' ],
-			$tag,
+			( 'trunk' === $tag ? 'trunk' : 'tags/' . $tag ),
 			$plugin->post_name,
 			$tag
 		);
@@ -302,7 +302,7 @@ class Scanner {
 			return;
 		}
 
-		$body = "Detected errors in $slug\n";
+		$body = sprintf( "Detected errors in [%s](https://wordpress.org/%s/)\n", $plugin->post_name, $plugin->post_name );
 		$body .= "https://wordpress.org/plugins/wp-admin/post.php?post={$plugin->ID}&action=edit\n";
 		$body .= $totals . "\n\n```\n";
 		$body .= sprintf( "%-80s %-8s %-8s\n", 'Type', 'Errors', 'Files' );
