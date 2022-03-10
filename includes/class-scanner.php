@@ -276,6 +276,11 @@ class Scanner {
 
 	public static function notify_slack_channel( $plugin, $results, $tag ) {
 
+		// Don't alert the channel for plugins that have already been closed
+		if ( 'closed' === $plugin->post_status ) {
+			return;
+		}
+
 		$totals = sprintf(
 			"Found %d errors in %s %s.\n\n",
 			$results[ 'totals' ][ 'errors' ],
