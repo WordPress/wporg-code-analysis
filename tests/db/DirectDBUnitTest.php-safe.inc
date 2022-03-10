@@ -399,12 +399,12 @@ function false_positive_19() {
 
 		$stats = $wpdb->get_row( "SELECT * FROM {$wpdb->prefix}woomotiv_stats
 			WHERE product_id={$product_id} AND popup_type IN ('order' , 'review')
-			AND the_day=$day 
-			AND the_month=$month 
+			AND the_day=$day
+			AND the_month=$month
 			AND the_year=$year
 		");
 	}
-	
+
 }
 
 function secure_wpdb_query_17() {
@@ -436,4 +436,14 @@ function false_positive_21() {
     $table = $wpdb->prefix . Database::MY_TABLE;
 	$sql   = "SELECT id, conditions FROM $table";
 	$rows  = $wpdb->get_results($sql);
+}
+
+function false_positive_22( $interval_in_days ) {
+	global $wpdb;
+	$table_name = $this->get_log_table_name();
+
+	$query              = $wpdb->prepare( "DELETE FROM {$table_name} WHERE sent_date < DATE_SUB( CURDATE(), INTERVAL %d DAY )", $interval_in_days );
+	$deleted_rows_count = $wpdb->query( $query );
+	return $deleted_rows_count;
+
 }
