@@ -301,7 +301,8 @@ class Scanner {
 			return;
 		}
 
-		$body = sprintf( "Detected errors in %s\n", $plugin->post_title );
+		$body = sprintf( "Detected errors in *%s*\n", $plugin->post_title );
+		$body .= $totals . "\n";
 		$body .= sprintf( "https://wordpress.org/plugins/wp-admin/post.php?post=%s&action=edit\n", $plugin->ID );
 		$body .= sprintf( "https://plugins.trac.wordpress.org/browser/%s/%s/\n",
 			$plugin->post_name,
@@ -309,7 +310,7 @@ class Scanner {
 		);
 		$body .= sprintf( "https://wordpress.org/plugins/%s/\n", $plugin->post_name );
 
-		$body .= $totals . "\n\n```\n";
+		$body .= "\n\n```\n";
 		$body .= sprintf( "%-80s %8s %8s\n", 'Type', 'Errors', 'Files' );
 		$body .= sprintf( "%-80s %8s %8s\n", '----', '------', '-----' );
 		foreach ( $summary as $source => $file_errors ) {
