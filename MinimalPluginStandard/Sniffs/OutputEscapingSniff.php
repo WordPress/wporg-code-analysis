@@ -148,6 +148,7 @@ class OutputEscapingSniff extends AbstractEscapingCheckSniff {
 		'get_post_format' => true,
 		'wp_get_attachment_image' => true,
 		'mysql2date'      => true,
+		'wp_create_nonce' => true,
 	);
 
 	// Explicit user input will always generate an error when displayed unescaped.
