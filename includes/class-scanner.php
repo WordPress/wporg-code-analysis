@@ -277,9 +277,11 @@ class Scanner {
 	public static function notify_slack_channel( $plugin, $results, $tag ) {
 
 		$totals = sprintf(
-			"Found %d errors in %d files.\n\n",
+			"Found %d errors in [%s](https://plugins.svn.wordpress.org/browser/%s/%s).\n\n",
 			$results[ 'totals' ][ 'errors' ],
-			count( $results[ 'files' ] )
+			$tag,
+			$plugin->post_name,
+			$tag
 		);
 
 		$summary = [];
@@ -292,7 +294,7 @@ class Scanner {
 				}
 
 				// Count the instances of each error per filename
-				$summary[ $source ][ $filename ][ $line ] = true;
+				$summary[ $message['source'] ][ $filename ][ $message['line'] ] = true;
 			}
 		}
 
@@ -302,12 +304,13 @@ class Scanner {
 
 		$body = "Detected errors in $slug\n";
 		$body .= "https://wordpress.org/plugins/wp-admin/post.php?post={$plugin->ID}&action=edit\n";
-		$body .= $totals . "\n\n```";
-		$body .= sprintf( "%-64s %-8s %-8s\n", 'Type', 'Errors', 'Files' );
-		$body .= sprintf( "%-64s %-8s %-8s\n", '----', '------', '-----' );
+		$body .= $totals . "\n\n```\n";
+		$body .= sprintf( "%-80s %-8s %-8s\n", 'Type', 'Errors', 'Files' );
+		$body .= sprintf( "%-80s %-8s %-8s\n", '----', '------', '-----' );
 		foreach ( $summary as $source => $file_errors ) {
-			$body .= sprintf( "%-64s %8d %8d\n", $source, count( $file_errors, COUNT_RECURSIVE ), count ( $file_errors ) );
+			$body .= sprintf( "%-80s %8d %8d\n", $source, count( $file_errors, COUNT_RECURSIVE ), count ( $file_errors ) );
 		}
+		$body .= '```';
 
 		if ( defined( 'PLUGIN_REVIEW_ALERT_SLACK_CHANNEL' ) && function_exists( 'slack_dm' ) ) {
 			\slack_dm(
