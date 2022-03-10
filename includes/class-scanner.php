@@ -306,18 +306,18 @@ class Scanner {
 
 		$body = sprintf( "Detected errors in *%s*\n", $plugin->post_title );
 		if ( $active_installs >= 10000 ) {
-			$body .= sprintf( ":bangbang::bangbang::bangbang: %d+ active installs :bangbang::bangbang::bangbang:", $active_installs );
+			$body .= sprintf( ":bangbang::bangbang::bangbang: %d+ active installs :bangbang::bangbang::bangbang:\n", $active_installs );
 		} else {
 			$body .= sprintf( "%d+ active installs", $active_installs );
 		}
 
 		$body .= $totals . "\n";
-		$body .= sprintf( "https://wordpress.org/plugins/wp-admin/post.php?post=%s&action=edit\n", $plugin->ID );
-		$body .= sprintf( "https://plugins.trac.wordpress.org/browser/%s/%s/\n",
+		$body .= sprintf( "Details: https://wordpress.org/plugins/wp-admin/post.php?post=%s&action=edit\n", $plugin->ID );
+		$body .= sprintf( "Source: https://plugins.trac.wordpress.org/browser/%s/%s/\n",
 			$plugin->post_name,
 			( 'trunk' === $tag ? 'trunk' : 'tags/' . $tag )
 		);
-		$body .= sprintf( "https://wordpress.org/plugins/%s/\n", $plugin->post_name );
+		$body .= sprintf( "Plugin: https://wordpress.org/plugins/%s/\n", $plugin->post_name );
 
 		$body .= "\n\n```\n";
 		$body .= sprintf( "%-80s %8s %8s\n", 'Type', 'Errors', 'Files' );
