@@ -303,15 +303,15 @@ class Scanner {
 
 		$body = sprintf( "Detected errors in %s\n", $plugin->post_title );
 		$body .= sprintf( "https://wordpress.org/plugins/wp-admin/post.php?post=%s&action=edit\n", $plugin->ID );
-		$body .= sprintf( "https://plugins.trac.wordpress.org/browser/%s/%s/",
+		$body .= sprintf( "https://plugins.trac.wordpress.org/browser/%s/%s/\n",
 			$plugin->plugin_name,
 			( 'trunk' === $tag ? 'trunk' : 'tags/' . $tag )
 		);
-		$body .= sprintf( "https://wordpress.org/plugins/%s/", $plugin->plugin_name );
+		$body .= sprintf( "https://wordpress.org/plugins/%s/\n", $plugin->plugin_name );
 
 		$body .= $totals . "\n\n```\n";
-		$body .= sprintf( "%-80s %-8s %-8s\n", 'Type', 'Errors', 'Files' );
-		$body .= sprintf( "%-80s %-8s %-8s\n", '----', '------', '-----' );
+		$body .= sprintf( "%-80s %8s %8s\n", 'Type', 'Errors', 'Files' );
+		$body .= sprintf( "%-80s %8s %8s\n", '----', '------', '-----' );
 		foreach ( $summary as $source => $file_errors ) {
 			$body .= sprintf( "%-80s %8d %8d\n", $source, count( $file_errors, COUNT_RECURSIVE ), count ( $file_errors ) );
 		}
