@@ -277,10 +277,10 @@ class Scanner {
 	public static function notify_slack_channel( $plugin, $results, $tag ) {
 
 		$totals = sprintf(
-			"Found %d errors in [%s](https://plugins.svn.wordpress.org/browser/%s/%s).\n\n",
+			"Found %d errors in <a href=\"https://plugins.svn.wordpress.org/browser/%s/%s\">%s</a>.\n\n",
 			$results[ 'totals' ][ 'errors' ],
-			( 'trunk' === $tag ? 'trunk' : 'tags/' . $tag ),
 			$plugin->post_name,
+			( 'trunk' === $tag ? 'trunk' : 'tags/' . $tag ),
 			$tag
 		);
 
@@ -302,7 +302,7 @@ class Scanner {
 			return;
 		}
 
-		$body = sprintf( "Detected errors in [%s](https://wordpress.org/%s/)\n", $plugin->post_name, $plugin->post_name );
+		$body = sprintf( "Detected errors in <a href=\"https://wordpress.org/%s/\">%s</a>\n", $plugin->post_name, $plugin->post_name );
 		$body .= "https://wordpress.org/plugins/wp-admin/post.php?post={$plugin->ID}&action=edit\n";
 		$body .= $totals . "\n\n```\n";
 		$body .= sprintf( "%-80s %-8s %-8s\n", 'Type', 'Errors', 'Files' );
