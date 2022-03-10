@@ -308,7 +308,7 @@ class Scanner {
 		if ( $active_installs >= 10000 ) {
 			$body .= sprintf( ":bangbang::bangbang::bangbang: %d+ active installs :bangbang::bangbang::bangbang:\n", $active_installs );
 		} else {
-			$body .= sprintf( "%d+ active installs", $active_installs );
+			$body .= sprintf( "%d+ active installs\n", $active_installs );
 		}
 
 		$body .= $totals . "\n";
