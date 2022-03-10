@@ -302,11 +302,11 @@ class Scanner {
 
 		$body = "Detected errors in $slug\n";
 		$body .= "https://wordpress.org/plugins/wp-admin/post.php?post={$plugin->ID}&action=edit\n";
-		$body .= $totals . "\n\n";
+		$body .= $totals . "\n\n```";
 		$body .= sprintf( "%-64s %-8s %-8s\n", 'Type', 'Errors', 'Files' );
 		$body .= sprintf( "%-64s %-8s %-8s\n", '----', '------', '-----' );
 		foreach ( $summary as $source => $file_errors ) {
-			$body .= sprintf( "%-64s %8d %8d\n", count( $file_errors, COUNT_RECURSIVE ), count ( $file_errors ) );
+			$body .= sprintf( "%-64s %8d %8d\n", $source, count( $file_errors, COUNT_RECURSIVE ), count ( $file_errors ) );
 		}
 
 		if ( defined( 'PLUGIN_REVIEW_ALERT_SLACK_CHANNEL' ) && function_exists( 'slack_dm' ) ) {
