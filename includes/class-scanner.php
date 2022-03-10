@@ -304,10 +304,10 @@ class Scanner {
 		$body = sprintf( "Detected errors in %s\n", $plugin->post_title );
 		$body .= sprintf( "https://wordpress.org/plugins/wp-admin/post.php?post=%s&action=edit\n", $plugin->ID );
 		$body .= sprintf( "https://plugins.trac.wordpress.org/browser/%s/%s/\n",
-			$plugin->plugin_name,
+			$plugin->post_name,
 			( 'trunk' === $tag ? 'trunk' : 'tags/' . $tag )
 		);
-		$body .= sprintf( "https://wordpress.org/plugins/%s/\n", $plugin->plugin_name );
+		$body .= sprintf( "https://wordpress.org/plugins/%s/\n", $plugin->post_name );
 
 		$body .= $totals . "\n\n```\n";
 		$body .= sprintf( "%-80s %8s %8s\n", 'Type', 'Errors', 'Files' );
