@@ -301,7 +301,16 @@ class Scanner {
 			return;
 		}
 
+		// Get the order of magnitude of the number of installs
+		$active_installs = pow( 10, floor( log10( get_post_meta( $plugin->ID, 'active_installs' ) ) ) );
+
 		$body = sprintf( "Detected errors in *%s*\n", $plugin->post_title );
+		if ( $active_installs >= 10000 ) {
+			$body .= sprintf( ":bangbang::bangbang::bangbang: %d+ active installs :bangbang::bangbang::bangbang:", $active_installs );
+		} else {
+			$body .= sprintf( "%d+ active installs", $active_installs );
+		}
+
 		$body .= $totals . "\n";
 		$body .= sprintf( "https://wordpress.org/plugins/wp-admin/post.php?post=%s&action=edit\n", $plugin->ID );
 		$body .= sprintf( "https://plugins.trac.wordpress.org/browser/%s/%s/\n",
