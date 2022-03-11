@@ -447,3 +447,23 @@ function false_positive_22( $interval_in_days ) {
 	return $deleted_rows_count;
 
 }
+
+function false_positive_23() {
+	global $wpdb;
+	$wpdb->query(
+			$wpdb->prepare(
+					'INSERT INTO ec_address( `user_id`, `first_name`, `last_name`, `company_name`, `address_line_1`, `address_line_2`, `city`, `state`, `zip`, `country`, `phone` ) VALUES( %d, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s )',
+					$user_id,
+					( ( -1 != $billing_first_name_index ) ? $rows[ $i ][ $billing_first_name_index ] : '' ),
+					( ( -1 != $billing_last_name_index ) ? $rows[ $i ][ $billing_last_name_index ] : '' ),
+					( ( -1 != $billing_company_name_index ) ? $rows[ $i ][ $$billing_company_name_index ] : '' ),
+					( ( -1 != $billing_address_line_1_index ) ? $rows[ $i ][ $billing_address_line_1_index ] : '' ),
+					( ( -1 != $billing_address_line_2_index ) ? $rows[ $i ][ $billing_address_line_2_index ] : '' ),
+					( ( -1 != $billing_city_index ) ? $rows[ $i ][ $billing_city_index ] : '' ),
+					( ( -1 != $billing_state_index ) ? $rows[ $i ][ $billing_state_index ] : '' ),
+					( ( -1 != $billing_zip_index ) ? $rows[ $i ][ $billing_zip_index ] : '' ),
+					( ( -1 != $billing_country_index ) ? $rows[ $i ][ $billing_country_index ] : '' ),
+					( ( -1 != $billing_phone_index ) ? $rows[ $i ][ $billing_phone_index ] : '' )
+			)
+	);
+}
