@@ -467,3 +467,9 @@ function false_positive_23() {
 			)
 	);
 }
+
+function false_positive_24() {
+	global $wpdb;
+	$wpdb->query( "delete from " . WCSC::table_name() );
+	$wpdb->query( "delete from " . WCSC_Error_Logs::table_name() );
+}
