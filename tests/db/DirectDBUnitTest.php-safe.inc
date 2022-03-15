@@ -473,3 +473,9 @@ function false_positive_24() {
 	$wpdb->query( "delete from " . WCSC::table_name() );
 	$wpdb->query( "delete from " . WCSC_Error_Logs::table_name() );
 }
+
+function false_positive_25( $tables ) {
+	global $wpdb;
+	// Should be ignored because it's a DROP TABLE.
+	$wpdb->query( 'DROP TABLE ' . implode( ',', $tables ) );
+}
