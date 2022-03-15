@@ -479,3 +479,15 @@ function false_positive_25( $tables ) {
 	// Should be ignored because it's a DROP TABLE.
 	$wpdb->query( 'DROP TABLE ' . implode( ',', $tables ) );
 }
+
+function false_positive_26( $foo_id ) {
+		$query = $this->wpdb->prepare(
+					"
+					SELECT the_id
+					FROM $this->the_table
+					WHERE foo_id = %d",
+					$foo_id
+			);
+
+		return (int) $this->wpdb->get_var( $query );
+}
