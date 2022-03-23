@@ -91,6 +91,7 @@ class DirectDBSniff extends AbstractEscapingCheckSniff {
 		'rand'           => true,
 		'mt_rand'        => true,
 		'max'            => true,
+		'table_name'     => true,
 	);
 
 	/**
