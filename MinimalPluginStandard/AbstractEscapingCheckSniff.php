@@ -180,7 +180,7 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 	protected function _is_sanitized_var( $var, $context ) {
 
 		// If it's $wpdb->tablename then it's implicitly safe
-		if ( '$wpdb->' === substr( $var, 0, 7 ) || '$this->' === substr( $var, 0, 7 ) || '$wpdb' === $var ) {
+		if ( '$wpdb->' === substr( $var, 0, 7 ) || '$this->table' === substr( $var, 0, 12 ) || '$wpdb' === $var ) {
 			return true;
 		}
 
