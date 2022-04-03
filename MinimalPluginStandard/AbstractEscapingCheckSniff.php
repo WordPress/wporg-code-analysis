@@ -180,7 +180,7 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 	protected function _is_sanitized_var( $var, $context ) {
 
 		// If it's $wpdb->tablename then it's implicitly safe
-		if ( '$wpdb->' === substr( $var, 0, 7 ) || '$this->table' === substr( $var, 0, 12 ) || '$wpdb' === $var ) {
+		if ( '$wpdb->' === substr( $var, 0, 7 ) || '$this->table' === substr( $var, 0, 12 ) || '$this->the_table' === substr( $var, 0, 16 ) || '$wpdb' === $var ) {
 			return true;
 		}
 
@@ -537,21 +537,12 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 	}
 
 	/**
-	 * Is a SQL query of a type that should only produce a warning when it contains unescaped parameters?
-	 *
-	 * For example, CREATE TABLE queries usually include unescaped table and column names.
+	 * Is an expression one that should only produce a warning when it is used unescaped?
 	 */
-	public function is_warning_sql( $sql ) {
-		foreach ( $this->warn_only_queries as $warn_query ) {
-			if ( 0 === strpos( ltrim( $sql, '\'"' ), $warn_query ) ) {
-				return true;
-			}
-		}
-
+	public function is_warning_expression( $expression_string ) {
+		// Override this in child class if needed.
 		return false;
 	}
-
-
 
 	/**
 	 * Processes this test, when one of its tokens is encountered.
@@ -629,7 +620,10 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 					$extra_context = $this->unwind_unsafe_assignments( $unsafe_ptr );
 					$unsafe_expression = $this->get_unsafe_expression_as_string( $unsafe_ptr );
 
-					if ( $this->is_warning_parameter( $unsafe_expression ) || $this->is_suppressed_line( $checkPtr, [ 'WordPress.DB.PreparedSQL.NotPrepared', 'WordPress.DB.PreparedSQL.InterpolatedNotPrepared', 'WordPress.DB.DirectDatabaseQuery.DirectQuery', 'DB call', 'unprepared SQL', 'PreparedSQLPlaceholders replacement count'] ) ) {
+					if ( $this->is_warning_parameter( $unsafe_expression )
+						|| $this->is_suppressed_line( $checkPtr, [ 'WordPress.DB.PreparedSQL.NotPrepared', 'WordPress.DB.PreparedSQL.InterpolatedNotPrepared', 'WordPress.DB.DirectDatabaseQuery.DirectQuery', 'DB call', 'unprepared SQL', 'PreparedSQLPlaceholders replacement count'] )
+						|| $this->is_warning_expression( $methodParam[ 'clean' ] )
+						) {
 						$this->phpcsFile->addWarning( 'Unescaped parameter %s used in $wpdb->%s(%s)%s',
 							$checkPtr,
 							$this->rule_name,

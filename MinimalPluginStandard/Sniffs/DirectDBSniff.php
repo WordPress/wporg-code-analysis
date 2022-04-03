@@ -38,6 +38,7 @@ class DirectDBSniff extends AbstractEscapingCheckSniff {
 		'esc_sql'                    => true,
 		'wp_parse_id_list'           => true,
 		'bp_esc_like'                => true,
+		'sanitize_sql_orderby'       => true,
 	);
 
 	/**
@@ -90,6 +91,7 @@ class DirectDBSniff extends AbstractEscapingCheckSniff {
 		'rand'           => true,
 		'mt_rand'        => true,
 		'max'            => true,
+		'table_name'     => true,
 	);
 
 	/**
@@ -191,6 +193,24 @@ class DirectDBSniff extends AbstractEscapingCheckSniff {
 			\T_VARIABLE,
 			\T_STRING,
 		);
+	}
+
+
+
+
+	/**
+	 * Is a SQL query of a type that should only produce a warning when it contains unescaped parameters?
+	 *
+	 * For example, CREATE TABLE queries usually include unescaped table and column names.
+	 */
+	public function is_warning_expression( $sql ) {
+		foreach ( $this->warn_only_queries as $warn_query ) {
+			if ( 0 === strpos( ltrim( $sql, '\'"' ), $warn_query ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 }

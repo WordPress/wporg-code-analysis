@@ -587,15 +587,35 @@ abstract class AbstractSniffHelper extends Sniff {
 		$end_of_expression = $this->find_end_of_expression( $stackPtr );
 		$next = $this->next_non_empty( $end_of_expression + 1 );
 
-		$ternaryPtr = $this->phpcsFile->findNext( [ \T_INLINE_THEN => \T_INLINE_THEN ], $stackPtr, $end_of_expression, false, null, true );
-		if ( $ternaryPtr && !$allow_empty ) {
-			// If it's followed immediately by `:` then the middle expression is empty.
-			$lookahead = $this->next_non_empty( $ternaryPtr + 1 );
-			if ( \T_INLINE_ELSE === $this->tokens[ $lookahead ][ 'code' ] ) {
-				return false;
+		$next = $this->next_non_empty( $stackPtr );
+		while ( $next && $next < $end_of_expression ) {
+			/**
+			 * `foo( $bar ) ? $baz : ''` -> ternary expression
+			 * `foo( $bar ? $baz : '' )` -> not a ternary expression
+			 */
+			if ( in_array( $this->tokens[ $next ][ 'code' ], Tokens::$functionNameTokens ) ) {
+				$next = $this->next_non_empty( $next + 1 );
+				if ( \T_OPEN_PARENTHESIS === $this->tokens[ $next ][ 'code' ] && isset( $this->tokens[ $next ][ 'parenthesis_closer' ] ) ) {
+					$next = $this->tokens[ $next ][ 'parenthesis_closer' ];
+				}
 			}
+
+			if ( \T_INLINE_THEN === $this->tokens[ $next ][ 'code' ] ) {
+				// Found a ternary; check the $allow_empty condition
+				if ( !$allow_empty ) {
+					$lookahead = $this->next_non_empty( $next + 1 );
+					if ( \T_INLINE_ELSE === $this->tokens[ $lookahead ][ 'code' ] ) {
+						return false;
+					}
+				}
+
+				return $next;
+			}
+
+			$next = $this->next_non_empty( $next + 1 );
 		}
-		return $ternaryPtr;
+
+		return false;
 	}
 
 	/**
