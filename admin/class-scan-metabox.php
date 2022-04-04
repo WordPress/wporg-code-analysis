@@ -35,6 +35,8 @@ class Scan_Metabox {
 			return;
 		}
 
+		$tag_dir = ( 'trunk' === $post->stable_tag ? 'trunk' : 'tags/' . $post->stable_tag );
+
 		echo '<pre style="white-space: pre-wrap;">';
 		foreach ( $results[ 'files' ] as $pathname => $file ) {
 			list( $slug, $filename ) = explode( '/', $pathname, 2 );
@@ -43,7 +45,7 @@ class Scan_Metabox {
 				if ( 'WARNING' === $message[ 'type' ] ) {
 					continue;
 				}
-				printf( "%s %s in <a href='https://plugins.trac.wordpress.org/browser/%s/trunk/%s#L%d'>%s line %d</a>\n", esc_html( $message[ 'type' ] ), esc_html( $message[ 'source' ] ), esc_attr( $slug ), esc_attr( $filename ), $message[ 'line' ], esc_html( $filename ), $message[ 'line' ] );
+				printf( "%s %s in <a href='https://plugins.trac.wordpress.org/browser/%s/%s/%s#L%d'>%s line %d</a>\n", esc_html( $message[ 'type' ] ), esc_html( $message[ 'source' ] ), esc_attr( $slug ), esc_attr( $tag_dir ), esc_attr( $filename ), $message[ 'line' ], esc_html( $filename ), $message[ 'line' ] );
 				echo esc_html( $message[ 'message' ] ) . "\n";
 				if ( $message['context'] ) {
 					foreach ( $message['context'] as $line_no => $context_line ) {
