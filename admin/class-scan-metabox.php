@@ -48,7 +48,7 @@ class Scan_Metabox {
 
 				$marks = [];
 				if ( preg_match_all( '/ at line (\d+):/', $message[ 'message' ], $matches, PREG_PATTERN_ORDER ) ) {
-					$marks[] = array_map( 'intval', $matches[1] );
+					$marks = array_map( 'intval', $matches[1] );
 				}
 				$marks[] = $message[ 'line' ];
 				printf( "%s %s in <a href='https://plugins.trac.wordpress.org/browser/%s/%s/%s%s#L%d'>%s line %d</a>\n", esc_html( $message[ 'type' ] ), esc_html( $message[ 'source' ] ), esc_attr( $slug ), esc_attr( $tag_dir ), esc_attr( $filename ), ($marks ? '?marks=' . join( ',', $marks ) : '' ), $message[ 'line' ], esc_html( $filename ), $message[ 'line' ] );
