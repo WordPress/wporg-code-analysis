@@ -35,7 +35,7 @@ class Scan_Metabox {
 			return;
 		}
 
-		$tag_dir = ( 'trunk' === $post->stable_tag ? 'trunk' : 'tags/' . $post->stable_tag );
+		$tag_dir = ( 'trunk' === $post->stable_tag || '' == $post->stable_tag ? 'trunk' : 'tags/' . $post->stable_tag );
 
 		echo '<pre style="white-space: pre-wrap;">';
 		foreach ( $results[ 'files' ] as $pathname => $file ) {
@@ -50,6 +50,7 @@ class Scan_Metabox {
 				if ( preg_match_all( '/ at line (\d+):/', $message[ 'message' ], $matches, PREG_PATTERN_ORDER ) ) {
 					$marks[] = array_map( 'intval', $matches[1] );
 				}
+				$marks[] = $message[ 'line' ];
 				printf( "%s %s in <a href='https://plugins.trac.wordpress.org/browser/%s/%s/%s%s#L%d'>%s line %d</a>\n", esc_html( $message[ 'type' ] ), esc_html( $message[ 'source' ] ), esc_attr( $slug ), esc_attr( $tag_dir ), esc_attr( $filename ), ($marks ? '?marks=' . join( ',', $marks ) : '' ), $message[ 'line' ], esc_html( $filename ), $message[ 'line' ] );
 				echo esc_html( $message[ 'message' ] ) . "\n";
 				if ( $message['context'] ) {
