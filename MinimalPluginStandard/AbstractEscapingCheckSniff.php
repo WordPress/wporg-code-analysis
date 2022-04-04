@@ -69,6 +69,18 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 	);
 
 	/**
+	 * Superglobals that are definitively not safe because they contain unescaped user input.
+	 */
+	protected $unsafe_variables = array(
+		'$_GET',
+		'$_POST',
+		'$_REQUEST',
+		'$_COOKIE',
+		'$_SERVER', // Includes HTTP headers etc that are user input
+		'$_ENV',    // Could contain CGI vars directly from user input
+	);
+
+	/**
 	 * Variable names that should only produce a warning when used unescaped.
 	 */
 	protected $warn_only_parameters = [
@@ -221,6 +233,7 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 		$_unsafe_ptr = $this->unsafe_ptr;
 		$_unsafe_expression = $this->unsafe_expression;
 		$this->unsafe_ptr = null;
+		$this->expression_severity = $severity = 0;
 
 		if ( --$limit < 0 ) {
 			return [];
@@ -262,6 +275,11 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 									if ( $var_name ) {
 										if ( !$this->_is_sanitized_var( $var_name, $this->get_context( $assignmentPtr ) ) ) {
 											$vars_to_explain[ $var_name ] = true;
+											if ( preg_match( '/^([$]\w+)\W/', $var_name, $matches ) ) {
+												if ( in_array( $matches[1], $this->unsafe_variables ) ) {
+													$severity = 10;
+												}
+											}
 										}
 									}
 								}
@@ -285,6 +303,7 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 
 		$this->unsafe_expression = $_unsafe_expression;
 		$this->unsafe_ptr = $_unsafe_ptr;
+		$this->expression_severity = $severity;
 
 		return array_unique( $extra_context );
 	}
@@ -628,7 +647,7 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 							$checkPtr,
 							$this->rule_name,
 							[ $unsafe_expression, $method, $methodParam[ 'clean' ], rtrim( "\n" . join( "\n", $extra_context ) ) ],
-							0,
+							$this->expression_severity,
 							false
 						);
 					} else {
@@ -636,7 +655,7 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 							$checkPtr,
 							$this->rule_name,
 							[ $unsafe_expression, $method, $methodParam[ 'clean' ], rtrim( "\n" . join( "\n", $extra_context ) ) ],
-							0,
+							$this->expression_severity,
 							false
 						);
 					}
@@ -653,7 +672,7 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 							$checkPtr,
 							$this->rule_name,
 							[ $unsafe_expression, $this->tokens[ $checkPtr ][ 'content' ], rtrim( "\n" . join( "\n", $extra_context ) ) ],
-							0,
+							$this->expression_severity,
 							false
 						);
 					} else {
@@ -661,7 +680,7 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 							$checkPtr,
 							$this->rule_name,
 							[ $unsafe_expression, $this->tokens[ $checkPtr ][ 'content' ], rtrim( "\n" . join( "\n", $extra_context ) ) ],
-							0,
+							$this->expression_severity,
 							false
 						);
 					}
