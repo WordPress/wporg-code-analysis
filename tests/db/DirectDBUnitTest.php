@@ -128,6 +128,7 @@ EOF;
 		$this->assertEquals(
 			[
 				446, // FIXME: this is a known bug. Need to find a way to fix it (false_positive_22)
+				504, // FIXME: another known bug (false_positive_28)
 			],
 			$lines);
 	}
