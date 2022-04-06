@@ -1,3 +1,8 @@
+.phpcs {
+	border-left: 5px solid transparent;
+	padding-left: 5px;
+}
 .phpcs-severity-10 {
-	background-color: #fcc;
+	border-left-color: #d63638;
+	background-color: #fcf0f1;
 }
