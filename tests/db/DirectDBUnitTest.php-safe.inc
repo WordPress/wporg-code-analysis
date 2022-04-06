@@ -496,3 +496,10 @@ function false_positive_27() {
 	$wpdb->query( $wpdb->prepare( "SELECT * FROM $wpdb->foo WHERE foo = %s", ( 1 == $bar ? $foo : '' ) ) );
 	$wpdb->query( $wpdb->prepare( "SELECT * FROM $wpdb->foo WHERE foo = %s", $foo );
 }
+
+function false_positive_28() {
+
+	$r = $wpdb->prepare( "SELECT * FROM foo WHERE bar = %s", $bar );
+
+	$r = $wpdb->get_results( $r );
+}

@@ -52,6 +52,7 @@ class Scan_Metabox {
 				}
 				$marks[] = $message[ 'line' ];
 				$marks = array_unique( $marks );
+				echo '<div class="phpcs phpcs-severity-' . intval( $message[ 'severity' ] ) . '">';
 				printf( "%s %s in <a href='https://plugins.trac.wordpress.org/browser/%s/%s/%s%s#L%d'>%s line %d</a>\n", esc_html( $message[ 'type' ] ), esc_html( $message[ 'source' ] ), esc_attr( $slug ), esc_attr( $tag_dir ), esc_attr( $filename ), ($marks ? '?marks=' . join( ',', $marks ) : '' ), $message[ 'line' ], esc_html( $filename ), $message[ 'line' ] );
 				echo esc_html( $message[ 'message' ] ) . "\n";
 				if ( $message['context'] ) {
@@ -65,6 +66,7 @@ class Scan_Metabox {
 					}
 					echo "\n";
 				}
+				echo "</div>\n";
 			}
 		}
 		echo '</pre>';
