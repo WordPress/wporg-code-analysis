@@ -52,20 +52,21 @@ class Scan_Metabox {
 				}
 				$marks[] = $message[ 'line' ];
 				$marks = array_unique( $marks );
+				echo '<div class="phpcs-severity-' . intval( $message[ 'severity' ] ) . '">';
 				printf( "%s %s in <a href='https://plugins.trac.wordpress.org/browser/%s/%s/%s%s#L%d'>%s line %d</a>\n", esc_html( $message[ 'type' ] ), esc_html( $message[ 'source' ] ), esc_attr( $slug ), esc_attr( $tag_dir ), esc_attr( $filename ), ($marks ? '?marks=' . join( ',', $marks ) : '' ), $message[ 'line' ], esc_html( $filename ), $message[ 'line' ] );
 				echo esc_html( $message[ 'message' ] ) . "\n";
-				$style = ( $message[ 'severity' ] > 5 ? ' style="color:red;"' : '' );
 				if ( $message['context'] ) {
 					foreach ( $message['context'] as $line_no => $context_line ) {
 						$line = $line_no . '&emsp;' . esc_html( $context_line ). "\n";
 						if ( $line_no == $message['line'] ) {
-							echo '<b' . $style . '>' . $line . '</b>';
+							echo '<b>' . $line . '</b>';
 						} else {
 							echo $line;
 						}
 					}
 					echo "\n";
 				}
+				echo "</div>\n";
 			}
 		}
 		echo '</pre>';
