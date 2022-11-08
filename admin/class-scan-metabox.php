@@ -78,6 +78,21 @@ class Scan_Metabox {
 	}
 
 	/**
+	 * Display the metabox, if cached output directly, else ajax load.
+	 */
+	public static function maybe_display_ajax() {
+		global $post;
+
+		$output = self::get_scan_output_cached( $post->ID, true );
+
+		if ( false === $output ) {
+			return self::display_ajax();
+		} else {
+			echo '<div id="scan_plugin_output">' . $output . '</div>';
+		}
+	}
+
+	/**
 	 * Ajax handler that runs a scan and returns the output to display
 	 */
 	public static function get_ajax_response( $action = 'scan-plugin' ) {
@@ -107,7 +122,7 @@ class Scan_Metabox {
 	/**
 	 * Return the output of a scan as a string, with caching.
 	 */
-	public static function get_scan_output_cached( $post_id ) {
+	public static function get_scan_output_cached( $post_id, $bail_if_not_cached = false ) {
 		$post_id = intval( $post_id );
 		if ( $post_id < 1 ) {
 			return false;
@@ -115,6 +130,8 @@ class Scan_Metabox {
 
 		if ( $cached = get_transient( "code_scan_$post_id" ) ) {
 			return $cached;
+		} elseif ( $bail_if_not_cached ) {
+			return false;
 		}
 
 		// Set a temporary cached value for 2 minutes, to prevent a stampede of multiple scans running at once.

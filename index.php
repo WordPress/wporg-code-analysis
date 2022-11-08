@@ -41,12 +41,12 @@ function register_admin_metabox( $post_type, $post ) {
 		return;
 	}
 
-    add_meta_box(
-        'code-scanner',
-        __( 'Code Scanner', 'wporg-plugins' ),
-        array( __NAMESPACE__ . '\Admin\Scan_Metabox', 'display_ajax' ),
-        'plugin', 'normal', 'high'
-    );
+	add_meta_box(
+		'code-scanner',
+		__( 'Code Scanner', 'wporg-plugins' ),
+		array( __NAMESPACE__ . '\Admin\Scan_Metabox', 'maybe_display_ajax' ),
+		'plugin', 'normal', 'high'
+	);
 
     wp_enqueue_script( 'code-scan-metabox-js', plugins_url( 'admin/metabox.js', __FILE__ ), array( 'wp-util' ), 1 );
     wp_enqueue_style( 'code-scan-metabox-css', plugins_url( 'admin/metabox.css', __FILE__ ), array(), 1 );
