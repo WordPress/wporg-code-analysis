@@ -36,6 +36,7 @@ class Scan_Metabox {
 		}
 
 		$tag_dir          = ( 'trunk' === $post->stable_tag || '' == $post->stable_tag ? 'trunk' : 'tags/' . $post->stable_tag );
+		$upload_dir       = wp_get_upload_dir();
 		$is_uploaded_file = str_starts_with( $results['file'], $upload_dir['basedir'] );
 
 		echo '<pre style="white-space: pre-wrap;">';
