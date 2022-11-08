@@ -35,11 +35,17 @@ class Scan_Metabox {
 			return;
 		}
 
-		$tag_dir = ( 'trunk' === $post->stable_tag || '' == $post->stable_tag ? 'trunk' : 'tags/' . $post->stable_tag );
+		$tag_dir          = ( 'trunk' === $post->stable_tag || '' == $post->stable_tag ? 'trunk' : 'tags/' . $post->stable_tag );
+		$is_uploaded_file = str_starts_with( $results['file'], $upload_dir['basedir'] );
 
 		echo '<pre style="white-space: pre-wrap;">';
 		foreach ( $results[ 'files' ] as $pathname => $file ) {
-			list( $slug, $filename ) = explode( '/', $pathname, 2 );
+			// Trim off the slug. Present in published plugins, not necesarily present in uploaded ZIPs
+			$filename = $pathname;
+			if ( str_starts_with( $filename, "{$post->post_name}/" ) ) {
+				list( , $filename ) = explode( '/', $filename, 2 );
+			}
+
 			foreach ( $file[ 'messages' ] as $message ) {
 				// Skip warnings for now
 				if ( 'WARNING' === $message[ 'type' ] ) {
@@ -53,7 +59,30 @@ class Scan_Metabox {
 				$marks[] = $message[ 'line' ];
 				$marks = array_unique( $marks );
 				echo '<div class="phpcs phpcs-severity-' . intval( $message[ 'severity' ] ) . '">';
-				printf( "%s %s in <a href='https://plugins.trac.wordpress.org/browser/%s/%s/%s%s#L%d'>%s line %d</a>\n", esc_html( $message[ 'type' ] ), esc_html( $message[ 'source' ] ), esc_attr( $slug ), esc_attr( $tag_dir ), esc_attr( $filename ), ($marks ? '?marks=' . join( ',', $marks ) : '' ), $message[ 'line' ], esc_html( $filename ), $message[ 'line' ] );
+				if ( $is_uploaded_file ) {
+					printf(
+						"%s %s in <em>%s line %d</em>\n",
+						esc_html( $message[ 'type' ] ),
+						esc_html( $message[ 'source' ] ),
+						esc_html( $filename ),
+						$message[ 'line' ]
+					);
+				} else {
+					// Must have been a plugin zip from svn.
+					printf(
+						"%s %s in <a href='https://plugins.trac.wordpress.org/browser/%s/%s/%s%s#L%d'>%s line %d</a>\n",
+						esc_html( $message[ 'type' ] ),
+						esc_html( $message[ 'source' ] ),
+						esc_attr( $post->post_name ),
+						esc_attr( $tag_dir ),
+						esc_attr( $filename ),
+						($marks ? '?marks=' . join( ',', $marks ) : '' ),
+						$message[ 'line' ],
+						esc_html( $filename ),
+						$message[ 'line' ]
+					);
+				}
+
 				echo esc_html( $message[ 'message' ] ) . "\n";
 				if ( $message['context'] ) {
 					foreach ( $message['context'] as $line_no => $context_line ) {

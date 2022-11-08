@@ -84,6 +84,8 @@ class Scanner {
 
 		$result['hash'] = self::get_result_hash( $result );
 
+		$result['file'] = $zip_file_path;
+
 		//TODO: cache this?
 
 		return $result;
