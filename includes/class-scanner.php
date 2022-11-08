@@ -23,8 +23,6 @@ class Scanner {
 
 	public static function get_scan_results_for_zip( $zip_file_path ) {
 
-		$out = wp_cache_get( $zip_file_path, 'wporg-code-analysis-scan' );
-
 		// Note that unzip() automatically removes the temp directory on shutdown
 		$unzip_dir = Filesystem::unzip( $zip_file_path );
 
@@ -83,10 +81,7 @@ class Scanner {
 		}
 
 		$result['hash'] = self::get_result_hash( $result );
-
 		$result['file'] = $zip_file_path;
-
-		//TODO: cache this?
 
 		return $result;
 	}
