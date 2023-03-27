@@ -1,4 +1,4 @@
-#!/usr/bin/php
+#!/usr/bin/env php
 <?php
 /**
  * A quick and dirty script for testing the PHPCS class against plugins installed on wporg.

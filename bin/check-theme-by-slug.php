@@ -1,4 +1,4 @@
-#!/usr/bin/php
+#!/usr/bin/env php
 <?php
 /**
  * A quick and dirty script for testing the PHPCS class against any plugin in the directory.
@@ -142,7 +142,7 @@ require dirname( __DIR__ ) . '/includes/class-phpcs.php';
 
 if ( empty( $opts['slug'] ) ) {
 	$themes = get_top_slugs( intval( $opts['number'] ), intval( $opts['page'] ), $opts['browse'] ?? 'popular' );
-	$slugs = array_map( 'reset', $themes ); // ugh
+	$slugs  = array_keys( $themes );
 } else {
 	$slugs = [ $opts['slug'] ];
 }
