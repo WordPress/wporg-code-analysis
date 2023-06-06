@@ -25,3 +25,8 @@ function unsafe_output_example_6( $foo ) {
 	// Unsafe but just a warning.
 	echo trim( $foo );
 }
+
+function unsafe_output_example_7( $foo ) {
+	?><img src="<?php echo esc_html( $foo ) ?>" alt="<?php echo esc_html( $foo ) ?>" /><?php
+}
+
