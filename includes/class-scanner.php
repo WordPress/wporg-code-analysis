@@ -90,6 +90,23 @@ class Scanner {
 		//TODO: make it so it's possible to scan a specific ZIP based on $version
 		$post = get_post( $post );
 
+		$zip_files = array();
+		foreach ( get_attached_media( 'application/zip', $post ) as $zip_file ) {
+			$file = get_attached_file( $zip_file->ID );
+			$zip_files[ strtotime( $zip_file->post_date ) ] = [
+				'file'     => $file,
+				'basename' => basename( $file )
+			];
+		}
+
+		// If specific version specified is an attachment..
+		if ( str_contains( $version, '.zip' ) ) {
+			$match = wp_list_filter( $zip_files, [ 'basename' => $verison ] );
+			if ( $match ) {
+				return $match[0]['file'];
+			}
+		}
+
 		// Scan the published ZIP file.
 		if ( in_array( $post->post_status, [ 'publish', 'disabled', 'closed' ] ) ) {
 			// Need to fetch the zip remotely from the downloads server.
@@ -113,16 +130,10 @@ class Scanner {
 			// If not successful, we'll use the ZIP attached to the post, if possible.
 		}
 
-		$zip_files = array();
-		foreach ( get_attached_media( 'application/zip', $post ) as $zip_file ) {
-			$zip_files[ $zip_file->post_date ] = array( get_attached_file( $zip_file->ID ), $zip_file );
-		}
-		uksort( $zip_files, function ( $a, $b ) {
-			return strtotime( $a ) < strtotime( $b );
-		} );
-
-		if ( count( $zip_files ) ) {
-			return end( $zip_files )[0];
+		if ( $zip_files ) {
+			// Just the last ZIP then.
+			ksort( $zip_files );
+			return end( $zip_files )['file'];
 		}
 
 		return false;

@@ -32,8 +32,8 @@ function load_files() {
 }
 
 function register_admin_metabox( $post_type, $post ) {
-    if ( 'plugin' !== $post_type ) {
-        return;
+	if ( 'plugin' !== $post_type ) {
+		return;
 	}
 
 	// Only load the metabox if the plugin directory plugin is active
@@ -48,8 +48,8 @@ function register_admin_metabox( $post_type, $post ) {
 		'plugin', 'normal', 'high'
 	);
 
-    wp_enqueue_script( 'code-scan-metabox-js', plugins_url( 'admin/metabox.js', __FILE__ ), array( 'wp-util' ), 1 );
-    wp_enqueue_style( 'code-scan-metabox-css', plugins_url( 'admin/metabox.css', __FILE__ ), array(), 1 );
+	wp_enqueue_script( 'code-scan-metabox-js', plugins_url( 'admin/metabox.js', __FILE__ ), array( 'wp-util' ), 2 );
+	wp_enqueue_style( 'code-scan-metabox-css', plugins_url( 'admin/metabox.css', __FILE__ ), array(), 1 );
 }
 
 add_action( 'add_meta_boxes', __NAMESPACE__ . '\register_admin_metabox', 10, 2 );

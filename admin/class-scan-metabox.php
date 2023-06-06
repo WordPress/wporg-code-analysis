@@ -14,10 +14,16 @@ use WordPressDotOrg\Code_Analysis\Scanner;
  * @package WordPressdotorg\Code_Analysis\Admin
  */
 class Scan_Metabox {
-	public static function display( $post = null ) {
+	public static function display( $post = null, $version = '' ) {
 		$post = get_post( $post );
 
-		$results = Scanner::get_scan_results_for_plugin( $post );
+		$include_warnings = false;
+		// Include warnings for non-published plugins.
+		if ( 'publish' !== $post->post_status ) {
+			$include_warnings = true;
+		}
+
+		$results = Scanner::get_scan_results_for_plugin( $post, $version );
 		if ( ! $results ) {
 			printf( '<p>Unable to scan.</p>' );
 			return false;
@@ -49,7 +55,7 @@ class Scan_Metabox {
 
 			foreach ( $file[ 'messages' ] as $message ) {
 				// Skip warnings for now
-				if ( 'WARNING' === $message[ 'type' ] ) {
+				if ( 'WARNING' === $message[ 'type' ] && ! $include_warnings ) {
 					continue;
 				}
 
@@ -102,24 +108,40 @@ class Scan_Metabox {
 		echo '</pre>';
 	}
 
-	public static function display_ajax() {
-		echo '<div id="scan_plugin_output">Loading...</div>';
-		wp_nonce_field( 'scan-plugin', 'scan_plugin_nonce', false );
-	}
-
 	/**
 	 * Display the metabox, if cached output directly, else ajax load.
 	 */
 	public static function maybe_display_ajax() {
 		global $post;
 
-		$output = self::get_scan_output_cached( $post->ID, true );
+		wp_nonce_field( 'scan-plugin', 'scan_plugin_nonce', false );
 
-		if ( false === $output ) {
-			return self::display_ajax();
-		} else {
-			echo '<div id="scan_plugin_output">' . $output . '</div>';
+		$output = self::get_scan_output_cached( $post->ID, '', true );
+
+		$attachments     = get_attached_media( 'application/zip', $post );
+		$tagged_versions = get_post_meta( $post->ID, 'tagged_versions', true ) ?: [];
+
+		echo '<select id="scan_plugin_version">';
+		echo '<option value="" disabled>Select a version</option>';
+		echo '<option value="latest">Latest</option>';
+		if ( $tagged_versions ) {
+			echo '<optgroup label="Tagged versions">';
+			foreach ( $tagged_versions as $version ) {
+				printf( '<option value="%s">%s</option>', esc_attr( $version ), esc_html( $version ) );
+			}
+			echo '</optgroup>';
 		}
+		if ( $attachments ) {
+			echo '<optgroup label="ZIPs">';
+			foreach ( $attachments as $zip_file ) {
+				$file = basename( get_attached_file( $zip_file->ID ) );
+				printf( '<option value="%s">%s</option>', esc_attr( $file ), esc_html( $file ) );
+			}
+			echo '</optgroup>';
+		}
+		echo '</select>';
+
+		echo '<div id="scan_plugin_output">' . ( $output ?: '<p class="placeholder">Loading...</p>' ) . '</div>';
 	}
 
 	/**
@@ -139,11 +161,12 @@ class Scan_Metabox {
 			wp_die( -1 );
 		}
 
-		$out = new \WP_Ajax_Response();
+		$version = wp_unslash( $_REQUEST[ 'version' ] ?? '' );
+		$out     = new \WP_Ajax_Response();
 
 		$out->add( [
 			'what' => 'scan-results',
-			'data' => self::get_scan_output_cached( $post_id ),
+			'data' => self::get_scan_output_cached( $post_id, $version ),
 		 ] );
 		$out->send();
 
@@ -152,30 +175,32 @@ class Scan_Metabox {
 	/**
 	 * Return the output of a scan as a string, with caching.
 	 */
-	public static function get_scan_output_cached( $post_id, $bail_if_not_cached = false ) {
+	public static function get_scan_output_cached( $post_id, $version = '', $bail_if_not_cached = false ) {
 		$post_id = intval( $post_id );
 		if ( $post_id < 1 ) {
 			return false;
 		}
 
-		if ( $cached = get_transient( "code_scan_$post_id" ) ) {
+		$transient = "code_scan_{$post_id}_{$version}";
+		$cached    = get_transient( $transient );
+
+		if ( $cached ) {
 			return $cached;
 		} elseif ( $bail_if_not_cached ) {
 			return false;
 		}
 
 		// Set a temporary cached value for 2 minutes, to prevent a stampede of multiple scans running at once.
-		set_transient( "code_scan_$post_id", '...', 2 * MINUTE_IN_SECONDS );
+		set_transient( $transient, '...', 2 * MINUTE_IN_SECONDS );
 
 		ob_start();
-		self::display( $post_id );
+		self::display( $post_id, $version );
 		$out = ob_get_clean();
 
 		// Cache the results and return it.
-		set_transient( "code_scan_$post_id", $out, 15 * MINUTE_IN_SECONDS );
+		set_transient( $transient, $out, 15 * MINUTE_IN_SECONDS );
 		return $out;
 	}
-
 
 }
 
