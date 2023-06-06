@@ -27,17 +27,25 @@ class OutputEscapingUnitTest extends TestCase {
 				16,
 				21,
 			],
-			$error_lines );
+			$error_lines
+		);
 
-		$warning_lines = array_keys( $phpcsFile->getWarnings() );
+		$warnings      = $phpcsFile->getWarnings();
+		$warning_lines = array_keys( $warnings );
 		$this->assertEquals(
 			[
 				4,
 				8,
 				26,
+				30, 31, 32
 			],
-			$warning_lines );
+			$warning_lines
+		);
 
+		// Verify the error terminates at the correct offset.
+		$this->assertEquals( 'Unescaped parameter esc_url_raw( $foo ) used in echo', $warnings[30][2][0]['message'] );
+		$this->assertEquals( 'Unescaped parameter esc_url_raw( $foo ) used in echo', $warnings[31][2][0]['message'] );
+		$this->assertEquals( 'Unescaped parameter esc_url_raw( $foo ) used in echo', $warnings[32][20][0]['message'] );
 	}
 
 	public function test_safe_code() {

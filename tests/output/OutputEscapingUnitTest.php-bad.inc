@@ -27,6 +27,8 @@ function unsafe_output_example_6( $foo ) {
 }
 
 function unsafe_output_example_7( $foo ) {
-	?><img src="<?php echo esc_html( $foo ) ?>" alt="<?php echo esc_html( $foo ) ?>" /><?php
+	echo esc_url_raw( $foo );
+	echo esc_url_raw( $foo ) ?>
+	?><img src="<?php echo esc_url_raw( $foo ) ?>" /><?php
 }
 
