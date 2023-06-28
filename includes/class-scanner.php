@@ -90,6 +90,8 @@ class Scanner {
 		//TODO: make it so it's possible to scan a specific ZIP based on $version
 		$post = get_post( $post );
 
+		$version = $version ?: 'latest';
+
 		$zip_files = array();
 		foreach ( get_attached_media( 'application/zip', $post ) as $zip_file ) {
 			$file = get_attached_file( $zip_file->ID );
