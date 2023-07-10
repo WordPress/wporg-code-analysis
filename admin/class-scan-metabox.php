@@ -92,15 +92,17 @@ class Scan_Metabox {
 
 				echo esc_html( $message[ 'message' ] ) . "\n";
 				if ( $message['context'] ) {
+					$first_line = array_key_first( $message['context'] );
+					echo '<pre class="line-numbers" data-start="' . intval($first_line) . '" data-line-offset="' . intval($first_line) . '" data-line="' . intval($message['line']) .'"><code language="php" class="language-php">&lt;?php ';
 					foreach ( $message['context'] as $line_no => $context_line ) {
-						$line = $line_no . '&emsp;' . esc_html( $context_line ). "\n";
+						$line = esc_html( $context_line ). "\n";
 						if ( $line_no == $message['line'] ) {
 							echo '<b>' . $line . '</b>';
 						} else {
 							echo $line;
 						}
 					}
-					echo "\n";
+					echo "</code></pre>\n";
 				}
 				echo "</div>\n";
 			}

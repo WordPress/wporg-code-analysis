@@ -5,6 +5,8 @@
 ( function( $, wp, pluginDirectory ) {
 	var ScanMetabox = {
 		ready: function() {
+			window.Prism = window.Prism || {};
+			Prism.manual = true;
 			$( '#scan_plugin_version' ).on( 'change', ScanMetabox.selectPlugin );
 
 			if ( $( '#scan_plugin_output .placeholder' ).length ) {
@@ -30,6 +32,8 @@
 				response = wpAjax.parseAjaxResponse( response );
 
 				$output.html( response.responses[0].data );
+			} ).always( function() {
+				Prism.highlightAllUnder( $output.get(0) );
 			} );
 		}
 
