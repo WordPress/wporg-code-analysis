@@ -6,3 +6,8 @@
 	border-left-color: #d63638;
 	background-color: #fcf0f1;
 }
+code[class*="language-"], pre[class*="language-"], code [class*="language-"] * {
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+	overflow: auto !important;
+}
