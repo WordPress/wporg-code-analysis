@@ -29,16 +29,10 @@
 			$output.html( '<p>Loading...</p>' );
 
 			wp.ajax.post( 'scan-plugin', data ).done( function( response ) {
-				response = wpAjax.parseAjaxResponse( response );
-
-				$output.html( response.responses[0].data );
-			} ).fail( function( response, t, e ) {
-				$output.html( '<p>Error loading plugin scan.</p>' );
-				console.debug( response );
-				console.debug( t );
-				console.debug( e );
-			} ).done( function() {
+				$output.html( response );
 				Prism.highlightAllUnder( $output.get(0), true );
+			} ).fail( function( response, t, e ) {
+				$output.append( '<p>Error loading plugin scan.</p>' );
 			} );
 		}
 

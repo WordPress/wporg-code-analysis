@@ -176,13 +176,8 @@ class Scan_Metabox {
 		}
 
 		$version = wp_unslash( $_REQUEST[ 'version' ] ?? '' );
-		$out     = new \WP_Ajax_Response();
 
-		$out->add( [
-			'what' => 'scan-results',
-			'data' => self::get_scan_output_cached( $post_id, $version ),
-		 ] );
-		$out->send();
+		wp_send_json_success( self::get_scan_output_cached( $post_id, $version ) );
 
 	}
 
