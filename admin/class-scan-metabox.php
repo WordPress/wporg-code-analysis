@@ -107,6 +107,9 @@ class Scan_Metabox {
 					$first_line = array_key_first( $message['context'] );
 					echo '<pre class="line-numbers" data-start="' . intval($first_line) . '" data-line-offset="' . intval($first_line) . '" data-line="' . intval($message['line']) .'"><code language="php" class="' . $code_class . '">';
 					foreach ( $message['context'] as $line_no => $context_line ) {
+						if ( $snippet_count > self::MAX_HIGHLIGHT_SNIPPETS ) {
+							$context_line = $line_no . '&emsp;' . $context_line;
+						}
 						$line = esc_html( $context_line ). "\n";
 						if ( $line_no == $message['line'] ) {
 							echo '<mark><b>' . $line . '</b></mark>';
