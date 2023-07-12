@@ -105,11 +105,11 @@ class Scan_Metabox {
 						$code_class = '';
 					}
 					$first_line = array_key_first( $message['context'] );
-					echo '<pre class="line-numbers" data-start="' . intval($first_line) . '" data-line-offset="' . intval($first_line) . '" data-line="' . intval($message['line']) .'"><code language="php" class="' . $code_class . '">&lt;?php ';
+					echo '<pre class="line-numbers" data-start="' . intval($first_line) . '" data-line-offset="' . intval($first_line) . '" data-line="' . intval($message['line']) .'"><code language="php" class="' . $code_class . '">';
 					foreach ( $message['context'] as $line_no => $context_line ) {
 						$line = esc_html( $context_line ). "\n";
 						if ( $line_no == $message['line'] ) {
-							echo '<b>' . $line . '</b>';
+							echo '<mark><b>' . $line . '</b></mark>';
 						} else {
 							echo $line;
 						}
