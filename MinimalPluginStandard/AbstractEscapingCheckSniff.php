@@ -261,7 +261,7 @@ abstract class AbstractEscapingCheckSniff extends AbstractSniffHelper {
 						$unsafe_ptr = $this->check_expression( $assignmentPtr );
 						if ( $unsafe_ptr ) {
 							$how = 'unsafely';
-							$extra_context[] = sprintf( "%s assigned %s at line %d:\n %s", $var, $how, $this->tokens[ $assignmentPtr ][ 'line' ], $code );
+							$extra_context[] = sprintf( "%s assigned %s at line %d:\n %s", addslashes($var), $how, $this->tokens[ $assignmentPtr ][ 'line' ], addslashes($code) );
 							foreach( $this->find_functions_in_expression( $assignmentPtr ) as $func ) {
 								if ( in_array( $func, $this->notEscapingFunctions ) ) {
 									$extra_context[] = sprintf( "Note: %s() is not a safe escaping function.", $func );
