@@ -14,6 +14,11 @@ use WordPressDotOrg\Code_Analysis\Scanner;
  * @package WordPressdotorg\Code_Analysis\Admin
  */
 class Scan_Metabox {
+	/**
+	 * Maximum number of code snippet blocks to highlight; a lazy workaround for Prism performance issues.
+	 */
+	const MAX_HIGHLIGHT_SNIPPETS = 15;
+
 	public static function display( $post = null, $version = '' ) {
 		$post = get_post( $post );
 
@@ -44,6 +49,7 @@ class Scan_Metabox {
 		$tag_dir          = ( 'trunk' === $post->stable_tag || '' == $post->stable_tag ? 'trunk' : 'tags/' . $post->stable_tag );
 		$upload_dir       = wp_get_upload_dir();
 		$is_uploaded_file = str_starts_with( $results['file'], $upload_dir['basedir'] );
+		$snippet_count	  = 0;
 
 		echo '<pre style="white-space: pre-wrap;">';
 		foreach ( $results[ 'files' ] as $pathname => $file ) {
@@ -92,8 +98,14 @@ class Scan_Metabox {
 
 				echo esc_html( $message[ 'message' ] ) . "\n";
 				if ( $message['context'] ) {
+					// Only highlight a limited number of snippets, to avoid Prism performance issues.
+					if ( ++ $snippet_count <= self::MAX_HIGHLIGHT_SNIPPETS ) {
+						$code_class = 'language-php';
+					} else {
+						$code_class = '';
+					}
 					$first_line = array_key_first( $message['context'] );
-					echo '<pre class="line-numbers" data-start="' . intval($first_line) . '" data-line-offset="' . intval($first_line) . '" data-line="' . intval($message['line']) .'"><code language="php" class="language-php">&lt;?php ';
+					echo '<pre class="line-numbers" data-start="' . intval($first_line) . '" data-line-offset="' . intval($first_line) . '" data-line="' . intval($message['line']) .'"><code language="php" class="' . $code_class . '">&lt;?php ';
 					foreach ( $message['context'] as $line_no => $context_line ) {
 						$line = esc_html( $context_line ). "\n";
 						if ( $line_no == $message['line'] ) {
