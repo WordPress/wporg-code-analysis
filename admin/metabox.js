@@ -28,12 +28,17 @@
 
 			$output.html( '<p>Loading...</p>' );
 
-			wp.ajax.post( 'scan-plugin', data ).always( function( response ) {
+			wp.ajax.post( 'scan-plugin', data ).done( function( response ) {
 				response = wpAjax.parseAjaxResponse( response );
 
 				$output.html( response.responses[0].data );
-			} ).always( function() {
-				Prism.highlightAllUnder( $output.get(0) );
+			} ).fail( function( response, t, e ) {
+				$output.html( '<p>Error loading plugin scan.</p>' );
+				console.debug( response );
+				console.debug( t );
+				console.debug( e );
+			} ).done( function() {
+				Prism.highlightAllUnder( $output.get(0), true );
 			} );
 		}
 
