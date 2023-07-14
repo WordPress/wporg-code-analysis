@@ -5,6 +5,8 @@
 ( function( $, wp, pluginDirectory ) {
 	var ScanMetabox = {
 		ready: function() {
+			window.Prism = window.Prism || {};
+			Prism.manual = true;
 			$( '#scan_plugin_version' ).on( 'change', ScanMetabox.selectPlugin );
 
 			if ( $( '#scan_plugin_output .placeholder' ).length ) {
@@ -26,10 +28,11 @@
 
 			$output.html( '<p>Loading...</p>' );
 
-			wp.ajax.post( 'scan-plugin', data ).always( function( response ) {
-				response = wpAjax.parseAjaxResponse( response );
-
-				$output.html( response.responses[0].data );
+			wp.ajax.post( 'scan-plugin', data ).done( function( response ) {
+				$output.html( response );
+				Prism.highlightAllUnder( $output.get(0), true );
+			} ).fail( function( response, t, e ) {
+				$output.append( '<p>Error loading plugin scan.</p>' );
 			} );
 		}
 
