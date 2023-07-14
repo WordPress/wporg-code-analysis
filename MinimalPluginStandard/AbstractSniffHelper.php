@@ -366,7 +366,7 @@ abstract class AbstractSniffHelper extends Sniff {
 		if ( null === $endPtr ) {
 			$endPtr = $this->find_end_of_expression( $stackPtr );
 		}
-		return $this->phpcsFile->getTokensAsString( $stackPtr, $endPtr - $stackPtr + 1 );
+		return trim( $this->phpcsFile->getTokensAsString( $stackPtr, $endPtr - $stackPtr + 1 ) );
 	}
 
 	/**
@@ -537,6 +537,7 @@ abstract class AbstractSniffHelper extends Sniff {
 		$stops = array (
 			\T_SEMICOLON,
 			\T_COMMA,
+			\T_CLOSE_TAG,
 		);
 		$prev = $stackPtr;
 		$next = $this->next_non_empty( $stackPtr );
