@@ -25,3 +25,10 @@ function unsafe_output_example_6( $foo ) {
 	// Unsafe but just a warning.
 	echo trim( $foo );
 }
+
+function unsafe_output_example_7( $foo ) {
+	echo esc_url_raw( $foo );
+	echo esc_url_raw( $foo ) ?>
+	?><img src="<?php echo esc_url_raw( $foo ) ?>" /><?php
+}
+
