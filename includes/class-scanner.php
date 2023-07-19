@@ -10,18 +10,18 @@ defined( 'WPINC' ) || die();
 
 class Scanner {
 
-	public static function get_scan_results_for_plugin( $post, $version = 'latest' ) {
+	public static function get_scan_results_for_plugin( $post, $version = 'latest', $_file = null ) {
 		$zip_file = self::get_zip_path( $post, $version );
 		if ( ! $zip_file || ! is_readable( $zip_file ) ) {
 			return false;
 		}
 
-		$results = self::get_scan_results_for_zip( $zip_file );
+		$results = self::get_scan_results_for_zip( $zip_file, $_file );
 
 		return $results;
 	}
 
-	public static function get_scan_results_for_zip( $zip_file_path ) {
+	public static function get_scan_results_for_zip( $zip_file_path, $_file = null ) {
 
 		// Note that unzip() automatically removes the temp directory on shutdown
 		$unzip_dir = Filesystem::unzip( $zip_file_path );
@@ -43,7 +43,22 @@ class Scanner {
 			's' => true, // Show the name of the sniff triggering a violation.
 		);
 
-		$result = $phpcs->run_json_report( $unzip_dir, $args, 'array' );
+		if ( $_file ) {
+			// Check a specific file.
+			$basepath = realpath( $unzip_dir );
+			$userpath = realpath( $basepath . '/' . $_file );
+
+			// We have to explicitly specify the basepath along with the file otherwise phpcs will refuse to run
+			$args['basepath'] = $basepath;
+
+			if ( !$userpath || !str_starts_with( $userpath, $basepath ) ) {
+				// Prevent directory traversal
+				wp_die( 'Invalid file path' );
+			}
+			$result = $phpcs->run_json_report( $userpath, $args, 'array' );
+		} else {
+			$result = $phpcs->run_json_report( $unzip_dir, $args, 'array' );
+		}
 
 		// If no response, either malformed output or PHP encountered an error.
 		if ( ! $result ) {
@@ -82,6 +97,9 @@ class Scanner {
 
 		$result['hash'] = self::get_result_hash( $result );
 		$result['file'] = $zip_file_path;
+		if ( isset( $userpath ) && $userpath ) {
+			$result['realfile'] = $userpath;
+		}
 
 		return $result;
 	}
