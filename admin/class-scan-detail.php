@@ -82,7 +82,35 @@ class Scan_Detail {
 		);
 
 		#echo '<pre style="white-space: pre-wrap;">';
-		#var_dump( $version, $file, $results );
+		echo '<form method="GET">';
+		echo '<select name="file">';
+		echo '<option value="" disabled>Select a file</option>';
+		if ( $results['unzipdir'] ) {
+			$dir = new \RecursiveDirectoryIterator($results['unzipdir']);
+			$files = new \RecursiveIteratorIterator($dir);
+
+			foreach($files as $_file){
+				if ( $_file->isDir() ) {
+					continue;
+				}
+				$filepath = $_file->getPath(). '/' . $_file->getFileName();
+				if ( substr( $filepath, 0, strlen( $results['unzipdir'] ) ) === $results['unzipdir'] ) {
+					$filepath = substr( $filepath, strlen( $results['unzipdir'] ) );
+				}
+				$filepath = ltrim( $filepath, '/' );
+				$value = $filepath;
+
+				if ( substr( $filepath, 0, strlen( $post->post_name ) ) === $post->post_name ) {
+					$filepath = substr( $filepath, strlen( $post->post_name ) );
+				}
+				echo '<option value="' . esc_attr( $value ) . '" ' . selected( $value, $filepath, false ) . '>' . esc_html( $filepath ) . '</option>';
+			}
+		}
+		echo '</select>';
+		echo '<input type="hidden" name="post_id" value="' . esc_attr( $post_id ) . '">';
+		echo '<input type="hidden" name="version" value="' . esc_attr( $version ) . '">';
+		echo '<input type="submit" value="Go">';
+		echo '</form>';
 		#echo '</pre>';
 
 		if ( isset( $results[ 'realfile' ] ) ) {
@@ -112,7 +140,7 @@ class Scan_Detail {
 					foreach ( $messages_by_line[$line_number] as $msg ) {
 						echo '<div class="message-' . esc_attr( strtolower( $msg[ 'type' ] ) ) . '">';
 						echo '<p>' . esc_html( $msg[ 'type' ] ) . esc_html( $msg[ 'source' ] ) . ' on line ' . esc_html( $line_number ) . '</p>';
-						echo '<p>' . esc_html( $msg[ 'message' ] ) . '</p>';
+						echo '<p>' . nl2br( esc_html( $msg[ 'message' ] ) ) . '</p>';
 						#var_dump( $msg );
 						echo '</div>';
 					}

@@ -97,6 +97,7 @@ class Scanner {
 
 		$result['hash'] = self::get_result_hash( $result );
 		$result['file'] = $zip_file_path;
+		$result['unzipdir'] = $unzip_dir;
 		if ( isset( $userpath ) && $userpath ) {
 			$result['realfile'] = $userpath;
 		}

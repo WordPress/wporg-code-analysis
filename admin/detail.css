@@ -2,14 +2,28 @@ mark {
 	position: relative;
 	width: auto;
 	display: block;
+	margin: 0;
+	border: 0;
 }
 
 mark.message-warning, div.message-warning {
-	background-color: #ff0;
+	background-color: #ffa;
 }
 
-mark.message-error, div.message-error {
-	background-color: #f00;
+mark.message-error {
+	background-color: #faa;
+}
+
+div.message-error {
+	border: 0 3em;
+	margin: 0 3em;
+	background-color: #faa;
+}
+
+div.message-warning {
+	border: 0 3em;
+	margin: 0 3em;
+	background-color: #ffa;
 }
 
 mark .message-detail {
