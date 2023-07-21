@@ -4,7 +4,11 @@ mark {
 	display: block;
 }
 
-mark.error {
+mark.message-warning, div.message-warning {
+	background-color: #ff0;
+}
+
+mark.message-error, div.message-error {
 	background-color: #f00;
 }
 
@@ -17,4 +21,10 @@ mark .message-detail {
 	opacity: 0.9;
 	border: 2px solid #000;
 	background-color: #fff;
+}
+
+code[class*="language-"], pre[class*="language-"], code [class*="language-"] * {
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+	overflow: auto !important;
 }
