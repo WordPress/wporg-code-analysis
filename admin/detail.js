@@ -6,8 +6,6 @@
 	var ScanDetail = {
 		ready: function() {
 			window.Prism = window.Prism || {};
-			Prism.hooks.add( 'complete', ScanDetail.moveMessages );
-			ScanDetail.moveMessages();
 		},
 
 		moveMessages: function( env ) {
