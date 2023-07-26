@@ -2,8 +2,9 @@ mark {
 	position: relative;
 	width: auto;
 	display: block;
-	margin: 0;
+	margin: 2px 0 0 0;
 	border: 0;
+	padding: 0;
 }
 
 mark.message-warning, div.message-warning {
@@ -41,4 +42,5 @@ code[class*="language-"], pre[class*="language-"], code [class*="language-"] * {
     white-space: pre-wrap !important;
     word-break: break-word !important;
 	overflow: auto !important;
+	padding: 0;
 }
