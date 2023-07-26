@@ -138,7 +138,7 @@ class Scan_Detail {
 					echo '<mark id="line-' . intval( $line_number ) . '" class="message-' . esc_attr($type) . '"><b>' . esc_html( rtrim( $line ) ) . '</b></mark>' . "\n";
 					echo '</code></pre>';
 					foreach ( $messages_by_line[$line_number] as $msg ) {
-						echo '<div class="message-' . esc_attr( strtolower( $msg[ 'type' ] ) ) . '">';
+						echo '<div class="message-detail message-' . esc_attr( strtolower( $msg[ 'type' ] ) ) . '">';
 						echo '<p>' . esc_html( $msg[ 'type' ] ) . esc_html( $msg[ 'source' ] ) . ' on line ' . esc_html( $line_number ) . '</p>';
 						echo '<p>' . nl2br( esc_html( $msg[ 'message' ] ) ) . '</p>';
 						#var_dump( $msg );

@@ -4,43 +4,36 @@ mark {
 	display: block;
 	margin: 2px 0 0 0;
 	border: 0;
-	padding: 0;
+	padding: 0 auto;
 }
 
 mark.message-warning, div.message-warning {
 	background-color: #ffa;
 }
 
-mark.message-error {
-	background-color: #faa;
+mark.message-error, div.message-error {
+	background-color: #fcc;
 }
 
-div.message-error {
-	border: 0 3em;
-	margin: 0 3em;
-	background-color: #faa;
-}
-
-div.message-warning {
-	border: 0 3em;
-	margin: 0 3em;
-	background-color: #ffa;
-}
-
-mark .message-detail {
-	position: absolute;
-	top: 1em;
-	right: 0;
-	width: 50%;
-	height: auto;
-	opacity: 0.9;
-	border: 2px solid #000;
-	background-color: #fff;
+div.message-detail {
+	padding: 0;
+	margin: 0 3.8em;
 }
 
 code[class*="language-"], pre[class*="language-"], code [class*="language-"] * {
     white-space: pre-wrap !important;
     word-break: break-word !important;
 	overflow: auto !important;
+}
+
+pre {
+	padding-top: 0;
+	padding-bottom: 0;
+	margin-top: 0;
+	margin-bottom: 0;
+}
+
+code {
 	padding: 0;
+	margin: 0;
 }
