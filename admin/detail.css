@@ -16,7 +16,7 @@ mark.message-error, div.message-error {
 }
 
 div.message-detail {
-	padding: 0;
+	padding: 1em;
 	margin: 0 3.8em;
 }
 
@@ -30,7 +30,7 @@ pre {
 	padding-top: 0;
 	padding-bottom: 0;
 	margin-top: 0;
-	margin-bottom: 0;
+	margin-bottom: -1em;
 }
 
 code {
