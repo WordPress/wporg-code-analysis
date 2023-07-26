@@ -119,13 +119,18 @@ class Scan_Detail {
 			$code_class = 'language-php';
 
 			$messages_by_line = array();
+			$highlight_lines = array();
 
 			foreach ( $results[ 'files' ][ $file ][ 'messages' ] as $message ) {
 				$messages_by_line[ intval($message[ 'line' ]) ][] = $message;
+				$highlight_lines[] = intval($message[ 'line' ]);
+				if ( preg_match_all( '/ at line (\d+):/', $message[ 'message' ], $matches, PREG_PATTERN_ORDER ) ) {
+					$highlight_lines = array_merge( $highlight_lines, array_map( 'intval', $matches[1] ) );
+				}
 			}
 
-			#echo '<pre>'; var_dump( $messages_by_line ); echo '</pre>';
-			$highlight_lines = array_map( 'intval', array_keys( $messages_by_line ) );
+			sort( $highlight_lines );
+			$highlight_lines = array_unique( $highlight_lines );
 
 			echo '<pre class="line-numbers" data-start="' . intval($first_line) . '" data-line-offset="' . intval($first_line) . '" data-line="' . join(',', $highlight_lines) . '"><code language="php" class="' . $code_class . '">';
 			$fp = fopen( $results['realfile'], 'r');
@@ -140,11 +145,11 @@ class Scan_Detail {
 					foreach ( $messages_by_line[$line_number] as $msg ) {
 						echo '<div class="message-detail message-' . esc_attr( strtolower( $msg[ 'type' ] ) ) . '">';
 						echo '<p>' . esc_html( $msg[ 'type' ] ) . esc_html( $msg[ 'source' ] ) . ' on line ' . esc_html( $line_number ) . '</p>';
-						echo '<p>' . nl2br( esc_html( $msg[ 'message' ] ) ) . '</p>';
+						echo '<pre>' . esc_html( $msg[ 'message' ] ) . '</pre>';
 						#var_dump( $msg );
 						echo '</div>';
 					}
-					$highlight_lines = array_filter( array_map( 'intval', array_keys( $messages_by_line ) ),
+					$highlight_lines = array_filter( $highlight_lines,
 						fn( $line ) => $line > $line_number );
 
 					echo '<pre class="line-numbers" data-start="' . intval($line_number + 1) . '" data-line-offset="' . intval($line_number) . '" data-line="' . join(',', $highlight_lines) . '"><code language="php" class="' . $code_class . '">';
