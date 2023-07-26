@@ -3,6 +3,7 @@ namespace WordPressdotorg\Code_Analysis\Admin;
 
 use WordPressDotOrg\Code_Analysis\PHPCS;
 use WordPressDotOrg\Code_Analysis\Scanner;
+use WordPressdotorg\Plugin_Directory\Tools\Filesystem;
 
 class Scan_Detail {
 	/**
@@ -56,17 +57,64 @@ class Scan_Detail {
 		return $keys[ $pos + 1 ] ?? false;
 	}
 
+	protected function find_files_in_zip( $zip_file_path, $ext = 'php' ) {
+		$unzip_dir = Filesystem::unzip( $zip_file_path );
+		if ( ! $unzip_dir ) {
+			return false;
+		}
+
+		$out = array();
+
+		// There is probably a more efficient way
+		$dir = new \RecursiveDirectoryIterator( $unzip_dir );
+		$files = new \RecursiveIteratorIterator( $dir );
+
+		foreach ($files as $_file) {
+			if ( $_file->isDir() ) {
+				continue;
+			}
+			if ( $ext && $ext !== $_file->getExtension() ) {
+				continue;
+			}
+
+			$filepath = $_file->getPath(). '/' . $_file->getFileName();
+			if ( substr( $filepath, 0, strlen( $unzip_dir ) ) === $unzip_dir ) {
+				$filepath = substr( $filepath, strlen( $unzip_dir ) );
+			}
+			$filepath = ltrim( $filepath, '/' );
+			$out[] = $filepath;
+		}
+
+		return $out;
+	}
+
 	public function show_scan() {
 		$post_id = $_REQUEST['post_id'] ?? null;
 		$version = $_REQUEST['version'] ?? '';
 		$file = $_REQUEST['file'] ?? null;
 
-		if ( ! $post_id || ! $file ) {
-			echo '<p>Missing post ID or file.</p>';
-			return;
+		if ( $post_id > 0 ) {
+			$post = get_post( $post_id );
+		} elseif ( ! empty( $_REQUEST['slug'] ) ) {
+			$post = get_page_by_path( $_REQUEST['slug'], OBJECT, 'plugin' );
 		}
 
-		$post = get_post( $post_id );
+		if ( !$file ) {
+			$zip_file = Scanner::get_zip_path( $post, $version );
+			$files_in_zip = $this->find_files_in_zip( $zip_file );
+			if ( is_array( $files_in_zip ) && count( $files_in_zip ) > 0 ) {
+				$file = $files_in_zip[0];
+			}
+		}
+
+		if ( ! $post || ! $file ) {
+			echo '<p>Missing post ID or file.</p>';
+			echo '<p><form method="GET">';
+			echo '<input type="hidden" name="page" value="scan-detail" />';
+			echo '<input type="text" name="slug" placeholder="Plugin Slug" />';
+			echo '</form></p>';
+			return false;
+		}
 
 		$include_warnings = true;
 
@@ -112,11 +160,12 @@ class Scan_Detail {
 				if ( substr( $filepath, 0, strlen( $post->post_name ) ) === $post->post_name ) {
 					$filepath = substr( $filepath, strlen( $post->post_name ) );
 				}
-				echo '<option value="' . esc_attr( $value ) . '" ' . selected( $value, $filepath, false ) . '>' . esc_html( $filepath ) . '</option>';
+				echo '<option value="' . esc_attr( $value ) . '" ' . selected( $value, $file, false ) . '>' . esc_html( $filepath ) . '</option>';
 			}
 		}
 		echo '</select>';
-		echo '<input type="hidden" name="post_id" value="' . esc_attr( $post_id ) . '">';
+		echo '<input type="hidden" name="page" value="scan-detail" />';
+		echo '<input type="hidden" name="post_id" value="' . esc_attr( $post->ID ) . '">';
 		echo '<input type="hidden" name="version" value="' . esc_attr( $version ) . '">';
 		echo '<input type="submit" value="Go">';
 		echo '</form>';
@@ -143,7 +192,9 @@ class Scan_Detail {
 
 			$next_message_line = array_key_first( $messages_by_line );
 
-			echo '<a href="#line-' . intval( $next_message_line ) . '" class="button-secondary left">Next</a>';
+			if ( $next_message_line ) {
+				echo '<a href="#line-' . intval( $next_message_line ) . '" class="button-secondary left">First</a>';
+			}
 			echo '<pre class="line-numbers" data-start="' . intval($first_line) . '" data-line-offset="' . intval($first_line) . '" data-line="' . join(',', $highlight_lines) . '"><code language="php" class="' . $code_class . '">';
 
 			$fp = fopen( $results['realfile'], 'r');
