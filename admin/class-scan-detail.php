@@ -47,6 +47,15 @@ class Scan_Detail {
 		wp_enqueue_style( 'code-scan-detail-css', plugins_url( 'detail.css', __FILE__ ), array(), 1 );
 	}
 
+	protected function find_array_key_after( $array, $key ) {
+		$keys = array_keys( $array );
+		$pos = array_search( $key, $keys );
+		if ( false === $pos ) {
+			return false;
+		}
+		return $keys[ $pos + 1 ] ?? false;
+	}
+
 	public function show_scan() {
 		$post_id = $_REQUEST['post_id'] ?? null;
 		$version = $_REQUEST['version'] ?? '';
@@ -132,15 +141,20 @@ class Scan_Detail {
 			sort( $highlight_lines );
 			$highlight_lines = array_unique( $highlight_lines );
 
+			$next_message_line = array_key_first( $messages_by_line );
+
+			echo '<a href="#line-' . intval( $next_message_line ) . '" class="button-secondary left">Next</a>';
 			echo '<pre class="line-numbers" data-start="' . intval($first_line) . '" data-line-offset="' . intval($first_line) . '" data-line="' . join(',', $highlight_lines) . '"><code language="php" class="' . $code_class . '">';
+
 			$fp = fopen( $results['realfile'], 'r');
 			while ( $fp && !feof( $fp ) ) {
 				$line = fgets( $fp ); // length limit?
+				$line = str_replace( array("\r\n", "\r", "\n"), "\n", $line ); // normalize EOLs
 				++ $line_number;
 
 				if ( isset( $messages_by_line[$line_number] ) ) {
 					$type = strtolower($messages_by_line[$line_number][0]['type']);
-					echo '<mark id="line-' . intval( $line_number ) . '" class="message-' . esc_attr($type) . '"><b>' . esc_html( rtrim( $line ) ) . '</b></mark>' . "\n";
+					echo '<mark id="line-' . intval( $line_number ) . '" class="message-' . esc_attr($type) . '"><b>' . esc_html( $line ) . '</b></mark>';
 					echo '</code></pre>';
 					foreach ( $messages_by_line[$line_number] as $msg ) {
 						echo '<div class="message-detail message-' . esc_attr( strtolower( $msg[ 'type' ] ) ) . '">';
@@ -149,13 +163,18 @@ class Scan_Detail {
 						#var_dump( $msg );
 						echo '</div>';
 					}
+
 					$highlight_lines = array_filter( $highlight_lines,
 						fn( $line ) => $line > $line_number );
+
+					if ( $next_message_line = $this->find_array_key_after( $messages_by_line, $line_number ) ) {
+						echo '<a href="#line-' . intval( $next_message_line ) . '" class="button-secondary left">Next</a>';
+					}
 
 					echo '<pre class="line-numbers" data-start="' . intval($line_number + 1) . '" data-line-offset="' . intval($line_number) . '" data-line="' . join(',', $highlight_lines) . '"><code language="php" class="' . $code_class . '">';
 
 				} else {
-					echo esc_html( rtrim($line) ) . "\n";
+					echo esc_html( $line );
 				}
 			}
 			echo '</code></pre>';
