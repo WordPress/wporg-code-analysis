@@ -156,9 +156,6 @@ class Scan_Detail {
 				if ( substr( $_file, 0, strlen( $post->post_name ) ) === $post->post_name ) {
 					$_file = substr( $_file, strlen( $post->post_name ) );
 				}
-				if ( $results[ 'files' ][ $value ] ) {
-					$_file .= ' (' . count( $results[ 'files' ][ $value ][ 'messages' ] ) . ')';
-				}
 				if ( pathinfo( $_file, PATHINFO_EXTENSION ) === 'php' ) {
 					echo '<option value="' . esc_attr( $value ) . '" ' . selected( $value, $file, false ) . '>' . esc_html( $_file ) . '</option>';
 				} else {
