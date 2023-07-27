@@ -7,17 +7,20 @@ mark {
 	padding: 0 auto;
 }
 
-mark.message-warning, div.message-warning {
-	background-color: #ffa;
+mark.message-warning, div.message-detail.message-warning {
+	border-left-color: #ff5;
+	background-color: #ffd;
 }
 
-mark.message-error, div.message-error {
-	background-color: #fcc;
+mark.message-error, div.message-detail.message-error {
+	border-left-color: #d63638;
+	background-color: #fcf0f1;
 }
 
 div.message-detail {
 	padding: 1em;
 	margin: 0 3.8em;
+	border-left: 5px solid transparent;
 }
 
 code[class*="language-"], pre[class*="language-"], code [class*="language-"] * {
@@ -31,6 +34,9 @@ pre {
 	padding-bottom: 0;
 	margin-top: 0;
 	margin-bottom: -1em;
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+	overflow: auto !important;
 }
 
 code {
