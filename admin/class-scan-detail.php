@@ -63,6 +63,10 @@ class Scan_Detail {
 			return false;
 		}
 
+		return $this->find_files_in_dir( $unzip_dir, $ext );
+	}
+
+	protected function find_files_in_dir( $unzip_dir, $ext = 'php' ) {
 		$out = array();
 
 		// There is probably a more efficient way
@@ -143,24 +147,23 @@ class Scan_Detail {
 		echo '<select name="file">';
 		echo '<option value="" disabled>Select a file</option>';
 		if ( $results['unzipdir'] ) {
-			$dir = new \RecursiveDirectoryIterator($results['unzipdir']);
-			$files = new \RecursiveIteratorIterator($dir);
+
+			$files = $this->find_files_in_dir( $results['unzipdir'], null );
 
 			foreach($files as $_file){
-				if ( $_file->isDir() ) {
-					continue;
-				}
-				$filepath = $_file->getPath(). '/' . $_file->getFileName();
-				if ( substr( $filepath, 0, strlen( $results['unzipdir'] ) ) === $results['unzipdir'] ) {
-					$filepath = substr( $filepath, strlen( $results['unzipdir'] ) );
-				}
-				$filepath = ltrim( $filepath, '/' );
-				$value = $filepath;
+				$value = $_file;
 
-				if ( substr( $filepath, 0, strlen( $post->post_name ) ) === $post->post_name ) {
-					$filepath = substr( $filepath, strlen( $post->post_name ) );
+				if ( substr( $_file, 0, strlen( $post->post_name ) ) === $post->post_name ) {
+					$_file = substr( $_file, strlen( $post->post_name ) );
 				}
-				echo '<option value="' . esc_attr( $value ) . '" ' . selected( $value, $file, false ) . '>' . esc_html( $filepath ) . '</option>';
+				if ( $results[ 'files' ][ $value ] ) {
+					$_file .= ' (' . count( $results[ 'files' ][ $value ][ 'messages' ] ) . ')';
+				}
+				if ( pathinfo( $_file, PATHINFO_EXTENSION ) === 'php' ) {
+					echo '<option value="' . esc_attr( $value ) . '" ' . selected( $value, $file, false ) . '>' . esc_html( $_file ) . '</option>';
+				} else {
+					echo '<option value="' . esc_attr( $value ) . '" ' . selected( $value, $file, false ) . ' disabled>' . esc_html( $_file ) . '</option>';
+				}
 			}
 		}
 		echo '</select>';
