@@ -7,6 +7,9 @@
 		"platform": {
 			"php": "7.4"
 		},
+		"allow-plugins": {
+			"dealerdirect/phpcodesniffer-composer-installer": true
+		},
 		"_comment": "Work around `test:watch` timeout, see https://github.com/spatie/phpunit-watcher/issues/63#issuecomment-545633709",
 		"process-timeout": 0
 	},
