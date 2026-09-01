@@ -178,7 +178,7 @@ class Scan_Metabox {
 			wp_die( -1 );
 		}
 
-		check_ajax_referer( 'scan-plugin', 'scan_plugin_nonce' );
+		check_ajax_referer( 'scan-plugin' );
 
 		if ( ! current_user_can( 'plugin_review', $post_id ) ) {
 			wp_die( -1 );
