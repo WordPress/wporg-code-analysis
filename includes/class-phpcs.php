@@ -169,12 +169,13 @@ class PHPCS {
 			if ( true === $value ) {
 				$arg_array[] = "{$prefix}{$key}";
 			} else {
-				$arg_array[] = "{$prefix}{$key}={$value}";
+				$arg_array[] = "{$prefix}{$key}=" . escapeshellarg( $value );
 			}
 		}
 		$arg_string = implode( ' ', $arg_array );
 
-		$command = "{$this->php} {$this->phpcs} $arg_string $path";
+		// Quote each interpolated value; $this->php is trusted and carries its own flags, so it stays unquoted.
+		$command = "{$this->php} " . escapeshellarg( $this->phpcs ) . " $arg_string " . escapeshellarg( $path );
 
 		return shell_exec( $command );
 	}

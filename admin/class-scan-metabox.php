@@ -69,7 +69,7 @@ class Scan_Metabox {
 				if ( preg_match_all( '/ at line (\d+):/', $message[ 'message' ], $matches, PREG_PATTERN_ORDER ) ) {
 					$marks = array_map( 'intval', $matches[1] );
 				}
-				$marks[] = $message[ 'line' ];
+				$marks[] = intval( $message[ 'line' ] );
 				$marks = array_unique( $marks );
 				echo '<div class="phpcs phpcs-severity-' . intval( $message[ 'severity' ] ) . '">';
 				if ( $is_uploaded_file ) {
@@ -178,6 +178,12 @@ class Scan_Metabox {
 			wp_die( -1 );
 		}
 
+		check_ajax_referer( 'scan-plugin', 'scan_plugin_nonce' );
+
+		if ( ! current_user_can( 'plugin_review', $post_id ) ) {
+			wp_die( -1 );
+		}
+
 		$version = wp_unslash( $_REQUEST[ 'version' ] ?? '' );
 
 		wp_send_json_success( self::get_scan_output_cached( $post_id, $version ) );
@@ -193,7 +199,7 @@ class Scan_Metabox {
 			return false;
 		}
 
-		$transient = "code_scan_{$post_id}_{$version}";
+		$transient = "code_scan_{$post_id}_" . md5( (string) $version );
 		$cached    = get_transient( $transient );
 
 		if ( $cached ) {

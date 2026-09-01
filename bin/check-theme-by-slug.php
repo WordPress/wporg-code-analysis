@@ -45,7 +45,7 @@ function get_top_slugs( $plugins_to_retrieve, $starting_page = 1, $browse = 'pop
 
 	$response = curl_exec( $ch );
 
-	$data = unserialize( $response );
+	$data = unserialize( $response, array( 'allowed_classes' => array( 'stdClass' ) ) );
 
 	curl_close( $ch );
 
@@ -94,6 +94,11 @@ function export_plugin( $slug, $tag = null ) {
 
 // Export a theme to ./themes/SLUG and return the full path to that directory
 function export_theme( $slug, $url ) {
+
+	// Only fetch theme archives from the official download host over TLS.
+	if ( 'https' !== parse_url( (string) $url, PHP_URL_SCHEME ) || ! preg_match( '/(^|\.)wordpress\.org$/', (string) parse_url( (string) $url, PHP_URL_HOST ) ) ) {
+		die( "Refusing to fetch theme from untrusted URL: $url\n" );
+	}
 
 	$zipfile = tempnam( '/tmp', $slug . '.zip' );
 	copy( $url, $zipfile );
