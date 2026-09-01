@@ -109,17 +109,13 @@ class Scanner {
 			}
 		}
 
-		/*
-		 * Resolve a download URL only for known release identifiers. An arbitrary version
-		 * string should not be turned into a URL and, via basename(), a local archive path.
-		 */
 		$allowed_versions = array_merge(
 			array( 'latest', 'latest-stable', 'trunk' ),
 			(array) ( get_post_meta( $post->ID, 'tagged_versions', true ) ?: array() )
 		);
 
 		// Scan the published ZIP file.
-		if ( in_array( $version, $allowed_versions, true ) && in_array( $post->post_status, [ 'publish', 'disabled', 'closed' ] ) ) {
+		if ( in_array( $version, $allowed_versions, true ) && in_array( $post->post_status, [ 'publish', 'disabled', 'closed' ], true ) ) {
 			// Need to fetch the zip remotely from the downloads server.
 			$zip_url = Template::download_link( $post, $version );
 

@@ -178,10 +178,6 @@ class Scan_Metabox {
 			wp_die( -1 );
 		}
 
-		/*
-		 * A scan is an expensive server-side operation, so restrict the endpoint to the
-		 * same reviewers who see the metabox, and require its nonce.
-		 */
 		check_ajax_referer( 'scan-plugin', 'scan_plugin_nonce' );
 
 		if ( ! current_user_can( 'plugin_review', $post_id ) ) {

@@ -174,11 +174,7 @@ class PHPCS {
 		}
 		$arg_string = implode( ' ', $arg_array );
 
-		/*
-		 * The path and argument values can contain characters that are significant to the
-		 * shell (archive names, temporary paths), so quote each one. $this->php is a trusted,
-		 * statically-built invocation that carries its own flags, so it is left unquoted.
-		 */
+		// Quote each interpolated value; $this->php is trusted and carries its own flags, so it stays unquoted.
 		$command = "{$this->php} " . escapeshellarg( $this->phpcs ) . " $arg_string " . escapeshellarg( $path );
 
 		return shell_exec( $command );
