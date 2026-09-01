@@ -169,12 +169,17 @@ class PHPCS {
 			if ( true === $value ) {
 				$arg_array[] = "{$prefix}{$key}";
 			} else {
-				$arg_array[] = "{$prefix}{$key}={$value}";
+				$arg_array[] = "{$prefix}{$key}=" . escapeshellarg( $value );
 			}
 		}
 		$arg_string = implode( ' ', $arg_array );
 
-		$command = "{$this->php} {$this->phpcs} $arg_string $path";
+		/*
+		 * The path and argument values can contain characters that are significant to the
+		 * shell (archive names, temporary paths), so quote each one. $this->php is a trusted,
+		 * statically-built invocation that carries its own flags, so it is left unquoted.
+		 */
+		$command = "{$this->php} " . escapeshellarg( $this->phpcs ) . " $arg_string " . escapeshellarg( $path );
 
 		return shell_exec( $command );
 	}

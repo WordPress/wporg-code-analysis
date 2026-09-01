@@ -45,7 +45,7 @@ function get_top_slugs( $plugins_to_retrieve, $starting_page = 1, $browse = 'pop
 
 	$response = curl_exec( $ch );
 
-	$data = unserialize( $response );
+	$data = unserialize( $response, array( 'allowed_classes' => array( 'stdClass' ) ) );
 
 	curl_close( $ch );
 
@@ -75,6 +75,11 @@ function get_dir_for_tag( $tag ) {
 // Export a plugin to ./plugins/SLUG and return the full path to that directory
 function export_plugin( $slug, $tag = null ) {
 
+	// Plugin slugs use a restricted character set; validate before building the export command.
+	if ( ! preg_match( '/^[a-z0-9-]+$/', (string) $slug ) ) {
+		die( "Invalid plugin slug: $slug\n" );
+	}
+
 	$tmpnam = tempnam( '/tmp', 'plugin-' . $slug );
 
 	$dir = get_dir_for_tag( $tag );
@@ -83,7 +88,8 @@ function export_plugin( $slug, $tag = null ) {
 		$tmpnam = realpath( $tmpnam );
 		unlink( $tmpnam );
 		mkdir( $tmpnam ) || die( "Failed creating temp directory $tmpnam" );
-		$cmd = "svn export --force https://plugins.svn.wordpress.org/" . $slug . $dir . ' ' . $tmpnam;
+		$url = 'https://plugins.svn.wordpress.org/' . $slug . $dir;
+		$cmd = 'svn export --force ' . escapeshellarg( $url ) . ' ' . escapeshellarg( $tmpnam );
 		shell_exec( $cmd );
 
 		return $tmpnam;

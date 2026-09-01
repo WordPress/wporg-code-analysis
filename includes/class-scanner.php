@@ -103,14 +103,23 @@ class Scanner {
 
 		// If specific version specified is an attachment..
 		if ( str_contains( $version, '.zip' ) ) {
-			$match = wp_list_filter( $zip_files, [ 'basename' => $verison ] );
+			$match = wp_list_filter( $zip_files, [ 'basename' => $version ] );
 			if ( $match ) {
-				return $match[0]['file'];
+				return reset( $match )['file'];
 			}
 		}
 
+		/*
+		 * Resolve a download URL only for known release identifiers. An arbitrary version
+		 * string should not be turned into a URL and, via basename(), a local archive path.
+		 */
+		$allowed_versions = array_merge(
+			array( 'latest', 'latest-stable', 'trunk' ),
+			(array) ( get_post_meta( $post->ID, 'tagged_versions', true ) ?: array() )
+		);
+
 		// Scan the published ZIP file.
-		if ( in_array( $post->post_status, [ 'publish', 'disabled', 'closed' ] ) ) {
+		if ( in_array( $version, $allowed_versions, true ) && in_array( $post->post_status, [ 'publish', 'disabled', 'closed' ] ) ) {
 			// Need to fetch the zip remotely from the downloads server.
 			$zip_url = Template::download_link( $post, $version );
 

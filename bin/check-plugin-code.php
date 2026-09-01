@@ -17,6 +17,10 @@ $opts = getopt( '', array( 'slug:', 'report:' ) );
 if ( empty( $opts['slug'] ) ) {
 	$opts['slug'] = 'plugin-directory';
 }
+// The slug is appended to a filesystem path, so restrict it to a plain slug.
+if ( ! preg_match( '/^[a-z0-9-]+$/', (string) $opts['slug'] ) ) {
+	die( "Invalid plugin slug: {$opts['slug']}\n" );
+}
 if ( empty( $opts['report'] ) ) {
 	$opts['report'] = 'summary';
 }
