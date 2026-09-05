@@ -29,6 +29,12 @@ function load_files() {
 	require PLUGIN_DIR . 'includes/class-phpcs.php';
 	require PLUGIN_DIR . 'includes/class-scanner.php';
 	require PLUGIN_DIR . 'admin/class-scan-metabox.php';
+	require PLUGIN_DIR . 'admin/class-scan-detail.php';
+
+	// Load this early so we can use the menu hooks.
+	if ( defined( 'WP_ADMIN' ) && WP_ADMIN ) {
+		Admin\Scan_Detail::instance();
+	}
 }
 
 function register_admin_metabox( $post_type, $post ) {

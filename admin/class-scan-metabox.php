@@ -83,7 +83,7 @@ class Scan_Metabox {
 				} else {
 					// Must have been a plugin zip from svn.
 					printf(
-						"%s %s in <a href='https://plugins.trac.wordpress.org/browser/%s/%s/%s%s#L%d'>%s line %d</a>\n",
+						"%s %s in <a href='https://plugins.trac.wordpress.org/browser/%s/%s/%s%s#L%d'>%s line %d</a> <a href='%s'>(expand)</a>\n",
 						esc_html( $message[ 'type' ] ),
 						esc_html( $message[ 'source' ] ),
 						esc_attr( $post->post_name ),
@@ -92,7 +92,8 @@ class Scan_Metabox {
 						($marks ? '?marks=' . join( ',', $marks ) : '' ),
 						$message[ 'line' ],
 						esc_html( $filename ),
-						$message[ 'line' ]
+						$message[ 'line' ],
+						esc_url( admin_url( 'admin.php?page=scan-detail&post_id=' . $post->ID . '&version=' . $version . '&file=' . $post->post_name . '/' . $filename . '#line-' . $message[ 'line' ] ) )
 					);
 				}
 
