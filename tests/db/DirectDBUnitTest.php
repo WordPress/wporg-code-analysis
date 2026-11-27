@@ -132,4 +132,24 @@ EOF;
 			],
 			$lines);
 	}
+
+	public function test_unsafe_code_fixture_function_names_are_unique() {
+		$tokens = token_get_all( file_get_contents( __FILE__ . '-bad.inc' ) );
+		$names  = [];
+		$depth  = 0;
+		foreach ( $tokens as $i => $token ) {
+			if ( '{' === $token || ( is_array( $token ) && in_array( $token[0], [ T_CURLY_OPEN, T_DOLLAR_OPEN_CURLY_BRACES ], true ) ) ) {
+				$depth++;
+			} elseif ( '}' === $token ) {
+				$depth--;
+			} elseif ( 0 === $depth && is_array( $token ) && T_FUNCTION === $token[0] && is_array( $tokens[ $i + 2 ] ) && T_STRING === $tokens[ $i + 2 ][0] ) {
+				// Only top-level functions, since a class method may share a name with one.
+				$names[] = $tokens[ $i + 2 ][1];
+			}
+		}
+
+		$this->assertSame( [], array_keys( array_filter( array_count_values( $names ), function ( $count ) {
+			return $count > 1;
+		} ) ) );
+	}
 }
